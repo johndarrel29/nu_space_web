@@ -9,7 +9,7 @@ function useUserProfile() {
     throw new Error('user role is missing. Cannot fetch profile.');
   }
 
-  console.log('Auth User:', user.role);
+
 
   const getUserProfile = async () => {
     const formattedToken = token?.startsWith("Bearer ") ? token.slice(7) : token;
@@ -20,13 +20,13 @@ function useUserProfile() {
     }
 
     try {
-      console.log('getUserProfile called with authUser:', user);
+
 
       let url = '';
 
       const role = user?.role || '';
 
-      console.log('Exact user role:', role);
+
 
       switch (role) {
         case 'admin':
@@ -44,7 +44,7 @@ function useUserProfile() {
 
       }
 
-      console.log('Fetching user profile from URL:', url);
+
 
       const res = await fetch(url, {
         method: 'GET',
@@ -81,7 +81,7 @@ function useUserProfile() {
         throw new Error(`Error: ${response.status} - ${response.statusText}`);
       }
 
-      console.log("Officer deleted successfully");
+
       return response.json();
     } catch (err) {
       console.error("Error deleting officer:", err);
@@ -113,7 +113,7 @@ function useUserProfile() {
     onSuccess: () => {
       queryClient.invalidateQueries(["membersData"]);
       refetchUserProfile();
-      console.log("Officer deleted successfully, refetching user profile");
+
     },
     onError: (err) => {
       console.error("Error deleting officer:", err);

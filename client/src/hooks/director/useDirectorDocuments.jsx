@@ -1,7 +1,7 @@
-import { useTokenStore } from "../../store/tokenStore";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useUserStoreWithAuth } from '../../store';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { useUserStoreWithAuth } from '../../store';
+import { useTokenStore } from "../../store/tokenStore";
 
 const fetchDirectorDocuments = async ({ queryKey }) => {
     try {
@@ -18,7 +18,6 @@ const fetchDirectorDocuments = async ({ queryKey }) => {
 
         // Construct the query string from params
         const queryString = new URLSearchParams(filteredParams).toString();
-        console.log("Fetching director documents with token:", token, "and url: ", `${process.env.REACT_APP_BASE_URL}/api/director/documents/fetch-documents?${queryString}`);
         const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/director/documents/fetch-documents?${queryString}`, {
             method: "GET",
             headers: {
@@ -40,7 +39,6 @@ const fetchDirectorDocuments = async ({ queryKey }) => {
 
 const approveDirectorDocument = async ({ formData, documentId }) => {
     try {
-        console.log("Received data for approval in director:", documentId, formData);
         const token = useTokenStore.getState().getToken();
 
         const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/director/documents/approveDocument/${documentId}`, {
@@ -119,7 +117,6 @@ function useDirectorDocuments({
     } = useMutation({
         mutationFn: approveDirectorDocument,
         onSuccess: (data) => {
-            console.log("Document approved successfully:", data);
             // Optionally, you can refetch the data or update the state here
             queryClient.invalidateQueries(["directorDocuments"]);
         },

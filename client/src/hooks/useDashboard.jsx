@@ -1,13 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
-import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "../context/AuthContext";
+import { useQuery } from "@tanstack/react-query";
 import { useTokenStore } from "../store";
 
 const fetchAdminDocsRequest = async () => {
     try {
         const token = useTokenStore.getState().token;
 
-        console.log("Fetching admin documents...", token);
+
 
         const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/dashboard/adminDocuments`, {
             method: "GET",
@@ -16,14 +14,13 @@ const fetchAdminDocsRequest = async () => {
             }
         });
 
-        console.log("Response status:", response);
+
 
         if (!response.ok) {
             throw new Error("Failed to fetch admin documents");
         }
 
         const data = await response.json();
-        console.log("Admin documents data:", data);
         return data.documents ?? data; // <-- return the array if present, else fallback
 
     } catch (error) {

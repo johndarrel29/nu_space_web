@@ -1,16 +1,17 @@
-import {
-    ReusableTable, Button, Backdrop, CloseButton, TabSelector, UploadBatchModal
-} from '../../components'
-import { useDocumentManagement, useModal, useRSODocuments } from '../../hooks';
-import { useEffect, useState } from 'react';
-import useNotification from '../../utils/useNotification';
+import { AnimatePresence, motion } from "framer-motion";
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AnimatePresence } from "framer-motion";
-import { DropIn } from "../../animations/DropIn";
-import { motion } from "framer-motion";
-import { useCallback } from 'react'
-import { useDropzone } from 'react-dropzone'
 import { toast } from 'react-toastify';
+import { DropIn } from "../../animations/DropIn";
+import {
+    Backdrop,
+    Button,
+    CloseButton,
+    ReusableTable,
+    TabSelector, UploadBatchModal
+} from '../../components';
+import { useModal, useRSODocuments } from '../../hooks';
+import useNotification from '../../utils/useNotification';
 
 // add modal confirmation before deleting
 
@@ -19,67 +20,25 @@ function MainDocument() {
     const Navigate = useNavigate();
 
     const {
-        documents,
-        fetchDocuments,
-        submitDocument,
-        loading,
         error,
-
-        submitDocumentMutate,
-        submitDocumentLoading,
-        submitDocumentSuccess,
-        submitDocumentError,
-
         generalDocuments,
         generalDocumentsLoading,
-        generalDocumentsError,
-        generalDocumentsQueryError,
         refetchGeneralDocuments,
-
-        // uploadAccreditationDocument
-        uploadAccreditationDocument,
-        uploadAccreditationDocumentLoading,
-        uploadAccreditationDocumentSuccess,
-        uploadAccreditationDocumentError,
-        uploadAccreditationDocumentQueryError,
-
-        // deleteAccreditationDocument
         deleteAccreditationDocument,
-        deleteAccreditationDocumentLoading,
-        deleteAccreditationDocumentSuccess,
-        deleteAccreditationDocumentError,
-        deleteAccreditationDocumentQueryError,
     } = useRSODocuments();
 
-    const [files, setFiles] = useState(null);
-    const [titles, setTitles] = useState("");
+
     const { handleNotification } = useNotification();
     const [activeTab, setActiveTab] = useState(0);
     const { isOpen, openModal, closeModal } = useModal();
     const [modalType, setModalType] = useState("");
-    const [msg, setMsg] = useState(null);
     const [selectedDocument, setSelectedDocument] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
-    const [descriptions, setDescriptions] = useState([]);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [documentToDelete, setDocumentToDelete] = useState(null);
     const user = JSON.parse(localStorage.getItem("user"));
     const userID = user?.id || "";
 
-    const {
-        documentsData,
-        documentsLoading,
-        documentsError,
-        documentsQueryError,
-        refetchDocuments
-    } = useDocumentManagement({ userID });
-    console.log("generalDocuments", {
-        generalDocuments,
-        generalDocumentsLoading,
-        generalDocumentsError,
-        generalDocumentsQueryError,
-        refetchGeneralDocuments,
-    });
 
     /**
      * Formats a date string to a readable format
@@ -92,28 +51,14 @@ function MainDocument() {
         return date.toLocaleDateString(undefined, options);
     };
 
-    const onDrop = useCallback(acceptedFiles => {
-        acceptedFiles.forEach((file) => {
-            const reader = new FileReader()
 
-            reader.onabort = () => console.log('file reading was aborted')
-            reader.onerror = () => console.log('file reading has failed')
-            reader.onload = () => {
-                // Do whatever you want with the file contents
-                const binaryStr = reader.result
-                console.log(binaryStr)
-            }
-            reader.readAsArrayBuffer(file)
-        })
-    }, [])
-    const { getRootProps, getInputProps, isDragActive, acceptedFiles } = useDropzone({ onDrop })
 
     // Prepare table data from documents
     const tableRow = Array.isArray(generalDocuments)
         ? generalDocuments
             .filter(doc => doc.purpose !== "activities")
             .map((doc) => {
-                console.log("doc", doc); // inside your map
+
 
                 return {
                     id: doc._id,
@@ -171,34 +116,13 @@ function MainDocument() {
     const handleCloseModal = () => {
         setModalType("");
         closeModal();
-        setFiles(null);
-        setTitles("");
-        setMsg(null);
     }
-
-    const handleDocumentView = (row) => {
-        setSelectedDocument(row);
-        setModalType("view");
-        openModal();
-        console.log("Selected row:", row);
-    }
-
-    const handleFileChange = (e) => {
-        const fileArray = Array.from(e.target.files);
-        setFiles(fileArray);
-    };
-
-    const removeFile = (index) => {
-        const updatedFiles = [...files];
-        updatedFiles.splice(index, 1);
-        setFiles(updatedFiles);
-    };
 
     const handleDeleteDocument = (row) => {
-        console.log("Delete clicked for:", row.id);
+
         deleteAccreditationDocument({ documentId: row.id }, {
             onSuccess: () => {
-                console.log("Document deleted successfully");
+
                 toast.success("Document deleted successfully");
                 refetchGeneralDocuments(); // Refresh the document list
             },
@@ -209,73 +133,7 @@ function MainDocument() {
         });
     };
 
-    /**
-     * Handles document submission
-     * Validates files and submits them to the server
-     */
-    const handleSubmit = async () => {
-        try {
-            if (!files || files.length === 0) {
-                console.log("No files to upload or titles provided.");
-                return;
-            }
-
-            console.log("Submitting document:", files, "titles:", titles);
-
-            const fd = new FormData();
-
-
-            files.forEach((file, i) => {
-                console.log("files[i] content:", files[i]);
-                fd.append('files', files[i]);
-
-                // Optional: if you're sending metadata per file
-                fd.append(`title_${i}`, files.title || `Untitled ${i + 1}`);
-                fd.append(`description_${i}`, files.description || "No description provided");
-                fd.append(`purpose_${i}`, files.purpose || "No purpose provided");
-            });
-
-            console.log("Submitting full FormData:");
-            for (const [key, value] of fd.entries()) {
-                console.log("fd is an instance of FormData:", fd instanceof FormData);
-
-                console.log(`${key}: ${value instanceof File ? value.name : value}`);
-            }
-
-            submitDocumentMutate(
-                { formData: fd }, {
-                onSuccess: (data) => {
-                    console.log("Document submitted successfully:", data);
-                    // setMsg("File uploaded successfully!");
-                    handleNotification("Document submitted successfully!");
-                    refetchGeneralDocuments(); // Refresh the document list
-                },
-                onError: (error) => {
-                    console.error("Error submitting document:", error);
-                    // setMsg("Error uploading file.");
-                    handleNotification("Error submitting document. Please try again.");
-                }
-            }
-            );
-            // setMsg("File uploaded successfully!");
-            handleNotification("Document submitted successfully!");
-        } catch (error) {
-            console.error("Error submitting document:", error);
-            // setMsg("Error uploading file.");
-            // handleNotification("Error submitting document. Please try again.");
-        }
-    };
-
-    //listens to success. it will close the modal and clear the file on the state
-    useEffect(() => {
-        if (submitDocumentSuccess) {
-            setFiles(null);
-            setTitles("");
-            closeModal();
-            setMsg("Document submitted successfully!");
-            refetchGeneralDocuments(); // Refresh the document list
-        }
-    })
+    // Note: Upload success handling is managed within UploadBatchModal.
 
     return (
         <div className='flex flex-col'>

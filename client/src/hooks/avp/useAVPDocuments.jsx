@@ -5,7 +5,7 @@ import { useEffect } from "react";
 const getAVPDocuments = async ({ queryKey }) => {
     try {
         const token = useTokenStore.getState().getToken();
-        const [_key, params = {}] = queryKey;
+        const [, params = {}] = queryKey;
 
         // Filter out undefined, null, or empty string values from params
         const filteredParams = {};
@@ -17,7 +17,6 @@ const getAVPDocuments = async ({ queryKey }) => {
 
         // Construct the query string from params
         const queryString = new URLSearchParams(filteredParams).toString();
-        console.log("Fetching AVP documents with token:", token, "and url: ", `${process.env.REACT_APP_BASE_URL}/api/avp/documents/fetch-documents?${queryString}`);
         const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/avp/documents/fetch-documents?${queryString}`, {
             method: "GET",
             headers: {
@@ -30,7 +29,6 @@ const getAVPDocuments = async ({ queryKey }) => {
             console.error("AVP documents fetch failed:", errorText);
             throw new Error("Failed to fetch AVP documents");
         }
-        console.log("Response status:", response.status);
         return response.json();
     }
     catch (error) {
@@ -92,7 +90,6 @@ function useAVPDocuments() {
         isLoading: isAVPApprovingDocument,
         isError: isAVPApproveDocumentError,
         isSuccess: isAVPApproveDocumentSuccess,
-        error: avpApproveErrorMessage,
     } = useMutation({
         mutationFn: approveAVPDocument,
         onSuccess: () => {

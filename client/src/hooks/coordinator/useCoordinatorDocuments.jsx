@@ -1,7 +1,7 @@
-import { useTokenStore } from "../../store/tokenStore";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useUserStoreWithAuth } from '../../store';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { useUserStoreWithAuth } from '../../store';
+import { useTokenStore } from "../../store/tokenStore";
 
 const getCoordinatorDocuments = async ({ queryKey }) => {
     try {
@@ -18,7 +18,6 @@ const getCoordinatorDocuments = async ({ queryKey }) => {
 
         // Construct the query string from params
         const queryString = new URLSearchParams(filteredParams).toString();
-        console.log("Fetching coordinator documents with token:", token, "and url: ", `${process.env.REACT_APP_BASE_URL}/api/coordinator/documents/fetch-documents?${queryString}`);
         const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/coordinator/documents/fetch-documents?${queryString}`, {
             method: "GET",
             headers: {
@@ -32,18 +31,17 @@ const getCoordinatorDocuments = async ({ queryKey }) => {
             console.error("Coordinator documents fetch failed:", errorText);
             throw new Error("Failed to fetch coordinator documents");
         }
-        console.log("Response status:", response.status);
         return response.json();
 
     } catch (error) {
         console.error("Error fetching coordinator documents:", error);
-        throw error; // rethrow so react-query can handle the error state
+        throw error;
     }
 }
 
 const approveCoordinatorDocument = async ({ formData, documentId }) => {
     try {
-        console.log("received data, ", documentId, formData);
+
         const token = useTokenStore.getState().getToken();
 
         const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/coordinator/documents/approveDocument/${documentId}`, {
@@ -123,7 +121,6 @@ function useCoordinatorDocuments({
     } = useMutation({
         mutationFn: approveCoordinatorDocument,
         onSuccess: (data) => {
-            console.log("Document approved successfully:", data);
             // Optionally, you can refetch the data or update the state here
             queryClient.invalidateQueries(["coordinatorDocuments"]);
         },

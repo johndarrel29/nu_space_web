@@ -1,6 +1,6 @@
+import { useMemo } from 'react';
 import { create } from 'zustand';
 import { useAuth } from '../context/AuthContext';
-import { useMemo } from 'react';
 
 // Create a Zustand store for user-related state
 const useUserStore = create((set, get) => ({
@@ -8,7 +8,7 @@ const useUserStore = create((set, get) => ({
     setAdditionalUserData: (data) => set({ additionalUserData: data }),
 }));
 
-// Custom hook that combines AuthContext with derived role states
+// Custom hook which combines AuthContext with derived role states
 export default function useUserStoreWithAuth() {
     const { user, isAuthenticated, loading, token, login, logout } = useAuth();
     const { additionalUserData, setAdditionalUserData } = useUserStore();
@@ -23,7 +23,7 @@ export default function useUserStoreWithAuth() {
         isAVP: user?.role === "avp",
     }), [user?.role]);
 
-    console.log("User role:", user?.role);
+
 
     return {
         user,
@@ -39,3 +39,4 @@ export default function useUserStoreWithAuth() {
 }
 
 export { useUserStore };
+

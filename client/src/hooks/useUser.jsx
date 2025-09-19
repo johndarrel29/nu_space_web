@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 // match url with the role on updateuserrole
 
 const loginUserRequest = async ({ email, password, platform }) => {
-  console.log("Login request initiated with email:", email, "and platform:", platform, "password:", password);
+
 
   const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/login/webLogin`, {
     method: "POST",
@@ -52,7 +52,7 @@ const registerUserRequest = async ({ firstName, lastName, email, password, confi
 // for admin fetching users
 const fetchUsersRequest = async () => {
   try {
-    console.log("Fetching users...");
+
     const token = localStorage.getItem("token");
     const formattedToken = token?.startsWith("Bearer ") ? token.slice(7) : "";
 
@@ -65,7 +65,7 @@ const fetchUsersRequest = async () => {
       },
     });
 
-    console.log("Response status users:", response.status);
+
 
     if (!response.ok) {
       throw new Error(`Error: ${response.status} - ${response.statusText}`);
@@ -73,7 +73,7 @@ const fetchUsersRequest = async () => {
 
     const json = await response.json();
     // return regular data
-    console.log("Fetched users data in UseUser:", json);
+
 
     return json?.students;
 
@@ -89,7 +89,7 @@ const updateUserRequest = async ({ userId, userData, userRole }) => {
   const token = localStorage.getItem("token");
   const formattedToken = token?.startsWith("Bearer ") ? token.slice(7) : "";
 
-  console.log('Updating user with ID:', userId, 'and data:', userData);
+
 
   if (!userRole) {
     throw new Error('user role is missing. Cannot fetch profile.');
@@ -112,8 +112,7 @@ const updateUserRequest = async ({ userId, userData, userRole }) => {
 
     }
 
-    console.log('Updating user role for URL:', url);
-    console.log('User data being sent:', userData);
+
     const response = await fetch(url, {
       method: "PATCH",
       headers: {
@@ -160,7 +159,7 @@ const deleteUserRequest = async (userId) => {
 
 function useUser() {
   const { user } = useAuth();
-  console.log("useUser hook called with user:", user);
+
 
   const loginUserMutate = useMutation({
     mutationFn: loginUserRequest,
@@ -180,9 +179,7 @@ function useUser() {
     error: registerError,
   } = useMutation({
     mutationFn: registerUserRequest,
-    onSuccess: (data) => {
-      console.log("User registered successfully:", data);
-    },
+    onSuccess: (data) => { },
     onError: (error) => {
       console.error("Error registering user:", error);
       if (error.details && error.details.length > 0) {

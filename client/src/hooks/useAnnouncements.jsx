@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
-import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "../context/AuthContext";
 
 //use token from authContext as the single source of truth for authentication
@@ -9,7 +8,7 @@ function useAnnouncements() {
     const { user } = useAuth();
     console.log("User in useAnnouncements:", user);
 
-    const rsoId = user?.assigned_rso; // Replace with actual logic to get RSO ID
+    const rsoId = user?.assigned_rso;
 
     const createAnnouncement = async ({ title, content }) => {
         const token = localStorage.getItem("token");

@@ -1,12 +1,11 @@
-import Badge from "../ui/Badge";
-import { useAdminDocuments, useCoordinatorDocuments, useAVPDocuments, useDirectorDocuments, useAdminAcademicYears, useAdminActivity } from "../../hooks";
-import { FormatDate } from "../../utils";
-import { Searchbar, ReusableDropdown, DropdownSearch } from "../../components";
-import { useMemo, useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { useUserStoreWithAuth } from '../../store';
-import { CardSkeleton } from '../../components';
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import DefaultPicture from "../../assets/images/default-picture.png";
+import { CardSkeleton, DropdownSearch, ReusableDropdown, Searchbar } from "../../components";
+import { useAdminAcademicYears, useAdminActivity, useAdminDocuments, useAVPDocuments, useCoordinatorDocuments, useDirectorDocuments } from "../../hooks";
+import { useUserStoreWithAuth } from '../../store';
+import { FormatDate } from "../../utils";
+import Badge from "../ui/Badge";
 
 // TODO: Add loading and error states for the table
 // TODO: Fix the loading to show a skeleton loader
@@ -48,12 +47,11 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
         RSO: filters.rsoId
     });
 
-    console.log("adminPaginatedActivities ", adminPaginatedActivities);
+
 
     const isOnRSODetailsPage = location.pathname.includes("/rsos/rso-details");
 
-    console.log("Is on RSO Details Page:", isOnRSODetailsPage ? "Yes" : "No");
-    console.log("current active tab ", activeTab);
+
 
     const { isUserAdmin, isCoordinator, isDirector, isAVP } = useUserStoreWithAuth();
 
@@ -91,7 +89,7 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
         refetchAllDocuments,
     } = useAdminDocuments(filters);
 
-    console.log("all docs ", allDocuments);
+
 
     // Table headings
     const tableHeading = [
@@ -116,11 +114,11 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
                 purpose: "recognition",
                 page: 1
             }));
-            console.log("Setting RSO filter with ID:", rsoId); // Added logging to debug
+            // set RSO filter using provided rsoId
         }
     }, [isOnRSODetailsPage, rsoId]);
 
-    console.log("is avp? ", isAVP);
+
 
     // Effects
     useEffect(() => {
@@ -130,7 +128,6 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
             setTableData(allDocuments);
         } else if (avpDocuments && isAVP) {
             setTableData(avpDocuments?.documents);
-            console.log("avp docs ", avpDocuments);
         } else if (directorDocuments && isDirector) {
             setTableData(directorDocuments);
         }
@@ -221,12 +218,10 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
     };
 
     const handleRSO = (value) => {
-        console.log("value to be stored in rsoId: ", value)
         setFilters(prev => ({ ...prev, rsoId: value, page: 1 }));
     };
 
     const handleAcademicYear = (value) => {
-        console.log("value to be stored: ", value)
         setFilters(prev => ({ ...prev, yearId: value, page: 1 }));
     };
 
@@ -292,7 +287,7 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
                                 id="rso-filter"
                                 isSorting={true}
                                 setSelectedSorting={handleRSO}
-                                setSelectedCategory={() => console.log("Category selected")}
+                                setSelectedCategory={() => { }}
                                 valueType="id"
                             />
                         </div>
@@ -313,7 +308,7 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
                             options={["All Organizations", "Approved", "Pending", "Rejected"]}
                         />
                     </div>
-                    {console.log("academic years:", academicYears?.years)}
+
                     <div className="w-full mb-2 md:mb-0">
                         <label htmlFor="academic-year" className="block text-sm font-medium text-gray-700 mb-1">
                             Academic Year
@@ -480,7 +475,7 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
             ) : activitySelected && activeTab === 2 ? (
                 <>
                     <div className="overflow-x-auto">
-                        {console.log("table data ", tableData)}
+
                         {/* back button */}
                         <div className="p-3 flex items-center gap-4 justify-between">
                             <button
@@ -524,7 +519,7 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {console.log("activity selected pre docs ", activitySelected?.Activity_pre_activity_documents)}
+
                                     {docsToRender.length > 0 ? (
                                         docsToRender.map((row, index) => (
                                             <tr
@@ -632,7 +627,7 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
                                             ))}
                                         </tr>
                                     </thead>
-                                    {console.log("table data ", tableData)}
+
                                     <tbody>
                                         {(tableData?.signedDocuments || tableData).length > 0 ? (
                                             (tableData?.signedDocuments || tableData).map((row, index) => (
