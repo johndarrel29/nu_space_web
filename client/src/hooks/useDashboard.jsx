@@ -161,7 +161,10 @@ const useDashboard = () => {
         error: errorAdminDocs
     } = useQuery({
         queryKey: ['adminDocs'],
-        queryFn: fetchAdminDocsRequest
+        queryFn: fetchAdminDocsRequest,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
     });
 
     const {
@@ -171,7 +174,10 @@ const useDashboard = () => {
         error: errorAccreditation
     } = useQuery({
         queryKey: ['accreditation'],
-        queryFn: fetchAccreditationRequest
+        queryFn: fetchAccreditationRequest,
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
     });
 
     const {
@@ -181,7 +187,10 @@ const useDashboard = () => {
         error: errorActivity
     } = useQuery({
         queryKey: ['activity'],
-        queryFn: fetchActivityRequest
+        queryFn: fetchActivityRequest,
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
     });
 
     const {
@@ -191,7 +200,10 @@ const useDashboard = () => {
         error: errorCreatedActivities
     } = useQuery({
         queryKey: ['createdActivities'],
-        queryFn: fetchCreatedActivityRequest
+        queryFn: fetchCreatedActivityRequest,
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
     });
 
     const {
@@ -201,7 +213,10 @@ const useDashboard = () => {
         error: errorRSOMembers
     } = useQuery({
         queryKey: ['RSOMembers'],
-        queryFn: fetchMembersRequest
+        queryFn: fetchMembersRequest,
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
     });
 
     const {
@@ -211,7 +226,10 @@ const useDashboard = () => {
         error: errorRSOApplicants
     } = useQuery({
         queryKey: ['RSOApplicants'],
-        queryFn: fetchApplicantsRequest
+        queryFn: fetchApplicantsRequest,
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
     });
 
     return {

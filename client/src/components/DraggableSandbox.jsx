@@ -1,6 +1,6 @@
 // render this as the page then test to see if writing and dragging works.
-import interact from 'interactjs'
-import { useRef, useEffect, useState, useCallback } from 'react';
+import interact from 'interactjs';
+import { useCallback, useEffect, useRef, useState } from 'react';
 // import imageSample from '../assets/images/NUSpace_blue.png'
 // import imageSample from '../assets/images/icon_yellow.png'
 
@@ -68,8 +68,6 @@ export default function DraggableSandbox({ onUpdate, imageSample }) {
                         target.setAttribute('data-y', y);
 
                         onUpdate?.({ x, y, width: target.offsetWidth, height: target.offsetHeight });
-
-                        console.log("[Browser drag box]", { x, y, width: target.offsetWidth, height: target.offsetHeight });
                     }
                 }
             })

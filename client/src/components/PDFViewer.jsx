@@ -1,18 +1,17 @@
-import React, { useState, useCallback } from "react";
-import { Document, Page, pdfjs } from "react-pdf";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { Document, Page, pdfjs } from "react-pdf";
 import "../css/pdfViewer.css";
 import { useTokenStore } from "../store";
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    "pdfjs-dist/build/pdf.worker.min.mjs",
-    import.meta.url
-).toString();
+// Configure PDF.js worker from CDN to ensure compatibility across environments
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
+// Use CDN-hosted assets for cMaps, standard fonts, and wasm to avoid manual copying
 const options = {
-    cMapUrl: '/cmaps/',
-    standardFontDataUrl: '/standard_fonts/',
-    wasmUrl: '/wasm/',
+    cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
+    standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
+    wasmUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/wasm/`,
 };
 
 const maxWidth = 800;

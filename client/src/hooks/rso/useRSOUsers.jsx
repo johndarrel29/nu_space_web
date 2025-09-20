@@ -1,6 +1,5 @@
-import { useQuery, useMutation, useInfiniteQuery } from "@tanstack/react-query";
-import { useAuth } from "../../context/AuthContext";
-import { useUserStoreWithAuth, useTokenStore } from '../../store';
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useTokenStore, useUserStoreWithAuth } from '../../store';
 
 const fetchMembers = async () => {
     try {
@@ -83,6 +82,8 @@ const approveUserMembership = async ({ id }) => {
 
 
 function useRSOUsers() {
+    const { isUserRSORepresentative } = useUserStoreWithAuth();
+
     const {
         data: rsoMembers,
         isError: isErrorFetchingMembers,
@@ -90,6 +91,7 @@ function useRSOUsers() {
         isRefetching: isRefetchingMembers,
         refetch: refetchMembers,
     } = useQuery({
+        enabled: isUserRSORepresentative,
         queryKey: ["rsoMembers"],
         queryFn: fetchMembers
     });
@@ -101,6 +103,7 @@ function useRSOUsers() {
         isRefetching: isRefetchingApplicants,
         refetch: refetchApplicants,
     } = useQuery({
+        enabled: isUserRSORepresentative,
         queryKey: ["rsoApplicants"],
         queryFn: fetchApplicants
     });
@@ -112,10 +115,11 @@ function useRSOUsers() {
         error: errorApprovingMembership,
         isSuccess: isSuccessApprovingMembership,
     } = useMutation({
+        enabled: isUserRSORepresentative,
         mutationFn: approveUserMembership,
         onSuccess: () => {
             refetchApplicants();
-            // Invalidate and refetch\
+            // Invalidate and refetch
             console.log("Membership approved successfully");
         }
     });

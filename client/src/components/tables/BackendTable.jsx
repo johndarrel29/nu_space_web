@@ -16,6 +16,7 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
     const navigate = useNavigate();
     const location = useLocation();
     const [activitySelected, setActivitySelected] = useState(null);
+    const [activityRoleData, setActivityRoleData] = useState(null);
     // State
     const [searchQuery, setSearchQuery] = useState("");
     const [tableData, setTableData] = useState([]);
@@ -48,9 +49,7 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
     });
 
 
-
     const isOnRSODetailsPage = location.pathname.includes("/rsos/rso-details");
-
 
 
     const { isUserAdmin, isCoordinator, isDirector, isAVP } = useUserStoreWithAuth();
@@ -66,11 +65,41 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
         refetchAcademicYears,
         isRefetchingAcademicYears,
         isAcademicYearsFetched,
+
+
     } = useAdminAcademicYears();
 
     // Documents data
-    const { avpDocuments } = useAVPDocuments(filters);
-    const { directorDocuments } = useDirectorDocuments(filters);
+    const {
+        avpDocuments,
+
+        avpActivityDocuments,
+        refetchAVPActivityDocuments,
+        isAVPActivityDocumentsLoading,
+        isAVPActivityDocumentsError,
+        avpActivityDocumentsError,
+    } = useAVPDocuments({
+        filters,
+        debouncedQuery: searchQuery,
+        page: filters.page,
+        limit: filters.limit,
+        RSO: filters.rsoId
+    });
+    const {
+        directorDocuments,
+        // Director activity documents
+        getDirectorActivityDocuments,
+        refetchDirectorActivityDocuments,
+        isDirectorActivityDocumentsLoading,
+        isDirectorActivityDocumentsError,
+        directorActivityDocumentsError,
+    } = useDirectorDocuments({
+        filters,
+        debouncedQuery: searchQuery,
+        page: filters.page,
+        limit: filters.limit,
+        RSO: filters.rsoId
+    });
     const {
         coordinatorDocuments,
         documentsLoading,
@@ -89,7 +118,19 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
         refetchAllDocuments,
     } = useAdminDocuments(filters);
 
+    useEffect(() => {
+        if (adminPaginatedActivities && (isCoordinator || isUserAdmin)) {
+            setActivityRoleData(adminPaginatedActivities?.pages?.[0]);
+        } else if (getDirectorActivityDocuments && isDirector) {
+            setActivityRoleData(getDirectorActivityDocuments);
+        } else if (avpActivityDocuments && isAVP) {
+            setActivityRoleData(avpActivityDocuments);
+        } else {
+            setActivityRoleData(null);
+        }
+    }, [adminPaginatedActivities, getDirectorActivityDocuments, avpActivityDocuments, isCoordinator, isUserAdmin, isDirector, isAVP]);
 
+    console.log("activity role data ", activityRoleData);
 
     // Table headings
     const tableHeading = [
@@ -118,6 +159,13 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
         }
     }, [isOnRSODetailsPage, rsoId]);
 
+    useEffect(() => {
+        console.log("activity documents from roles ", {
+            avp: avpActivityDocuments,
+            director: getDirectorActivityDocuments,
+            coordinatorAdmin: adminPaginatedActivities
+        })
+    }, [avpActivityDocuments, getDirectorActivityDocuments, adminPaginatedActivities]);
 
 
     // Effects
@@ -255,11 +303,11 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
     }, [tableData?.pagination?.page, tableData?.pagination?.limit, filters.page, filters.limit]);
 
     const activitiesStartIndex = useMemo(() => {
-        const page = adminPaginatedActivities?.pages?.[0]?.pagination?.page ?? filters.page ?? 1;
-        const limit = adminPaginatedActivities?.pages?.[0]?.pagination?.limit ?? filters.limit ?? 10;
+        const page = activityRoleData?.pagination?.page ?? filters.page ?? 1;
+        const limit = activityRoleData?.pagination?.limit ?? filters.limit ?? 10;
         if (!Number.isFinite(page) || !Number.isFinite(limit)) return 0;
         return (page - 1) * limit;
-    }, [adminPaginatedActivities, filters.page, filters.limit]);
+    }, [activityRoleData, filters.page, filters.limit]);
 
     return (
         <div className="p-4">
@@ -365,7 +413,7 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
                 )}
                 {activeTab === 2 && (
                     <span className="text-gray-700 font-semibold">
-                        Showing {adminPaginatedActivities?.pages?.[0]?.totalActivities ? adminPaginatedActivities?.pages?.[0]?.totalActivities : adminPaginatedActivities?.pages?.[0]?.activities.length || 0} results
+                        Showing {activityRoleData?.totalActivities ? activityRoleData?.totalActivities : activityRoleData?.activities.length || 0} results
                     </span>
                 )}
                 <li className="flex justify-center">
@@ -405,8 +453,8 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {(adminPaginatedActivities?.pages?.[0]?.activities || adminPaginatedActivities)?.length > 0 ? (
-                                        (adminPaginatedActivities?.pages?.[0]?.activities || adminPaginatedActivities).map((row, index) => (
+                                    {(activityRoleData?.activities || activityRoleData)?.length > 0 ? (
+                                        (activityRoleData?.activities || activityRoleData).map((row, index) => (
                                             <tr
                                                 key={row._id}
                                                 onClick={() => setActivitySelected(row)}
@@ -729,16 +777,16 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
                             <li className="page-item mx-1 px-3 py-2 bg-white border border-mid-gray rounded-md font-semibold rounded">
                                 <button
                                     onClick={() => setFilters({ ...filters, page: filters.page - 1 })}
-                                    className="page-link" disabled={(adminPaginatedActivities?.pages?.[0]?.pagination?.totalPages ?? 0) === 0 || filters.page === 1}>
+                                    className="page-link" disabled={(activityRoleData?.pagination?.totalPages ?? 0) === 0 || filters.page === 1}>
                                     Prev
                                 </button>
                             </li>
-                            <div className="px-4 py-2 font-semibold">{`${adminPaginatedActivities?.pages?.[0]?.pagination?.page || 1} of ${adminPaginatedActivities?.pages?.[0]?.pagination?.totalPages || 0}`}</div>
+                            <div className="px-4 py-2 font-semibold">{`${activityRoleData?.pagination?.page || 1} of ${activityRoleData?.pagination?.totalPages || 0}`}</div>
                             <li className="page-item mx-1 px-3 py-2 bg-white border border-mid-gray rounded-md font-semibold rounded">
                                 <button
                                     // onClick={() => fetchNextPage()}
                                     onClick={() => setFilters({ ...filters, page: filters.page + 1 })}
-                                    className="page-link" disabled={(adminPaginatedActivities?.pages?.[0]?.pagination?.totalPages ?? 0) === 0 || filters.page === adminPaginatedActivities?.pages?.[0]?.pagination?.totalPages}>
+                                    className="page-link" disabled={(activityRoleData?.pagination?.totalPages ?? 0) === 0 || filters.page === activityRoleData?.pagination?.totalPages}>
                                     Next
                                 </button>
                             </li>

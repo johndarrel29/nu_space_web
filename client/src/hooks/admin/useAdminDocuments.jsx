@@ -1,7 +1,7 @@
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { useAuth } from '../../context/AuthContext';
-import { useUserStoreWithAuth, useTokenStore } from "../../store";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { useAuth } from '../../context/AuthContext';
+import { useTokenStore, useUserStoreWithAuth } from "../../store";
 
 // =============API Calls
 // for admin
@@ -517,6 +517,7 @@ function useAdminDocuments({
         refetch: refetchSetAccreditationDeadline
     } = useMutation({
         mutationFn: setAccreditationDeadlineRequest,
+        enabled: isUserAdmin || isCoordinator,
         onSuccess: (data) => {
             console.log("Accreditation deadline set successfully:", data);
         },
@@ -571,6 +572,7 @@ function useAdminDocuments({
         refetch: refetchDeleteSingleDocumentTemplate
     } = useMutation({
         mutationFn: deleteSingleDocumentTemplateRequest,
+        enabled: isUserAdmin || isCoordinator,
         onSuccess: (data) => {
             console.log("Document template deleted successfully:", data);
         },
@@ -587,6 +589,7 @@ function useAdminDocuments({
     } = useMutation({
         queryKey: ['deleteDocumentTemplate'],
         mutationFn: deleteDocumentTemplateRequest,
+        enabled: isUserAdmin || isCoordinator,
         onSuccess: (data) => {
             console.log("Document template deleted successfully:", data);
         },
@@ -602,6 +605,7 @@ function useAdminDocuments({
         refetch: refetchUploadDocumentTemplate
     } = useMutation({
         mutationFn: uploadDocumentTemplateRequest,
+        enabled: isUserAdmin || isCoordinator,
         onSuccess: (data) => {
             console.log("Document template uploaded successfully:", data);
         },

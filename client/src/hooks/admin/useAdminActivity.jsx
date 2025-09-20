@@ -1,7 +1,7 @@
-import { useQuery, useMutation, useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "../../context/AuthContext";
-import { useTokenStore } from "../../store/tokenStore";
 import { useUserStoreWithAuth } from '../../store';
+import { useTokenStore } from "../../store/tokenStore";
 
 // admin fetch activity with parameters
 const fetchAdminActivity = async ({ queryKey, pageParam = 1 }) => {
@@ -220,6 +220,7 @@ function useAdminActivity({
         isFetchingNextPage,
     } = useInfiniteQuery({
         queryKey: ["adminActivities", filter],
+        enabled: isUserAdmin || isCoordinator,
         queryFn: fetchAdminActivity,
         // enabled: !!debouncedQuery || !!sorted || !!RSO || !!RSOType || !!college,
         getNextPageParam: (lastPage) => lastPage.nextPage,
@@ -232,6 +233,7 @@ function useAdminActivity({
         isSuccess: isActivityApproved,
     } = useMutation({
         mutationFn: approveActivity,
+        enabled: isUserAdmin || isCoordinator,
         onSuccess: () => {
             console.log("Activity approved successfully");
         },
@@ -247,6 +249,7 @@ function useAdminActivity({
         isSuccess: isActivityRejected,
     } = useMutation({
         mutationFn: rejectActivity,
+        enabled: isUserAdmin || isCoordinator,
         onSuccess: () => {
             console.log("Activity rejected successfully");
         },

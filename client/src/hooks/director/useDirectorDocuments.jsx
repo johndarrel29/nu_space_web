@@ -44,19 +44,67 @@ const approveDirectorDocument = async ({ formData, documentId }) => {
         const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/director/documents/approveDocument/${documentId}`, {
             method: "PATCH",
             headers: {
-                "Content-Type": "application/json",
                 Authorization: token || "",
             },
-            body: JSON.stringify(formData)
+            body: formData
         });
 
         if (!response.ok) {
-            throw new Error(`Error approving document: ${response.statusText}`);
+            const errorData = await response.json(); // try to read the server's message
+            throw new Error(errorData.message || `Error: ${response.status} - ${response.statusText}`);
         }
 
         return await response.json();
     } catch (error) {
         console.error("Error approving director document:", error);
+        throw error;
+    }
+}
+
+const getDirectorActivityDocumentsRequest = async ({ queryKey, pageParam = 1 }) => {
+    try {
+        const token = useTokenStore.getState().getToken();
+        const [_, filter] = queryKey;
+        const { limit = 12, query = "", sorted = "", RSO = "", RSOType = "", college = "", isGPOA = "All", page = 1 } = filter;
+
+        const url = new URL(`${process.env.REACT_APP_BASE_URL}/api/director/documents/all-activities`);
+
+        if (page > 1) {
+            if (page) url.searchParams.set("page", page);
+        } else {
+            url.searchParams.set("page", pageParam);
+        }
+        url.searchParams.set("limit", limit);
+        if (query) url.searchParams.set("search", query);
+        if (RSO) url.searchParams.set("RSO", RSO)
+        if (RSOType) url.searchParams.set("RSOType", RSOType);
+        if (isGPOA && isGPOA !== "All") url.searchParams.set("isGPOA", isGPOA === true ? "true" : "false");
+        if (college) url.searchParams.set("college", college);
+        if (sorted) url.searchParams.set("sorted", sorted);
+
+        const response = await fetch(url, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: token,
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json(); // try to read the server's message
+            throw new Error(errorData.message || `Error: ${response.status} - ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return {
+            activities: data.activities,
+            hasNextPage: data.pagination?.hasNextPage,
+            nextPage: data.pagination?.hasNextPage ? pageParam + 1 : undefined,
+            pagination: data.pagination,
+            totalActivities: data.pagination?.total || 0,
+        };
+    } catch (error) {
+        console.error("Error fetching director activity documents:", error);
         throw error;
     }
 }
@@ -72,6 +120,13 @@ function useDirectorDocuments({
     search = "",
     documentType = "",
     yearId = "",
+    query = "",
+    debouncedQuery = "",
+    sorted = "",
+    RSO = "",
+    isGPOA = "All",
+    RSOType = "",
+    college = "",
 } = {}) {
     const { isDirector } = useUserStoreWithAuth();
     const queryClient = useQueryClient();
@@ -87,6 +142,17 @@ function useDirectorDocuments({
         search,
         documentType,
         yearId,
+    };
+
+    const filter = {
+        query: debouncedQuery,
+        limit,
+        sorted,
+        RSO,
+        isGPOA,
+        RSOType,
+        college,
+        page,
     };
 
     useEffect(() => {
@@ -126,6 +192,18 @@ function useDirectorDocuments({
         enabled: isDirector,
     });
 
+    const {
+        data: getDirectorActivityDocuments,
+        refetch: refetchDirectorActivityDocuments,
+        isLoading: isDirectorActivityDocumentsLoading,
+        isError: isDirectorActivityDocumentsError,
+        error: directorActivityDocumentsError,
+    } = useQuery({
+        queryKey: ['directorActivityDocuments', filter],
+        queryFn: getDirectorActivityDocumentsRequest,
+        enabled: isDirector,
+    });
+
     return {
         // Data and loading/error states for director documents
         directorDocuments,
@@ -142,6 +220,12 @@ function useDirectorDocuments({
         isDirectorApproveDocumentError,
         isDirectorApproveDocumentSuccess,
 
+        // Director activity documents
+        getDirectorActivityDocuments,
+        refetchDirectorActivityDocuments,
+        isDirectorActivityDocumentsLoading,
+        isDirectorActivityDocumentsError,
+        directorActivityDocumentsError,
     };
 }
 

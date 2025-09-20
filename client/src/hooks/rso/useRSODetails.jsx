@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { useUserStoreWithAuth, useTokenStore } from "../../store";
+import { useTokenStore, useUserStoreWithAuth } from "../../store";
 
 // for rso fetch members (pure API helper)
 const fetchMembers = async () => {
@@ -105,6 +105,7 @@ function useRSODetails() {
         isError: isUpdateOfficerError,
         isSuccess: isUpdateOfficerSuccess,
     } = useMutation({
+        enabled: isUserRSORepresentative,
         mutationFn: updateOfficer,
         onSuccess: () => queryClient.invalidateQueries(["membersData"]),
     });
@@ -118,7 +119,7 @@ function useRSODetails() {
     } = useQuery({
         queryKey: ["membersData"],
         queryFn: fetchMembers,
-        enabled: isUserRSORepresentative === true,
+        enabled: isUserRSORepresentative,
         onSuccess: (data) => queryClient.setQueryData(["membersData"], data),
     });
 
@@ -129,6 +130,7 @@ function useRSODetails() {
         isSuccess: isCreateOfficerSuccess,
     } = useMutation({
         mutationFn: createOfficer,
+        enabled: isUserRSORepresentative,
         onSuccess: () => queryClient.invalidateQueries(["membersData"]),
     });
 
@@ -140,7 +142,7 @@ function useRSODetails() {
     } = useQuery({
         queryKey: ["rsoDetails"],
         queryFn: fetchRSODetailsRequest,
-        enabled: isUserRSORepresentative === true,
+        enabled: isUserRSORepresentative,
     });
 
     return {

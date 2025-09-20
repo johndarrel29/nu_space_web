@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from '../../context/AuthContext';
-import { useUserStoreWithAuth, useTokenStore } from "../../store";
+import { useTokenStore, useUserStoreWithAuth } from "../../store";
 
 // for rso representative
 // looks like this url is no longer available in backend
@@ -230,8 +230,7 @@ function useRSODocuments({ documentFor = "", documentId = "" } = {}) {
     } = useQuery({
         queryKey: ["documents"],
         queryFn: fetchDocuments,
-        // enabled: isUserRSORepresentative,
-        enabled: !!token,
+        enabled: !!isUserRSORepresentative && !!token,
         onSuccess: (data) => {
             console.log("Documents fetched successfully:", data);
         },
@@ -248,6 +247,7 @@ function useRSODocuments({ documentFor = "", documentId = "" } = {}) {
         isError: submitDocumentError,
         error: submitDocumentQueryError,
     } = useMutation({
+        enabled: isUserRSORepresentative,
         mutationFn: ({ formData }) => submitDocument({ formData }),
         onSuccess: () => {
             queryClient.invalidateQueries(["documents"]);
@@ -263,7 +263,7 @@ function useRSODocuments({ documentFor = "", documentId = "" } = {}) {
     } = useQuery({
         queryKey: ["documentTemplate", documentFor],
         queryFn: () => fetchDocumentTemplate(documentFor || "", user),
-        enabled: !!documentFor && !!user,
+        enabled: !!documentFor && !!isUserRSORepresentative,
         onSuccess: (data) => {
             console.log("Document template fetched successfully:", data);
         },
@@ -279,6 +279,7 @@ function useRSODocuments({ documentFor = "", documentId = "" } = {}) {
         isError: uploadAccreditationDocumentError,
         error: uploadAccreditationDocumentQueryError,
     } = useMutation({
+        enabled: isUserRSORepresentative,
         mutationFn: ({ formData }) => uploadAccreditationDocumentRequest({ formData }),
         onSuccess: () => {
             queryClient.invalidateQueries(["documents"]);
@@ -292,6 +293,7 @@ function useRSODocuments({ documentFor = "", documentId = "" } = {}) {
         isError: uploadActivityDocumentError,
         error: uploadActivityDocumentQueryError,
     } = useMutation({
+        enabled: isUserRSORepresentative,
         mutationFn: ({ formData, activityId }) => uploadActivityDocumentRequest({ formData, activityId }),
         onSuccess: () => {
             queryClient.invalidateQueries(["documents"]);
@@ -305,6 +307,7 @@ function useRSODocuments({ documentFor = "", documentId = "" } = {}) {
         isError: deleteAccreditationDocumentError,
         error: deleteAccreditationDocumentQueryError,
     } = useMutation({
+        enabled: isUserRSORepresentative,
         mutationFn: deleteAccreditationDocumentRequest,
         onSuccess: () => {
             queryClient.invalidateQueries(["documents"]);

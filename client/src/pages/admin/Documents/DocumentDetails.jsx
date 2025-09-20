@@ -1,11 +1,11 @@
-import { Button, TabSelector } from '../../../components';
-import { useUserStoreWithAuth } from '../../../store';
-import { data, useLocation, useNavigate } from 'react-router-dom';
-import { useCoordinatorDocuments, useAVPDocuments, useDirectorDocuments, useAdminDocuments, useRSODocuments } from '../../../hooks';
-import { handleDocumentStatus } from '../../../utils/useDocumentStatus';
-import { useState, useEffect } from 'react';
 import Switch from '@mui/material/Switch';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { Button, TabSelector } from '../../../components';
+import { useAdminDocuments, useAdminUser, useAVPDocuments, useCoordinatorDocuments, useDirectorDocuments, useRSODocuments, useSignature } from '../../../hooks';
+import { useUserStoreWithAuth } from '../../../store';
+import { handleDocumentStatus } from '../../../utils/useDocumentStatus';
 
 // TODO: the document detail returns null.
 // find how the docu id is being passed on the hook
@@ -17,6 +17,25 @@ export default function DocumentDetails() {
     const { documentId, documentTitle, documentSize, documentType, url } = location.state || {};
 
     console.log("Location state:", location.state);
+
+    const {
+        // fetching admin profile
+        adminProfile,
+        isAdminProfileLoading,
+        isAdminProfileError,
+        adminProfileError,
+        refetchAdminProfile,
+        isAdminProfileRefetching,
+    } = useAdminUser();
+
+    const {
+        // fetch query
+        signatureData,
+        isFetching,
+        isFetchError,
+        fetchError,
+        refetchSignature,
+    } = useSignature({ id: adminProfile?.user?._id || null });
 
     const {
         documentDetail,
@@ -37,6 +56,11 @@ export default function DocumentDetails() {
     console.log("Document ID:", documentId);
     console.log("Document Details:", documentDetail?.document);
     console.log("specificDocument:", specificDocument, "and id of ", documentId);
+
+    const nullWatermarkImage = signatureData?.data === null;
+
+    console.log("signature ", signatureData);
+
 
     // add: derived doc + helpers
     const doc = documentDetail && !isUserRSORepresentative
@@ -232,7 +256,7 @@ export default function DocumentDetails() {
 
             <div className="w-full flex justify-end gap-2 mt-4">
                 <Button
-                    disabled={!documentId}
+                    disabled={!documentId || nullWatermarkImage}
                     onClick={() => handleDocumentApprove(true)}
                 >
                     <div className="flex gap-2 items-center">

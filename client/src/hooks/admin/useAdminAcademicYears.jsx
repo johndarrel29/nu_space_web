@@ -1,5 +1,6 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useUserStoreWithAuth } from '../../store';
 import { useTokenStore } from "../../store/tokenStore";
-import { useQuery, useMutation } from "@tanstack/react-query";
 
 // API call function
 const getAcademicYears = async () => {
@@ -116,6 +117,7 @@ const deleteAcademicYearRequest = async ({ yearId }) => {
 }
 
 function useAdminAcademicYears() {
+    const { isUserAdmin, isCoordinator } = useUserStoreWithAuth();
 
     // custom hook to fetch academic years
     // admin only
@@ -130,6 +132,7 @@ function useAdminAcademicYears() {
     } = useQuery({
         queryKey: ["academicYears"],
         queryFn: getAcademicYears,
+        enabled: isUserAdmin || isCoordinator, // only run if user is admin or coordinator
     })
 
     const {
@@ -140,6 +143,7 @@ function useAdminAcademicYears() {
         isSuccess: isEditingAcademicYearSuccess,
     } = useMutation({
         mutationFn: editAcademicYearRequest,
+        enabled: isUserAdmin || isCoordinator,
         onSuccess: () => {
             refetchAcademicYears();
         },
@@ -156,6 +160,7 @@ function useAdminAcademicYears() {
         isSuccess: isDeletingAcademicYearSuccess,
     } = useMutation({
         mutationFn: deleteAcademicYearRequest,
+        enabled: isUserAdmin || isCoordinator,
         onSuccess: () => {
             refetchAcademicYears();
         },
@@ -172,6 +177,7 @@ function useAdminAcademicYears() {
         isSuccess: isCreatingAcademicYearSuccess,
     } = useMutation({
         mutationFn: createAcademicYearRequest,
+        enabled: isUserAdmin || isCoordinator,
         onSuccess: () => {
             refetchAcademicYears();
         },

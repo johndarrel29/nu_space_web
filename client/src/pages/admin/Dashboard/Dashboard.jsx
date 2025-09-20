@@ -1,23 +1,18 @@
-import { useState, useEffect } from 'react';
-import { useDashboard, useAdminUser, useRSODetails, useSignature, useUserProfile } from '../../../hooks';
-import { Button, Backdrop, CloseButton, ReportPage } from '../../../components'
-import { FormatDate } from '../../../utils';
-import formatRelativeTime from '../../../utils/formatRelativeTime';
-import { useUserStoreWithAuth } from '../../../store';
-import defaultImage from '../../../assets/images/default-picture.png';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useReactToPrint } from "react-to-print";
-import { useRef } from "react";
-import { DropIn } from "../../../animations/DropIn";
 import { toast } from 'react-toastify';
+import { DropIn } from "../../../animations/DropIn";
+import defaultImage from '../../../assets/images/default-picture.png';
+import { Backdrop, Button, CloseButton, ReportPage } from '../../../components';
+import { useAdminUser, useDashboard, useRSODetails, useSignature } from '../../../hooks';
+import { useUserStoreWithAuth } from '../../../store';
+import formatRelativeTime from '../../../utils/formatRelativeTime';
 
 // map the data throughout the UI
 
-// Static function to get RSO data
-function getRSODataLabel() {
-  return "RSO data";
-}
+
 
 export default function Dashboard() {
   const { isUserRSORepresentative, isUserAdmin, isCoordinator, isAVP, isDirector } = useUserStoreWithAuth();
@@ -61,6 +56,8 @@ export default function Dashboard() {
     deleteError,
     deleteData
   } = useSignature({ id: adminProfile?.user?._id || null });
+
+
 
 
   console.log("get signature data", signatureData, "with id", adminProfile?.user?._id);

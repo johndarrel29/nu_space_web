@@ -1,7 +1,6 @@
-import { useQuery, useMutation, useInfiniteQuery } from "@tanstack/react-query";
-import { useAuth } from "../../context/AuthContext";
-import { useTokenStore } from "../../store/tokenStore";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useUserStoreWithAuth } from '../../store';
+import { useTokenStore } from "../../store/tokenStore";
 
 const fetchAllForms = async ({ queryKey }) => {
     try {
@@ -140,7 +139,7 @@ function useAdminCentralizedForms({
     formType = "All",
 } = {}) {
     const token = useTokenStore.getState().getToken();
-    const { isUserAdmin, isCoordinator } = useUserStoreWithAuth();
+    const { isUserAdmin, isCoordinator, isUserRSORepresentative } = useUserStoreWithAuth();
 
     console.log(" useAdminCentralizedForms has been called ", { formId });
 
@@ -159,7 +158,7 @@ function useAdminCentralizedForms({
         queryKey: ["admin-centralized-forms", filter],
         queryFn: fetchAllForms,
         staleTime: 60000,
-        enabled: !!token && (isUserAdmin || isCoordinator), // only run if token exists and user is admin
+        enabled: isUserAdmin || isCoordinator, // only run if user is admin or coordinator
     });
 
     const {
@@ -169,6 +168,7 @@ function useAdminCentralizedForms({
         error: createFormError
     } = useMutation({
         mutationFn: createCentralizedForm,
+        enabled: !!token && (isUserAdmin || isCoordinator),
         onSuccess: () => {
             // Invalidate and refetch
             refetchAllForms();
@@ -186,7 +186,7 @@ function useAdminCentralizedForms({
     } = useQuery({
         queryKey: ["admin-centralized-form", formId],
         queryFn: () => fetchSpecificForms(formId),
-        enabled: !!formId,
+        enabled: !!formId && (isUserAdmin || isCoordinator), // only run if formId is provided and user is admin or coordinator
     });
 
     const {
@@ -196,7 +196,7 @@ function useAdminCentralizedForms({
         error: editFormError
     } = useMutation({
         mutationFn: editCentralizedForm,
-        enabled: !!formId,
+        enabled: isUserAdmin || isCoordinator,
     });
 
     const {
@@ -206,7 +206,7 @@ function useAdminCentralizedForms({
         error: deleteFormError
     } = useMutation({
         mutationFn: deleteCentralizedForm,
-        enabled: !!formId,
+        enabled: isUserAdmin || isCoordinator,
     });
 
     return {

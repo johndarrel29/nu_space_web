@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "../context/AuthContext";
 
 //use token from authContext as the single source of truth for authentication
-// continue with the get, update, and delete functions for announcements
+// continue with the get, update, and delete functions for announcement
 
 function useAnnouncements() {
     const { user } = useAuth();

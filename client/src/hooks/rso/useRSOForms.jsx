@@ -1,5 +1,5 @@
-import { useUserStoreWithAuth, useTokenStore } from "../../store";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useTokenStore, useUserStoreWithAuth } from "../../store";
 
 const getTemplateFormsRequest = async ({ queryKey }) => {
     try {
@@ -90,7 +90,7 @@ function useRSOForms({
         queryKey: ["specificForm", formId],
         queryFn: getSpecificFormRequest,
         refetchOnWindowFocus: false,
-        enabled: !!formId,
+        enabled: !!formId && !!isUserRSORepresentative, // Only run if formId is provided and the user is an RSO representative
     });
 
     return {

@@ -1,21 +1,22 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { PDFViewer, DraggableSandbox, Button, CloseButton } from '../../../components';
-import { useCoordinatorDocuments } from '../../../hooks';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Button, CloseButton, DraggableSandbox, PDFViewer } from '../../../components';
+import { useAVPDocuments, useCoordinatorDocuments, useDirectorDocuments } from '../../../hooks';
+import { useUserStoreWithAuth } from '../../../store';
 // import watermarkImage from '../../../assets/images/NUSpace_blue.png';
-import { useSignature, useAdminUser, useModal } from '../../../hooks';
+import { useAdminUser, useModal, useSignature } from '../../../hooks';
 
 // ================================================TODO===============================================
 // TODO: add modal, and prepare the request body for saving the watermarked document to the server
 
 
 
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import { useQuery } from "@tanstack/react-query";
-import { useTokenStore } from "../../../store";
+import { PDFDocument } from 'pdf-lib';
 import { toast } from 'react-toastify';
+import { useTokenStore } from "../../../store";
 // import { useAdminDocuments } from '../../../hooks';
 
 export default function WaterMarkPage() {
@@ -27,6 +28,21 @@ export default function WaterMarkPage() {
         isApproveDocumentError,
         isApproveDocumentSuccess,
     } = useCoordinatorDocuments();
+
+    const {
+        // Approve document functionality
+        approveDirectorDocumentMutate,
+        isDirectorApprovingDocument,
+        isDirectorApproveDocumentError,
+        isDirectorApproveDocumentSuccess,
+    } = useDirectorDocuments();
+
+    const {
+        approveAVPDocumentMutate,
+        isAVPApprovingDocument,
+        isAVPApproveDocumentError,
+        isAVPApproveDocumentSuccess,
+    } = useAVPDocuments();
     const [targetPage, setTargetPage] = useState(1);
     const [applyToAllPages, setApplyToAllPages] = useState(false);
     const navigate = useNavigate();
@@ -42,8 +58,8 @@ export default function WaterMarkPage() {
     const [watermarkPreviewUrl, setWatermarkPreviewUrl] = useState(null);
     const { isOpen, openModal, closeModal } = useModal();
     const [directorModalOpen, setDirectorModalOpen] = useState(false);
+    const { isCoordinator, isAVP, isDirector } = useUserStoreWithAuth();
 
-    console.log("received doc  id:", documentId, url);
 
     const {
         // fetching admin profile
@@ -80,13 +96,10 @@ export default function WaterMarkPage() {
         }
     }, [watermark]);
 
-    console.log("data for watermark:", signatureData);
+    const nullWatermarkImage = signatureData?.data?.signedUrl === null;
 
-    const watermarkImage = signatureData?.data?.signedUrl || null;
-    console.log("watermarkImage:", watermarkImage);
-
-    if (signatureData && signatureData?.data?.signedUrl === null) {
-        toast.error("No signature/watermark image available. Please create one first.");
+    if (nullWatermarkImage) {
+        toast.warn("No signature/watermark image available. Please create one first at Dashboard Page.");
         navigate(`/admin-documents/${documentId}`, { state: { documentId, url } });
     }
 
@@ -135,7 +148,7 @@ export default function WaterMarkPage() {
         return () => URL.revokeObjectURL(url);
     }, [watermarkData]);
 
-    console.log("watermarkData:", watermarkData ? true : false);
+
 
     async function createPdf({ downloadAfter = false } = {}) {
         if (!pdfData) { toast.error("PDF not loaded yet."); return; }
@@ -309,7 +322,7 @@ export default function WaterMarkPage() {
         const file = await createPdf({ downloadAfter: false });
         if (file) {
             openModal();
-            console.log('Generated file (after state set):', file, typeof file);
+
         }
     }
 
@@ -396,13 +409,22 @@ export default function WaterMarkPage() {
     const handleSendToDirector = async (confirm) => {
         let formData = new FormData();
 
+        const approveOnRole = isCoordinator ? approveDocumentMutate : isDirector ? approveDirectorDocumentMutate : isAVP ? approveAVPDocumentMutate : null;
+
         if (generatedPdfUrl) {
             formData.append("file", generatedPdfUrl);
         }
-        formData.set("toDirector", String(!!confirm));
+        if (isCoordinator) {
+            // Send string values in multipart form-data for widest backend compatibility
+            formData.set("toDirector", confirm ? "true" : "false");
+        }
         formData.set("watermark", "true");
+        formData.set("approve", "true");
 
-        approveDocumentMutate({ documentId, formData }, {
+        console.log("formdata before submit", formData);
+
+
+        approveOnRole({ documentId, formData }, {
             onSuccess: () => {
                 toast.success('Document approved successfully.');
                 // navigate to home documents page
