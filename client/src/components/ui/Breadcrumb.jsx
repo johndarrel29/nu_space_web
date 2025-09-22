@@ -1,8 +1,8 @@
 
+import classNames from "classnames";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { useActivities, useAdminDocuments, useRSODocuments } from "../../hooks";
 import { useUserStoreWithAuth } from "../../store";
-import classNames from "classnames";
 
 export default function Breadcrumb({ style, unSelected }) {
     const location = useLocation();
@@ -25,12 +25,6 @@ export default function Breadcrumb({ style, unSelected }) {
 
 
     const { viewActivityData } = useActivities(activityId);
-
-    console.log("specificDocument:", specificDocument?.title);
-    console.log("documentDetail:", documentDetail);
-    console.log("Breadcrumb viewActivityData:", viewActivityData);
-    console.log("act id", activityId);
-    console.log("path name ", viewActivityData?.Activity_name);
 
 
 
@@ -60,14 +54,14 @@ export default function Breadcrumb({ style, unSelected }) {
     }
 
     return (
-        <nav className="flex" aria-label="Breadcrumb">
-            <ol className="inline-flex items-center space-x-1  rtl:space-x-reverse">
+        <nav className="flex w-full overflow-x-auto" aria-label="Breadcrumb">
+            <ol className="inline-flex items-center space-x-1 rtl:space-x-reverse flex-nowrap w-full">
 
                 {paths.map((path, index) => {
-                    { console.log("Breadcrumb path:", path); }
                     const routeTo = `/${paths.slice(0, index + 1).join("/")}`;
                     const isLast = index === paths.length - 1;
                     const isFirst = index === 0;
+                    const label = capitalize(path);
 
                     return (
                         <li key={routeTo} aria-current={isLast ? "page" : undefined}>
@@ -81,12 +75,26 @@ export default function Breadcrumb({ style, unSelected }) {
                                 )
                                 }
                                 {isLast ? (
-                                    <span className={classNames(style)}>{capitalize(path)}</span>
+                                    <span
+                                        className={classNames(
+                                            style,
+                                            "truncate max-w-[140px] sm:max-w-[220px] md:max-w-[320px]"
+                                        )}
+                                        title={label}
+                                    >
+                                        {label}
+                                    </span>
                                 ) : (
                                     <Link
                                         state={documentId ? { documentId } : undefined}
-                                        to={routeTo} className={unSelected}>
-                                        {capitalize(path)}
+                                        to={routeTo}
+                                        className={classNames(
+                                            unSelected,
+                                            "truncate max-w-[140px] sm:max-w-[220px] md:max-w-[320px]"
+                                        )}
+                                        title={label}
+                                    >
+                                        {label}
                                     </Link>
                                 )}
                             </div>

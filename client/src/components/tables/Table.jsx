@@ -1,14 +1,13 @@
 'use client'
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { ActionModal, TableRow } from '../../components';
-import 'react-loading-skeleton/dist/skeleton.css'
-import { CardSkeleton } from '../../components';
 import { AnimatePresence } from "framer-motion";
-import { useModal, useAdminUser, useSuperAdminUsers } from "../../hooks";
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import 'react-loading-skeleton/dist/skeleton.css';
 import { toast } from 'react-toastify';
-import { useUserStoreWithAuth } from "../../store";
+import { ActionModal, CardSkeleton, TableRow } from '../../components';
 import { useAuth } from "../../context/AuthContext";
+import { useAdminUser, useModal, useSuperAdminUsers } from "../../hooks";
+import { useUserStoreWithAuth } from "../../store";
 
 // Table Component
 const Table = React.memo(({ searchQuery, selectedRole }) => {
@@ -354,7 +353,7 @@ const Table = React.memo(({ searchQuery, selectedRole }) => {
               </div>
             </div>
           ) : (
-            <div className="p-4 bg-gray-50 text-gray-500 rounded-lg flex flex-col items-center mb-4">
+            <div className="p-4 bg-gray-50 text-gray-800 rounded-lg flex flex-col items-center mb-4">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-12 w-12 text-gray-400 mb-2"
@@ -369,7 +368,7 @@ const Table = React.memo(({ searchQuery, selectedRole }) => {
                   d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <p className="text-gray-500 font-medium text-center max-w-md px-4">
+              <p className="text-gray-800 font-medium text-center max-w-md px-4">
                 No data available
               </p>
             </div>

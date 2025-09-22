@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Select from 'react-select';
 import useRSO from '../../hooks/useRSO';
 

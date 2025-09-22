@@ -399,11 +399,13 @@ export default function WaterMarkPage() {
     );
 
     const handleConfirm = async () => {
-        // Placeholder: integrate upload/save API here if needed
-        // toast.success('Confirmed. Applying watermark...');
-        // setConfirmChecked(false);
-        // closeModal();
-        setDirectorModalOpen(true);
+        // Coordinators choose whether to send to director; others approve directly
+        if (isCoordinator) {
+            setDirectorModalOpen(true);
+            return;
+        }
+        // For Director/AVP, go straight to approve mutate (no modal)
+        await handleSendToDirector(false);
     };
 
     const handleSendToDirector = async (confirm) => {
@@ -416,10 +418,10 @@ export default function WaterMarkPage() {
         }
         if (isCoordinator) {
             // Send string values in multipart form-data for widest backend compatibility
-            formData.set("toDirector", confirm ? "true" : "false");
+            formData.set("toDirector", confirm ? true : false);
         }
-        formData.set("watermark", "true");
-        formData.set("approve", "true");
+        formData.set("watermark", true);
+        formData.set("approve", true);
 
         console.log("formdata before submit", formData);
 
@@ -565,7 +567,7 @@ export default function WaterMarkPage() {
                 </div>
             )}
 
-            {directorModalOpen && (
+            {isCoordinator && directorModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
                     <div className="bg-white rounded-lg shadow-2xl w-full max-w-md mx-4 overflow-hidden">
                         {/* Header */}
@@ -594,9 +596,22 @@ export default function WaterMarkPage() {
                         </div>
 
                         {/* Footer */}
-                        <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-end gap-2 bg-white">
-                            <Button onClick={() => handleSendToDirector(false)} style={"secondary"}>Don't send</Button>
-                            <Button onClick={() => handleSendToDirector(true)} disabled={!generatedPdfUrl || isApprovingDocument}>
+                        <div className="px-4 py-3 border-t border-gray-200 flex flex-col items-center justify-end gap-2 bg-white">
+                            {/* <Button onClick={() => handleSendToDirector(false)} style={"secondary"}>Don't send</Button> */}
+                            <button
+                                className="w-full text-left px-3 py-2 rounded-md border border-gray-300 hover:bg-gray-50 transition"
+                                onClick={() => handleSendToDirector(false)}
+                            >
+                                <div className="flex items-start gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" className="h-5 w-5 mt-0.5 fill-gray-600"><path d="M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z" /></svg>
+                                    <div>
+                                        <div className="font-medium text-sm text-gray-900">Don't Send to Director</div>
+                                        <div className="text-xs text-gray-600">Approve but skip sending to director.</div>
+                                    </div>
+                                </div>
+                            </button>
+
+                            {/* <Button onClick={() => handleSendToDirector(true)} disabled={!generatedPdfUrl || isApprovingDocument}>
                                 {isApprovingDocument ? (
                                     <span className="inline-flex items-center gap-2">
                                         <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
@@ -608,6 +623,28 @@ export default function WaterMarkPage() {
                                 ) : (
                                     'Send'
                                 )}
+                            </Button> */}
+
+                            <button
+                                className="w-full text-left px-3 py-2 rounded-md border border-indigo-300 text-indigo-700 hover:bg-indigo-50 transition"
+                                onClick={() => handleSendToDirector(true)}
+                            >
+                                <div className="flex items-start gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" className="h-5 w-5 mt-0.5 fill-indigo-600"><path d="M352 64L288 64 288 288 64 288 64 352 288 352 288 576 352 576 352 352 576 352 576 288 352 288 352 64z" /></svg>
+                                    <div>
+                                        <div className="font-medium text-sm text-gray-900">Send to Director</div>
+                                        <div className="text-xs text-gray-600">Approve and send to director.</div>
+                                    </div>
+                                </div>
+                            </button>
+
+                        </div>
+                        <div className='px-4 py-3 border-t border-gray-200 flex justify-end bg-white'>
+                            <Button
+                                style={"secondary"}
+                                onClick={() => setDirectorModalOpen(false)}
+                            >
+                                Cancel
                             </Button>
                         </div>
                     </div>

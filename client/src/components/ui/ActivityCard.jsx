@@ -1,5 +1,5 @@
-import React from 'react';
 import DefaultPicture from "../../assets/images/default-picture.png";
+import Badge from './Badge';
 
 function ActivityCard({
   onClick,
@@ -28,6 +28,19 @@ function ActivityCard({
         : 'bg-yellow-100 text-yellow-900 border border-yellow-300';
 
 
+  // Handlers
+  const handleBadge = (badge) => {
+    switch (badge) {
+      case "pending":
+        return <Badge style="primary" text="Pending" />;
+      case "approved":
+        return <Badge style="success" text="Approved" />;
+      case "rejected":
+        return <Badge style="error" text="Rejected" />;
+      default:
+        return <Badge style="primary" text={badge || "Unknown"} />;
+    }
+  };
 
   return (
     <div
@@ -37,9 +50,9 @@ function ActivityCard({
     >
       {/* Image with status badge */}
       <div className="relative w-full aspect-square">
-        <div className={`absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-semibold z-10 ${statusBadgeClass}`}>
-          {status}
-        </div>
+        <span className={`absolute top-2 left-2 z-10 px-2 py-1`}>
+          {handleBadge(activity.Activity_approval_status)}
+        </span>
         <div className="w-full h-full">
           <img
             src={Activity_image || DefaultPicture}

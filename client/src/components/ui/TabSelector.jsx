@@ -1,10 +1,9 @@
 
-import React from "react";
 
 export default function TabSelector({ tabs, activeTab, onTabChange }) {
     return (
         <div className="bg-card-bg rounded-lg ">
-            <ul className="flex flex-wrap -mb-px text-sm font-medium text-center text-gray-500 dark:text-gray-400 cursor-pointer">
+            <ul className="flex flex-wrap -mb-px text-sm font-medium text-center text-gray-600 dark:text-gray-600 cursor-pointer">
                 {tabs.map((tab, index) => (
                     <li key={index} className="me-2">
                         <button

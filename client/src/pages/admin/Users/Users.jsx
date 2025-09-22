@@ -1,11 +1,11 @@
-import { useState, useMemo, memo } from "react";
-import { Table, Searchbar, CreateUserModal, ReusableTable, Button, Backdrop, CloseButton } from "../../../components";
-import { useModal, useRSO, useUserProfile, useRSOUsers } from "../../../hooks";
-import { motion, AnimatePresence } from "framer-motion";
-import { DropIn } from "../../../animations/DropIn";
-import { FormatDate } from "../../../utils";
-import { useUserStoreWithAuth } from "../../../store";
+import { AnimatePresence, motion } from "framer-motion";
+import { memo, useMemo, useState } from "react";
 import { toast } from "react-toastify";
+import { DropIn } from "../../../animations/DropIn";
+import { Backdrop, Button, CloseButton, CreateUserModal, ReusableTable, Searchbar, Table } from "../../../components";
+import { useModal, useRSO, useRSOUsers, useUserProfile } from "../../../hooks";
+import { useUserStoreWithAuth } from "../../../store";
+import { FormatDate } from "../../../utils";
 
 // approval status fix
 // it returns rejected even if its approved
@@ -246,13 +246,6 @@ export default function Users() {
               )
             }
           </div>
-          {/* Mobile stats (stacked) */}
-          {(isSuperAdmin || isUserAdmin || isCoordinator) && (
-            <div className="mt-4 flex sm:hidden gap-3">
-              <StatPill label="Applicants" value={totalApplicants} />
-              <StatPill label="Members" value={totalMembers} />
-            </div>
-          )}
         </div>
 
         {/* table for admin & super admin */}
@@ -266,20 +259,36 @@ export default function Users() {
         )}
         {isUserRSORepresentative && (
           <>
-            <div className="flex items-center gap-6 w-full justify-start bg-white border border-mid-gray p-6 rounded-md">
-              <div className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded-full ${userProfile?.rso?.yearlyData?.RSO_membershipStatus === true ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                <h1 className="text-gray-700 font-medium">Membership Status: <span className={`font-semibold ${userProfile?.rso?.yearlyData?.RSO_membershipStatus === true ? 'text-green-600' : 'text-red-600'}`}>{userProfile?.rso?.yearlyData?.RSO_membershipStatus === true ? "Active" : "Inactive"}</span></h1>
-              </div>
-              <div className="h-6 w-px bg-gray-200"></div>
-              {userProfile?.rso?.yearlyData?.RSO_membershipEndDate && (
-                <div className="flex items-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                  </svg>
-                  <h1 className="text-gray-700 font-medium">End Date: <span className="font-semibold text-gray-900">{FormatDate(userProfile?.rso?.yearlyData?.RSO_membershipEndDate)}</span></h1>
+
+
+            {/* redesigned banner (using membership data from old banner) */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg px-6 py-4 shadow-sm flex items-start gap-3 mb-6">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
+              </svg>
+              <div className="flex flex-col">
+                <span className="text-blue-800 font-semibold text-base">RSO Membership</span>
+                <div className='mt-1 flex flex-col sm:flex-row sm:items-center gap-2'>
+                  <span className="inline-flex items-center gap-2 text-blue-700 text-xs">
+                    <span className={`w-2 h-2 rounded-full ${userProfile?.rso?.yearlyData?.RSO_membershipStatus === true ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                    <span>
+                      Membership Status: {" "}
+                      <span className={`font-semibold ${userProfile?.rso?.yearlyData?.RSO_membershipStatus === true ? 'text-green-700' : 'text-red-700'}`}>
+                        {userProfile?.rso?.yearlyData?.RSO_membershipStatus === true ? 'Active' : 'Inactive'}
+                      </span>
+                    </span>
+                  </span>
+                  {userProfile?.rso?.yearlyData?.RSO_membershipEndDate && (
+                    <div className='hidden sm:block h-4 w-px bg-blue-200'></div>
+                  )}
+                  {userProfile?.rso?.yearlyData?.RSO_membershipEndDate && (
+                    <span className="text-blue-700 text-xs">
+                      End Date: {" "}
+                      <span className="font-semibold text-blue-900">{FormatDate(userProfile?.rso?.yearlyData?.RSO_membershipEndDate)}</span>
+                    </span>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
 
             {/* show error if rso membership is inactive */}
@@ -314,108 +323,106 @@ export default function Users() {
           <>
             <Backdrop className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30" />
             <motion.div
-              className="fixed inset-0 z-50 w-screen overflow-auto"
+              className="fixed inset-0 z-50 w-screen overflow-auto flex items-center justify-center p-4"
               variants={DropIn}
               initial="hidden"
               animate="visible"
               exit="exit"
             >
-              <div className="fixed inset-0 flex items-start justify-center z-50 p-8">
-                <div className="bg-white rounded-lg w-full max-w-5xl shadow-lg flex flex-col md:flex-row gap-6 p-8 max-h-[85vh] overflow-hidden">
-                  {/* Main Content: Form Review */}
-                  <div className="flex-1 flex flex-col min-h-0">
-                    <div className="flex items-center justify-between mb-6">
-                      <h2 className="text-xl font-semibold text-[#312895]">Application Review</h2>
-                    </div>
-                    {/* Scrollable responses container */}
-                    <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar max-h-[70vh]">
-                      {userModalData.pages.length === 0 && (
-                        <p className="text-sm text-gray-500">No responses available.</p>
-                      )}
-                      {/* Pages rendered as form sections */}
-                      {userModalData.pages.map((page) => (
-                        <div
-                          key={page.pageIndex}
-                          className="border border-gray-200 rounded-lg p-5 bg-white shadow-sm"
-                        >
-                          <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-sm font-semibold text-gray-800 capitalize">
-                              {page.title || `Untitled Page`}
-                            </h3>
-                            <span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">
-                              {page.elements.length} item{page.elements.length !== 1 && 's'}
-                            </span>
-                          </div>
-                          {page.elements.length === 0 && (
-                            <p className="text-sm text-gray-500 italic">No content available.</p>
-                          )}
-                          {page.elements.length > 0 && (
-                            <dl className="divide-y divide-gray-100">
-                              {page.elements.map((item, idx) => (
-                                <div
-                                  key={item.elementIndex || idx}
-                                  className="py-3 grid grid-cols-12 gap-4"
-                                >
-                                  <dt className="col-span-12 md:col-span-5 text-[11px] font-medium uppercase tracking-wide text-gray-500">
-                                    {item.title || `Question ${idx + 1}`}
-                                  </dt>
-                                  <dd
-                                    className="col-span-12 md:col-span-7 text-sm text-gray-900 whitespace-pre-wrap break-words"
-                                    title={item.answer}
-                                  >
-                                    {item.answer === "" || item.answer === null
-                                      ? <span className="italic text-gray-400">No answer</span>
-                                      : item.answer}
-                                  </dd>
-                                </div>
-                              ))}
-                            </dl>
-                          )}
+              <div className="bg-white rounded-lg w-full max-w-[95%] sm:max-w-3xl md:max-w-5xl shadow-lg flex flex-col md:flex-row gap-6 p-6 sm:p-8 max-h:[85vh] md:max-h-[85vh] overflow-hidden">
+                {/* Main Content: Form Review */}
+                <div className="flex-1 flex flex-col min-h-0">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-semibold text-[#312895]">Application Review</h2>
+                  </div>
+                  {/* Scrollable responses container */}
+                  <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar max-h-[70vh]">
+                    {userModalData.pages.length === 0 && (
+                      <p className="text-sm text-gray-500">No responses available.</p>
+                    )}
+                    {/* Pages rendered as form sections */}
+                    {userModalData.pages.map((page) => (
+                      <div
+                        key={page.pageIndex}
+                        className="border border-gray-200 rounded-lg p-5 bg-white shadow-sm"
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-sm font-semibold text-gray-800 capitalize">
+                            {page.title || `Untitled Page`}
+                          </h3>
+                          <span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">
+                            {page.elements.length} item{page.elements.length !== 1 && 's'}
+                          </span>
                         </div>
-                      ))}
-                    </div>
-
+                        {page.elements.length === 0 && (
+                          <p className="text-sm text-gray-500 italic">No content available.</p>
+                        )}
+                        {page.elements.length > 0 && (
+                          <dl className="divide-y divide-gray-100">
+                            {page.elements.map((item, idx) => (
+                              <div
+                                key={item.elementIndex || idx}
+                                className="py-3 grid grid-cols-12 gap-4"
+                              >
+                                <dt className="col-span-12 md:col-span-5 text-[11px] font-medium uppercase tracking-wide text-gray-500">
+                                  {item.title || `Question ${idx + 1}`}
+                                </dt>
+                                <dd
+                                  className="col-span-12 md:col-span-7 text-sm text-gray-900 whitespace-pre-wrap break-words"
+                                  title={item.answer}
+                                >
+                                  {item.answer === "" || item.answer === null
+                                    ? <span className="italic text-gray-400">No answer</span>
+                                    : item.answer}
+                                </dd>
+                              </div>
+                            ))}
+                          </dl>
+                        )}
+                      </div>
+                    ))}
                   </div>
 
-                  {/* Sidebar: Member Info + Actions */}
-                  <div className="w-full md:w-72 flex-shrink-0">
-                    <div className="w-full flex justify-end mb-4">
-                      <CloseButton onClick={handleCloseUserModal} />
+                </div>
+
+                {/* Sidebar: Member Info + Actions */}
+                <div className="w-full md:w-72 flex-shrink-0">
+                  <div className="w-full flex justify-end mb-4">
+                    <CloseButton onClick={handleCloseUserModal} />
+                  </div>
+                  <div className="border border-gray-200 rounded-lg p-5 space-y-6">
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 tracking-wide mb-3">Member Info</h3>
+                      <table className="w-full text-sm">
+                        <tbody>
+                          <tr>
+                            <td className="py-2 pr-4 text-gray-500 align-top">Full Name</td>
+                            <td className="py-2 font-medium">{userModalData.fullName}</td>
+                          </tr>
+                          <tr>
+                            <td className="py-2 pr-4 text-gray-500 align-top">Applicant No.</td>
+                            <td className="py-2 font-medium">{userModalData.index}</td>
+                          </tr>
+                        </tbody>
+                      </table>
                     </div>
-                    <div className="border border-gray-200 rounded-lg p-5 space-y-6">
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-700 tracking-wide mb-3">Member Info</h3>
-                        <table className="w-full text-sm">
-                          <tbody>
-                            <tr>
-                              <td className="py-2 pr-4 text-gray-500 align-top">Full Name</td>
-                              <td className="py-2 font-medium">{userModalData.fullName}</td>
-                            </tr>
-                            <tr>
-                              <td className="py-2 pr-4 text-gray-500 align-top">Applicant No.</td>
-                              <td className="py-2 font-medium">{userModalData.index}</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                      <div className="pt-4 border-t border-gray-200">
-                        <h4 className="text-sm font-semibold text-gray-700 mb-2">Action</h4>
-                        <Button
-                          onClick={handleApproveMembership}
-                          className="w-full"
-                        >
-                          Approve Membership
-                        </Button>
-                      </div>
-                      <div>
-                        <Button
-                          onClick={handleCloseUserModal}
-                          style="secondary"
-                          className="w-full"
-                        >
-                          Close
-                        </Button>
-                      </div>
+                    <div className="pt-4 border-t border-gray-200">
+                      <h4 className="text-sm font-semibold text-gray-700 mb-2">Action</h4>
+                      <Button
+                        onClick={handleApproveMembership}
+                        className="w-full"
+                      >
+                        Approve Membership
+                      </Button>
+                    </div>
+                    <div>
+                      <Button
+                        onClick={handleCloseUserModal}
+                        style="secondary"
+                        className="w-full"
+                      >
+                        Close
+                      </Button>
                     </div>
                   </div>
                 </div>

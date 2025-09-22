@@ -1,11 +1,10 @@
-import { Button } from '../../../components';
-import { useNavigate } from 'react-router-dom';
-import { useCallback, useEffect, useState } from 'react';
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { useAdminDocuments } from '../../../hooks';
-import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from 'react-router-dom';
 import { DropIn } from "../../../animations/DropIn";
-import { Backdrop, CloseButton, TextInput, ReusableDropdown } from '../../../components';
+import { Backdrop, Button, CloseButton } from '../../../components';
+import { useAdminDocuments } from '../../../hooks';
 
 import { toast } from 'react-toastify';
 
@@ -13,11 +12,8 @@ import { toast } from 'react-toastify';
 
 export default function AdminTemplates() {
     const navigate = useNavigate();
-    const [file, setFile] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showUploadModal, setShowUploadModal] = useState(false);
-    const [selectedTemplate, setSelectedTemplate] = useState(null);
-    const [selectedCategory, setSelectedCategory] = useState("All");
 
     // New states for upload modal
     const [uploadStep, setUploadStep] = useState(1); // 1 for document type selection, 2 for file upload
@@ -59,16 +55,10 @@ export default function AdminTemplates() {
     } = useAdminDocuments(filters);
 
     useEffect(() => {
-        console.log("Selected Template:", selectedTemplate);
-    }, [selectedTemplate]);
-
-    useEffect(() => {
         if (documentTemplateError) {
             console.error("Error fetching document template:", documentTemplateError);
         }
     }, [documentTemplateError]);
-
-    console.log("Document Template:", documentTemplate?.documents?.flatMap(doc => doc.documents || []));
     const flattenedDocuments = documentTemplate?.documents?.flatMap(doc => doc.documents || []) || [];
 
     const handleBackClick = () => {
@@ -80,8 +70,6 @@ export default function AdminTemplates() {
     };
 
     const handleDeleteTemplate = () => {
-        // TODO: Implement delete template functionality
-        console.log("Deleting template:", selectedTemplateCategory);
         deleteDocumentTemplate(selectedTemplateCategory, {
             onSuccess: () => {
                 toast.success("Template deleted successfully");
@@ -97,14 +85,12 @@ export default function AdminTemplates() {
 
     const handleCategoryChange = (e) => {
         setFilters(prev => ({ ...prev, documentType: e.target.value }));
-        console.log("Category filter changed to:", e.target.value);
         // Here you would typically update your filters state or trigger a refetch
     };
 
     // deleting for document template
     const handleDeleteCategoryChange = (e) => {
         setSelectedTemplateCategory(e.target.value);
-        console.log("Category filter changed to:", e.target.value);
         // Here you would typically update your filters state or trigger a refetch
     };
 
@@ -119,20 +105,15 @@ export default function AdminTemplates() {
     // Handle document type selection
     const handleDocumentTypeSelect = (type) => {
         setDocumentType(type);
-        console.log("Selected document type:", type);
     };
 
     // Handle upload files selection
     const handleUploadFilesChange = (files) => {
         setUploadFiles(files);
-        console.log("Files selected for upload:", files);
     };
 
     // Handle upload submission
     const handleUploadSubmit = () => {
-        console.log("Uploading files of type:", documentType);
-        console.log("Files to upload:", uploadFiles);
-
         uploadDocumentTemplate({
             documentFor: documentType,
             files: uploadFiles
@@ -155,37 +136,12 @@ export default function AdminTemplates() {
     };
 
     // Dropzone configuration
-    const onDrop = useCallback(acceptedFiles => {
-        setFile(acceptedFiles[0]);
-        console.log('File received:', acceptedFiles[0]);
-    }, []);
-
     // Dropzone for upload modal
     const uploadDropzone = useDropzone({
         onDrop: (acceptedFiles) => {
-            // Create a formatted log of all files
-            const fileDetails = acceptedFiles.map(file => ({
-                name: file.name,
-                size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
-                type: file.type
-            }));
-
-            console.table(fileDetails);
             handleUploadFilesChange(acceptedFiles);
         },
         multiple: true,
-        accept: {
-            'application/pdf': ['.pdf'],
-            'application/msword': ['.doc'],
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
-        }
-    });
-
-
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({
-        onDrop,
-        multiple: false,
-        maxFiles: 1,
         accept: {
             'application/pdf': ['.pdf'],
             'application/msword': ['.doc'],
@@ -201,11 +157,8 @@ export default function AdminTemplates() {
     }
 
     const handleDeleteDocument = (id, templateId) => {
-        console.log("Deleting template with id:", id, "and templateId:", templateId);
-
         deleteSingleDocumentTemplate({ documentId: id, templateId }, {
             onSuccess: () => {
-                console.log("Template deleted successfully");
                 toast.success("Template deleted successfully");
                 refetchDocumentTemplate();
             },
@@ -218,8 +171,6 @@ export default function AdminTemplates() {
 
     const handleConfirmDelete = (e) => {
         setSelectedTemplateCategory(e);
-        // e.preventDefault();
-        console.log("Confirming deletion for template ID:", selectedTemplateCategory);
     }
 
     const templateOptions = [
@@ -234,7 +185,7 @@ export default function AdminTemplates() {
             {/* Back navigation button */}
             <div
                 onClick={handleBackClick}
-                className="absolute top-0 left-2 flex items-center justify-center rounded-full h-8 w-8 cursor-pointer border border-gray-300 group"
+                className="absolute top-3 left-3 sm:top-4 sm:left-4 z-10 flex items-center justify-center rounded-full h-9 w-9 cursor-pointer border border-gray-300 bg-white/80 backdrop-blur group"
             >
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -245,7 +196,7 @@ export default function AdminTemplates() {
                 </svg>
             </div>
 
-            <div className="flex flex-col w-[800px] justify-center ">
+            <div className="flex flex-col w-full max-w-4xl px-4 sm:px-6 lg:px-0 justify-center pt-12">
                 <div className="mb-6">
                     <Button onClick={handleUploadClick}>
                         <div className='flex items-center gap-2'>
@@ -256,21 +207,21 @@ export default function AdminTemplates() {
                 </div>
 
                 {/* Header section */}
-                <div className="flex justify-between items-end mb-4">
-                    <h1>All Templates</h1>
-                    <div className='flex gap-4'>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 mb-4">
+                    <h1 className="text-lg sm:text-xl font-semibold">All Templates</h1>
+                    <div className='flex gap-3 flex-wrap items-center'>
                         {/* Static dropdown filter replacing the filter button */}
-                        <div className='flex items-center gap-2'>
-                            <label htmlFor="category-filter" className="text-sm font-medium text-gray-600">Filter by:</label>
+                        <div className='flex items-center gap-2 w-full sm:w-auto'>
+                            <label htmlFor="category-filter" className="text-sm font-medium text-gray-600 whitespace-nowrap">Filter by:</label>
                             <select
                                 id="category-filter"
                                 value={filters.documentType}
                                 onChange={handleCategoryChange}
-                                className="py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm"
+                                className="py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm w-full sm:w-auto"
                             >
                                 <option value="">-- Select Category --</option>
                                 {templateOptions.map((option, index) => (
-                                    <option key={option.index} value={option.value}>
+                                    <option key={option.value} value={option.value}>
                                         {option.label}
                                     </option>
                                 ))}
@@ -284,10 +235,8 @@ export default function AdminTemplates() {
                         </Button>
                     </div>
                 </div>
-
-                {console.log("flattenedDocuments", documentTemplate?.documents?.map((doc) => doc?.documents).flat().length === 0 ? "No templates found" : "")}
                 {/* Template item */}
-                {documentTemplate?.documents?.map((doc) => doc?.documents).flat().length === 0 ? (
+                {flattenedDocuments.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16">
                         <svg xmlns="http://www.w3.org/2000/svg" className="mb-4 w-12 h-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2a4 4 0 018 0v2m-6 4h6a2 2 0 002-2v-5a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-2.414-2.414A2 2 0 0012.586 7H7a2 2 0 00-2 2v7a2 2 0 002 2h2" />
@@ -300,19 +249,18 @@ export default function AdminTemplates() {
                         doc?.documents.map((subDoc, i) => (
                             <div
                                 key={subDoc.id}
-                                className="w-full bg-white rounded border border-mid-gray p-4 flex justify-between items-center gap-4 cursor-pointer hover:bg-gray-100 mb-4"
+                                className="w-full bg-white rounded border border-mid-gray p-3 sm:p-4 flex justify-between items-center gap-3 sm:gap-4 cursor-pointer hover:bg-gray-100 mb-3 sm:mb-4"
                             // onClick={() => setSelectedTemplate(doc)}
                             >
-                                <div className="flex items-center justify-between w-full px-4">
-                                    <div className='flex gap-8 items-center'>
-
-                                        <p>{i + 1}</p>
-                                        <div className="flex flex-col">
-                                            <h1 className="font-bold truncate max-w-[30rem]">{subDoc.title}</h1>
-                                            <div className='flex gap-2 items-center'>
-                                                <h2 className="text-gray-600 text-sm">{handleDocumentTypeName(doc?.documentFor)}</h2>
+                                <div className="flex items-center justify-between w-full px-2 sm:px-4">
+                                    <div className='flex gap-3 sm:gap-6 items-center flex-1 min-w-0'>
+                                        <p className="text-xs sm:text-sm w-5 sm:w-6 text-gray-600 tabular-nums">{i + 1}</p>
+                                        <div className="flex flex-col min-w-0">
+                                            <h1 className="font-semibold text-sm sm:text-base truncate max-w-[12rem] sm:max-w-[20rem] lg:max-w-[30rem]">{subDoc.title}</h1>
+                                            <div className='flex gap-2 items-center text-xs sm:text-sm'>
+                                                <h2 className="text-gray-600">{handleDocumentTypeName(doc?.documentFor)}</h2>
                                                 <div className='aspect-square rounded-full bg-gray-400 h-1 w-1'></div>
-                                                <h1 className="text-gray-600 text-sm">{subDoc.documentSize} MB</h1>
+                                                <h1 className="text-gray-600">{subDoc.documentSize} MB</h1>
                                             </div>
                                         </div>
                                     </div>
@@ -339,19 +287,18 @@ export default function AdminTemplates() {
                             initial="hidden"
                             animate="visible"
                             exit="exit">
-                            <div className="bg-white rounded-lg p-6 w-1/3 shadow-xl border border-gray-100">
+                            <div className="bg-white rounded-lg p-6 w-[92%] sm:w-[420px] md:w-[480px] shadow-xl border border-gray-100">
                                 <div className='flex justify-between items-center mb-4'>
                                     <h2 className='text-sm font-semibold'>Delete Template</h2>
                                     <CloseButton onClick={() => setShowDeleteModal(false)} />
                                 </div>
-                                {console.log("Document Template inside modal:", documentTemplate)}
                                 <div className='flex flex-col gap-4'>
                                     <label htmlFor="category-filter" className="text-sm font-medium text-gray-600">Delete Template from:</label>
                                     <select
                                         id="category-filter"
                                         value={selectedTemplateCategory}
                                         onChange={e => handleConfirmDelete(e.target.value)}
-                                        className="py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm"
+                                        className="py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm w-full"
                                     >
                                         <option value="">-- Select Category --</option>
                                         {documentTemplate?.documents
@@ -395,7 +342,7 @@ export default function AdminTemplates() {
                             initial="hidden"
                             animate="visible"
                             exit="exit">
-                            <div className="bg-white rounded-lg p-6 w-2/5 shadow-xl border border-gray-100">
+                            <div className="bg-white rounded-lg p-6 w-[92%] sm:w-[540px] md:w-[640px] shadow-xl border border-gray-100">
                                 <div className='flex justify-between items-center mb-4'>
                                     <h2 className='text-sm font-semibold'>
                                         {uploadStep === 1 ? 'Select Document Type' : 'Upload Files'}
@@ -409,7 +356,7 @@ export default function AdminTemplates() {
                                         <p className='text-sm text-gray-500 mb-2'>
                                             Please select the type of document you want to upload:
                                         </p>
-                                        <div className='grid grid-cols-2 gap-3'>
+                                        <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
                                             {templateOptions.map((type, index) => (
                                                 <div
                                                     key={index}
@@ -426,7 +373,7 @@ export default function AdminTemplates() {
                                             ))}
                                         </div>
 
-                                        <div className='flex justify-end mt-4 gap-2'>
+                                        <div className='flex justify-end mt-4 gap-2 flex-wrap'>
                                             <Button
                                                 style="secondary"
                                                 onClick={() => setShowUploadModal(false)}
@@ -479,14 +426,14 @@ export default function AdminTemplates() {
                                             )}
                                         </div>
 
-                                        <div className='flex justify-between mt-4'>
+                                        <div className='flex flex-col-reverse sm:flex-row justify-between gap-2 mt-4'>
                                             <Button
                                                 style="secondary"
                                                 onClick={() => setUploadStep(1)}
                                             >
                                                 Back
                                             </Button>
-                                            <div className='flex gap-2'>
+                                            <div className='flex gap-2 sm:justify-end'>
                                                 <Button
                                                     style="secondary"
                                                     onClick={() => setShowUploadModal(false)}

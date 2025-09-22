@@ -19,6 +19,8 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
     const [activityRoleData, setActivityRoleData] = useState(null);
     // State
     const [searchQuery, setSearchQuery] = useState("");
+    const [endType, setEndType] = useState('text');
+    const [startType, setStartType] = useState('text');
     const [tableData, setTableData] = useState([]);
     const [selectedDocType, setSelectedDocType] = useState('pre'); // 'pre' or 'post'
     const [filters, setFilters] = useState({
@@ -274,6 +276,7 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
     };
 
     const handleRowClick = (row) => {
+        console.log("Row clicked:", row);
         const route = isOnRSODetailsPage ? `/admin-documents/${row._id}` : `${row._id}`;
         navigate(route, {
             state: {
@@ -364,7 +367,7 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
                         <select
                             id="academic-year"
                             onChange={(e) => handleAcademicYear(e.target.value)}
-                            className="w-full h-10 rounded-md bg-white border border-mid-gray p-1 font-bold"
+                            className="w-full h-10 rounded-md bg-white border border-mid-gray p-1"
                         >
                             <option value="">Select Academic Year</option>
                             {academicYears?.years?.map(year => (
@@ -378,27 +381,31 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
                         </select>
                     </div>
                     <div className="w-full mb-2 md:mb-0">
-                        <label htmlFor="start-date" className="block text-sm font-medium text-gray-700 mb-1">
+                        <label htmlFor="start-date" className="block text-sm font-medium text-gray-800 mb-1">
                             Start Date
                         </label>
                         <input
                             id="start-date"
-                            type="date"
-                            className="w-full h-10 rounded-md bg-white border border-mid-gray p-1 font-bold"
+                            type={filters.startDate ? 'date' : startType}
+                            className="w-full h-10 rounded-md bg-white border border-mid-gray placeholder:text-black pl-2"
                             value={filters.startDate}
+                            onFocus={() => setStartType('date')}
+                            onBlur={(e) => { if (!e.target.value) setStartType('text'); }}
                             onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value, page: 1 }))}
                             placeholder="Start Date"
                         />
                     </div>
                     <div className="w-full">
-                        <label htmlFor="end-date" className="block text-sm font-medium text-gray-700 mb-1">
+                        <label htmlFor="end-date" className="block text-sm font-medium text-gray-800 mb-1">
                             End Date
                         </label>
                         <input
                             id="end-date"
-                            type="date"
-                            className="w-full h-10 rounded-md bg-white border border-mid-gray p-1 font-bold"
+                            type={filters.endDate ? 'date' : endType}
+                            className="w-full h-10 rounded-md bg-white border border-mid-gray placeholder:text-black pl-2"
                             value={filters.endDate}
+                            onFocus={() => setEndType('date')}
+                            onBlur={(e) => { if (!e.target.value) setEndType('text'); }}
                             onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value, page: 1 }))}
                             placeholder="End Date"
                         />
@@ -524,8 +531,8 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
                 <>
                     <div className="overflow-x-auto">
 
-                        {/* back button */}
-                        <div className="p-3 flex items-center gap-4 justify-between">
+                        {/* back button + pre/post toggles (responsive) */}
+                        <div className="p-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <button
                                 onClick={() => setActivitySelected(null)}
                                 className="text-blue-600"
@@ -535,16 +542,16 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
                                     Back to Activities
                                 </div>
                             </button>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
                                 <button
                                     onClick={() => setSelectedDocType('pre')}
-                                    className={`hover:underline ${selectedDocType === 'pre' ? 'font-bold underline text-off-black' : 'text-gray-600'}`}
+                                    className={`px-2 py-1 rounded hover:underline ${selectedDocType === 'pre' ? 'font-bold underline text-off-black' : 'text-gray-600'}`}
                                 >
                                     Pre-Activity Documents
                                 </button>
                                 <button
                                     onClick={() => setSelectedDocType('post')}
-                                    className={`hover:underline ${selectedDocType === 'post' ? 'font-bold underline text-off-black' : 'text-gray-600'}`}
+                                    className={`px-2 py-1 rounded hover:underline ${selectedDocType === 'post' ? 'font-bold underline text-off-black' : 'text-gray-600'}`}
                                 >
                                     Post-Activity Documents
                                 </button>
