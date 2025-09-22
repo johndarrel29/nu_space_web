@@ -1,9 +1,9 @@
+import { Tooltip } from 'react-tooltip';
 import editIcon from '../../assets/icons/pen-to-square-solid.svg';
 import deleteIcon from '../../assets/icons/trash-solid.svg';
+import { useUserProfile } from "../../hooks";
 import { FormatDate } from '../../utils';
 import { Badge } from '../ui';
-import { useUserProfile } from "../../hooks";
-import { Tooltip } from 'react-tooltip';
 
 const TableRow = ({ userRow, onOpenModal, index }) => {
   const { user, userProfile } = useUserProfile();
@@ -37,7 +37,7 @@ const TableRow = ({ userRow, onOpenModal, index }) => {
       case 'coordinator':
         return 'secondary';
       case 'rso_representative':
-        return 'tertiary';
+        return 'success';
       case 'student':
         return 'quarternary';
       default:
@@ -71,12 +71,12 @@ const TableRow = ({ userRow, onOpenModal, index }) => {
           <div className="text-sm font-medium text-gray-900">{index}</div>
           <div className="ml-4">
             <div className="text-sm font-medium text-gray-900">{fullName}</div>
-            <div className="text-sm text-gray-500">{userRow.email}</div>
+            <div className="text-sm text-gray-600">{userRow.email}</div>
           </div>
         </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm text-gray-500 flex items-center justify-center">{formattedDate}</div>
+        <div className="text-sm text-gray-600 flex items-center justify-center">{formattedDate}</div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="flex items-center justify-center">
@@ -113,7 +113,7 @@ const TableRow = ({ userRow, onOpenModal, index }) => {
 
                 </div>
                 {/* Tooltip component */}
-                <Tooltip id="global-tooltip" className="bg-gray-800 text-white text-xs p-2 rounded shadow-sm opacity-50" />
+                <Tooltip id="global-tooltip" className="bg-gray-600 text-white text-xs p-2 rounded shadow-sm opacity-50" />
 
                 <div
                   data-tooltip-id="global-tooltip"

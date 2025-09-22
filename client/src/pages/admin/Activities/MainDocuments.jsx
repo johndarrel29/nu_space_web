@@ -1,18 +1,23 @@
-import React, { useState } from "react";
-import Select from 'react-select';
-import {
-  ActivityCard, Searchbar, ReusableDropdown, Button, ActivitySkeleton, DropdownSearch, CloseButton
-} from "../../../components";
-import { useActivities, useUser, useRSO, useAdminActivity, useRSOActivities } from "../../../hooks";
-import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
-import DefaultPicture from "../../../assets/images/default-picture.png";
-import { useUserStoreWithAuth } from '../../../store';
-import { motion, AnimatePresence } from "framer-motion";
+import { DateTimePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers';
 import dayjs from "dayjs";
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Select from 'react-select';
 import { toast } from "react-toastify";
+import DefaultPicture from "../../../assets/images/default-picture.png";
+import {
+  ActivityCard,
+  ActivitySkeleton,
+  Button,
+  CloseButton,
+  DropdownSearch,
+  ReusableDropdown,
+  Searchbar
+} from "../../../components";
+import { useActivities, useAdminActivity, useRSO, useRSOActivities, useUser } from "../../../hooks";
+import { useUserStoreWithAuth } from '../../../store';
 
 // fix the rso path first to manipulate the activity data.
 // system enhancement: use isLoading to make loading animation when fetching or filtering activities
@@ -364,7 +369,7 @@ export default function MainDocuments() {
 
       {/* Deadline Button */}
       {(isUserAdmin || isCoordinator) && (
-        <div className="w-full flex justify-end mb-4">
+        <div className="w-full flex justify-end mb-4 px-0 sm:px-0">
           <Button onClick={() => setIsDeadlineModalOpen(true)}>
             <div className="flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" className="size-4 fill-white" viewBox="0 0 640 640"><path d="M320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320C64 178.6 178.6 64 320 64zM296 184L296 320C296 328 300 335.5 306.7 340L402.7 404C413.7 411.4 428.6 408.4 436 397.3C443.4 386.2 440.4 371.4 429.3 364L344 307.2L344 184C344 170.7 333.3 160 320 160C306.7 160 296 170.7 296 184z" /></svg>
@@ -600,8 +605,8 @@ export default function MainDocuments() {
               animate="visible"
               exit="exit"
             >
-              <div className="fixed inset-0 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-8 w-1/3">
+              <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-lg p-6 sm:p-8 w-full max-w-[90%] sm:max-w-xl md:max-w-2xl">
                   <div className='flex justify-between items-center mb-6'>
                     <h2 className="text-lg font-medium text-[#312895]">Set Activity Deadlines</h2>
                     <CloseButton onClick={() => setIsDeadlineModalOpen(false)} />
@@ -612,55 +617,51 @@ export default function MainDocuments() {
                       <div className="mb-4 w-full">
                         <label htmlFor="activity-select" className="block text-sm font-medium text-gray-700">Select Activity</label>
                         <Select
+                          classNamePrefix="react-select"
                           onChange={(selectedOption) => setSelectedActivityId(selectedOption ? selectedOption.value : null)}
-                          options={activityOptions} />
+                          options={activityOptions}
+                        />
                       </div>
-                      <table className="w-full">
-                        <tbody>
-                          <tr>
-                            <td className="py-4 pr-8 text-gray-700 text-sm">Pre Document Deadline</td>
-                            <td className="py-4">
-                              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                <DateTimePicker
-                                  value={preDocDeadline}
-                                  onChange={setPreDocDeadline}
-                                  className="w-full"
-                                  slotProps={{
-                                    textField: {
-                                      fullWidth: true,
-                                      size: 'small',
-                                      variant: 'outlined'
-                                    }
-                                  }}
-                                />
-                              </LocalizationProvider>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="py-4 pr-8 text-gray-700 text-sm">Post Document Deadline</td>
-                            <td className="py-4">
-                              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                <DateTimePicker
-                                  value={postDocDeadline}
-                                  onChange={setPostDocDeadline}
-                                  className="w-full"
-                                  slotProps={{
-                                    textField: {
-                                      fullWidth: true,
-                                      size: 'small',
-                                      variant: 'outlined'
-                                    }
-                                  }}
-                                />
-                              </LocalizationProvider>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="w-full">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Pre Document Deadline</label>
+                          <LocalizationProvider dateAdapter={AdapterDayjs}>
+                            <DateTimePicker
+                              value={preDocDeadline}
+                              onChange={setPreDocDeadline}
+                              className="w-full"
+                              slotProps={{
+                                textField: {
+                                  fullWidth: true,
+                                  size: 'small',
+                                  variant: 'outlined'
+                                }
+                              }}
+                            />
+                          </LocalizationProvider>
+                        </div>
+                        <div className="w-full">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Post Document Deadline</label>
+                          <LocalizationProvider dateAdapter={AdapterDayjs}>
+                            <DateTimePicker
+                              value={postDocDeadline}
+                              onChange={setPostDocDeadline}
+                              className="w-full"
+                              slotProps={{
+                                textField: {
+                                  fullWidth: true,
+                                  size: 'small',
+                                  variant: 'outlined'
+                                }
+                              }}
+                            />
+                          </LocalizationProvider>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   {/* Button to log deadlines */}
-                  <div className="flex justify-end mt-8 gap-3">
+                  <div className="flex justify-end mt-6 gap-3">
                     <Button
                       onClick={() => handleDateSelected()}
                       style="primary"

@@ -1,11 +1,11 @@
-import { useState, useEffect, act } from 'react';
-import { motion, AnimatePresence } from "framer-motion";
-import { Backdrop, Button, CloseButton, TextInput } from '../../../components';
-import { DropIn } from "../../../animations/DropIn";
-import { FormatDate } from '../../../utils'
-import { useModal, useAcademicYears } from '../../../hooks';
 import Switch from '@mui/material/Switch';
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
+import { DropIn } from "../../../animations/DropIn";
+import { Backdrop, Button, CloseButton } from '../../../components';
+import { useAcademicYears, useModal } from '../../../hooks';
+import { FormatDate } from '../../../utils';
 
 // when sending data to API, isActive = isActive, isUpcoming = isUpcoming
 // make the date input also accept time
@@ -279,7 +279,7 @@ export default function AcademicYear() {
     return (
         <>
             <div className="flex flex-col items-center justify-start w-full min-h-[80vh]">
-                <div className="flex flex-col w-[800px] justify-center mb-8">
+                <div className="flex flex-col w-full max-w-4xl px-4 sm:px-6 lg:px-0 justify-center mb-8">
                     {/*  Heading */}
                     <div className="flex flex-col items-center justify-center w-full mb-6">
                         <h2 className="text-md text-gray-500">Academic Year</h2>
@@ -287,30 +287,30 @@ export default function AcademicYear() {
                     </div>
 
                     {/* Edit Card */}
-                    <div className="w-full bg-white rounded-md p-6 flex justify-evenly items-center relative mb-4">
-                        <table className="w-1/2">
+                    <div className="w-full bg-white rounded-md p-4 sm:p-6 flex flex-col md:flex-row gap-4 md:gap-6 justify-between items-stretch md:items-center relative mb-4">
+                        <table className="w-full md:w-1/2">
                             <tbody>
                                 <tr>
-                                    <td className="py-3 pr-6 text-gray-500 text-sm text-end">Start</td>
+                                    <td className="py-3 pr-6 text-gray-500 text-sm text-left md:text-end">Start</td>
                                     <td className="py-3 font-medium">{activeYear ? (FormatDate(activeYear.startDate)) : 'No data'}</td>
                                 </tr>
                                 <tr>
-                                    <td className="py-3 pr-6 text-gray-500 text-sm text-end">End</td>
+                                    <td className="py-3 pr-6 text-gray-500 text-sm text-left md:text-end">End</td>
                                     <td className="py-3 font-medium">{activeYear ? (FormatDate(activeYear.endDate)) : 'No data'}</td>
                                 </tr>
                             </tbody>
                         </table>
-                        <table className="w-1/2">
+                        <table className="w-full md:w-1/2">
                             <tbody>
                                 <tr>
-                                    <td className="py-3 pr-6 text-gray-500 text-sm text-end">Status</td>
+                                    <td className="py-3 pr-6 text-gray-500 text-sm text-left md:text-end">Status</td>
                                     <td className="py-3 flex items-center gap-2">
                                         <div className={`w-3 h-3 rounded-full ${activeYear && activeYear.isActive ? 'bg-success' : 'bg-error'}`}></div>
                                         <span className="font-medium">{activeYear ? (activeYear.isActive ? "Active" : "Inactive") : "No data"}</span>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td className="py-3 pr-6 text-gray-500 text-sm text-end">Upcoming</td>
+                                    <td className="py-3 pr-6 text-gray-500 text-sm text-left md:text-end">Upcoming</td>
                                     <td className="py-3 flex items-center gap-2">
                                         <div className={`w-3 h-3 rounded-full ${activeYear && activeYear.isUpcoming ? 'bg-success' : 'bg-error'}`}></div>
                                         <span className="font-medium">{activeYear ? (activeYear.isUpcoming ? "Upcoming" : "No Upcoming") : "No data"}</span>
@@ -382,7 +382,7 @@ export default function AcademicYear() {
                                                 )}
                                             </div>
                                             <div className='flex items-center gap-4'>
-                                                <h2 className='text-sm text-gray-500'>
+                                                <h2 className='hidden md:block text-sm text-gray-500'>
                                                     {FormatDate(year.startDate)} - {FormatDate(year.endDate)}
                                                 </h2>
 
@@ -420,8 +420,8 @@ export default function AcademicYear() {
                             animate="visible"
                             exit="exit"
                         >
-                            <div className="fixed inset-0 flex items-center justify-center z-50">
-                                <div className="bg-white rounded-lg p-8 w-1/3">
+                            <div className="fixed inset-0 flex items-center justify-center z-50 p-4 sm:p-6">
+                                <div className="bg-white rounded-lg p-6 sm:p-8 w-11/12 sm:w-3/4 md:w-2/3 lg:w-1/2 xl:w-1/3 max-h-[85vh] overflow-auto">
                                     <div className='flex justify-between items-center mb-6'>
                                         <h2 className="text-lg font-medium text-[#312895]">
                                             {mode === 'edit' ? 'Edit Academic Year' : 'Create Academic Year'}
@@ -560,8 +560,8 @@ export default function AcademicYear() {
                             animate="visible"
                             exit="exit"
                         >
-                            <div className="fixed inset-0 flex items-center justify-center z-50">
-                                <div className="bg-white rounded-lg p-8 w-1/3">
+                            <div className="fixed inset-0 flex items-center justify-center z-50 p-4 sm:p-6">
+                                <div className="bg-white rounded-lg p-6 sm:p-8 w-11/12 sm:w-3/4 md:w-2/3 lg:w-1/2 xl:w-1/3 max-h-[85vh] overflow-auto">
                                     <div className='flex justify-between items-center mb-4'>
                                         <h2 className="text-lg font-medium text-[#312895]">
                                             Delete Academic Year

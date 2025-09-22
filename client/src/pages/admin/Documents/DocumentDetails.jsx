@@ -1,8 +1,7 @@
-import Switch from '@mui/material/Switch';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { Button, TabSelector } from '../../../components';
+import { Button, CloseButton, TabSelector } from '../../../components';
 import { useAdminDocuments, useAdminUser, useAVPDocuments, useCoordinatorDocuments, useDirectorDocuments, useRSODocuments, useSignature } from '../../../hooks';
 import { useUserStoreWithAuth } from '../../../store';
 import { handleDocumentStatus } from '../../../utils/useDocumentStatus';
@@ -117,12 +116,14 @@ export default function DocumentDetails() {
         approve: false,
     });
 
-    // Define tabs conditionally based on user role or approval state.
-    // If coordinator has already approved (doc?.coordinator_approved), hide/disable Action tab.
-    const showOnlyRemarks = (isUserAdmin || isUserRSORepresentative) || documentIsApproved || (doc?.coordinator_approved === true);
-    const tabs = showOnlyRemarks
-        ? [{ label: "Remarks" }]
-        : [{ label: "Action" }, { label: "Remarks" }];
+    // Decline modal state
+    const [declineModalOpen, setDeclineModalOpen] = useState(false);
+    const [declineRemarks, setDeclineRemarks] = useState("");
+    // Approve choice modal state
+    const [approveChoiceOpen, setApproveChoiceOpen] = useState(false);
+
+    // Tabs: remove Action tab and keep only Remarks, per request
+    const tabs = [{ label: "Remarks" }];
 
     const [activeTab, setActiveTab] = useState(0);
 
@@ -144,151 +145,16 @@ export default function DocumentDetails() {
         // } else {
         //     navigate(`/admin-documents/${documentId}/watermark`, { state: { documentId, url } });
         // }
+
+        console.log("Document click with url:", url);
         window.open(url, "_blank");
     };
 
-    const handleDirectorSwitch = (e) => {
-        const isChecked = e.target.checked;
-        console.log("Send to Director toggled:", isChecked);
-        setFormData(prev => ({
-            ...prev,
-            toDirector: isChecked // Updated to match state field name
-        }));
-    };
-
-    const handleWatermarkSwitch = (e) => {
-        const isChecked = e.target.checked;
-        console.log("Watermark switch toggled:", isChecked);
-        setFormData(prev => ({
-            ...prev,
-            watermark: isChecked // Updated to match state field name
-        }));
-    };
-
-    const handleRemarksChange = (e) => {
-        setFormData(prev => ({
-            ...prev,
-            remarks: e.target.value
-        }));
-    };
-
-    // Helper function to get the real tab index for non-admin users
-    const getTabContent = (tabIndex) => {
-        if ((isUserAdmin || isUserRSORepresentative) || documentIsApproved || (doc?.coordinator_approved && isCoordinator)) {
-            // Only Remarks tab available
-            if (tabIndex === 0) return renderRemarksTab();
-        } else {
-            // Action + Remarks
-            if (tabIndex === 0) return renderActionTab();
-            if (tabIndex === 1) return renderRemarksTab();
-        }
-        return null;
-    };
+    // Helper to render the only Remarks tab
+    const getTabContent = (tabIndex) => (tabIndex === 0 ? renderRemarksTab() : null);
 
     // Rendering functions for tab content
-    const renderActionTab = () => (
-        <div>
-            <textarea
-                rows="4"
-                name="remarks"
-                value={formData.remarks}
-                onChange={handleRemarksChange}
-                className="bg-textfield border border-mid-gray text-gray-900 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                placeholder="Add remarks on the document."
-            />
-            {isCoordinator && (
-                <div className="flex items-center mt-4 mb-4">
-                    <table>
-                        <tbody>
-                            <tr>
-                                <td>
-                                    <h2 className="text-sm text-gray-600 mr-2">Send to Director?</h2>
-                                </td>
-                                <td className="flex items-center gap-2">
-                                    <Switch
-                                        checked={formData.toDirector} // Updated to match state field name
-                                        onChange={handleDirectorSwitch}
-                                        sx={{
-                                            '& .MuiSwitch-switchBase.Mui-checked': {
-                                                color: '#312895',
-                                                '& + .MuiSwitch-track': {
-                                                    backgroundColor: '#312895',
-                                                },
-                                            },
-                                        }}
-                                    />
-                                    <div className={`text-sm px-2 py-1 rounded ${formData.toDirector ? 'bg-green-100' : 'bg-red-100'}`}>
-                                        <h1 className={`text-sm ${formData.toDirector ? 'text-green-800' : 'text-red-800'}`}>
-                                            {formData.toDirector ? 'Yes' : 'No'}
-                                        </h1>
-                                    </div>
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <td>
-                                    <h2 className="text-sm text-gray-600 mr-2">Is Watermarked?</h2>
-                                </td>
-                                <td className="flex items-center gap-2">
-                                    <Switch
-                                        checked={formData.watermark} // Updated to match state field name
-                                        onChange={handleWatermarkSwitch}
-                                        sx={{
-                                            '& .MuiSwitch-switchBase.Mui-checked': {
-                                                color: '#312895',
-                                                '& + .MuiSwitch-track': {
-                                                    backgroundColor: '#312895',
-                                                },
-                                            },
-                                        }}
-                                    />
-                                    <div className={`text-sm px-2 py-1 rounded ${formData.watermark ? 'bg-green-100' : 'bg-red-100'}`}>
-                                        <h1 className={`text-sm ${formData.watermark ? 'text-green-800' : 'text-red-800'}`}>
-                                            {formData.watermark ? 'Yes' : 'No'}
-                                        </h1>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            )}
-
-            <div className="w-full flex justify-end gap-2 mt-4">
-                <Button
-                    disabled={!documentId || nullWatermarkImage}
-                    onClick={() => handleDocumentApprove(true)}
-                >
-                    <div className="flex gap-2 items-center">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="size-4 fill-white"
-                            viewBox="0 0 640 640"
-                        >
-                            <path d="M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z" />
-                        </svg>
-                        Approve
-                    </div>
-                </Button>
-                <Button
-                    style="secondary"
-                    onClick={() => handleDocumentApprove(false)}
-                >
-                    <div className="flex gap-2 items-center">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="size-4"
-                            fill="current"
-                            viewBox="0 0 640 640"
-                        >
-                            <path d="M183.1 137.4C170.6 124.9 150.3 124.9 137.8 137.4C125.3 149.9 125.3 170.2 137.8 182.7L275.2 320L137.9 457.4C125.4 469.9 125.4 490.2 137.9 502.7C150.4 515.2 170.7 515.2 183.2 502.7L320.5 365.3L457.9 502.6C470.4 515.1 490.7 515.1 503.2 502.6C515.7 490.1 515.7 469.8 503.2 457.3L365.8 320L503.1 182.6C515.6 170.1 515.6 149.8 503.1 137.3C490.6 124.8 470.3 124.8 457.8 137.3L320.5 274.7L183.1 137.4z" />
-                        </svg>
-                        Decline
-                    </div>
-                </Button>
-            </div>
-        </div>
-    );
+    // Action tab removed per request
 
     const renderRemarksTab = () => (
         <div className="flex flex-col items-start w-full">
@@ -313,6 +179,9 @@ export default function DocumentDetails() {
         </div>
     );
 
+    // this function will now be used for approve button in the approve choice modal
+    // if approved is true, navigate to watermark page
+    // if false, do the normal approve flow and the toDirector is false and watermark is false
     const handleDocumentApprove = (isApproved) => {
         // disregard the mutate for now. navigate to watermark page
         if (isApproved) {
@@ -323,22 +192,38 @@ export default function DocumentDetails() {
 
         let updatedFormData = {
             ...formData,
-            approve: isApproved
+            approve: isApproved,
         };
 
 
         // Update form state with approval status
         if (isCoordinator) {
-            updatedFormData = {
-                ...formData,
-                approve: isApproved
-            };
+            const fd = new FormData();
+            fd.set("approve", true);
+            fd.set("toDirector", false);
+            fd.set("watermark", false);
+
+            // not yet implemented on UI. but just in case
+            if (formData?.remarks && formData.remarks.trim()) {
+                fd.set("remarks", formData.remarks.trim());
+            }
+
+            updatedFormData = fd;
         }
 
         if (isDirector || isAVP) {
             // dont include fields: watermark, and toDirector
-            const { watermark, toDirector, ...dataWithoutExcludedFields } = updatedFormData;
-            updatedFormData = dataWithoutExcludedFields;
+            // const { watermark, toDirector, ...dataWithoutExcludedFields } = updatedFormData;
+            // updatedFormData = dataWithoutExcludedFields;
+            const fd = new FormData();
+            fd.set("approve", true);
+            fd.set("watermark", false);
+            // not yet implemented on UI. but just in case
+            if (formData?.remarks && formData.remarks.trim()) {
+                fd.set("remarks", formData.remarks.trim());
+            }
+            updatedFormData = fd;
+
         }
 
 
@@ -385,7 +270,71 @@ export default function DocumentDetails() {
         }
     };
 
+    const handleDocumentDecline = () => {
+        try {
+            // Choose mutate function based on role
+            const declineOnRole = isCoordinator
+                ? approveDocumentMutate
+                : isDirector
+                    ? approveDirectorDocumentMutate
+                    : isAVP
+                        ? approveAVPDocumentMutate
+                        : null;
+
+            if (!declineOnRole) {
+                toast.error('Unable to decline: role not recognized.');
+                return;
+            }
+
+            let payload;
+
+            // Backend expects multipart form-data for coordinator; use strings for booleans
+            const fd = new FormData();
+            fd.set('approve', 'false');
+            fd.set('watermark', 'false');
+            if (isCoordinator) fd.set('toDirector', 'false');
+            if (declineRemarks && declineRemarks.trim()) {
+                fd.set('remarks', declineRemarks.trim());
+            }
+            payload = fd;
+
+            declineOnRole(
+                { formData: payload, documentId },
+                {
+                    onSuccess: () => {
+                        toast.success('Document declined successfully');
+                        setDeclineModalOpen(false);
+                    },
+                    onError: (error) => {
+                        console.error('Error declining document:', error);
+                        toast.error(error?.message || 'Failed to decline document');
+                    }
+                }
+            );
+        } catch (error) {
+            console.error('Error declining document:', error);
+            toast.error('Unexpected error while declining document');
+        }
+    }
+
     const statusDisplay = handleDocumentStatus(doc?.document_status);
+
+    const documentStatusFinished = (doc?.document_status === 'approved' || doc?.document_status === 'rejected');
+    const coordinatorFinished = (isCoordinator && (doc?.coordinator_approved === true || doc?.coordinator_approved === false));
+    const directorFinished = (isDirector && (doc?.director_approved === true || doc?.director_approved === false));
+    const avpFinished = (isAVP && (doc?.avp_approved === true || doc?.avp_approved === false));
+
+    const disableBasedOnRole = () => {
+        if (isCoordinator && ((doc?.coordinator_approved === false && documentStatusFinished) || doc?.coordinator_approved === true)) {
+            return true;
+        } else if (isDirector && ((doc?.director_approved === false && documentStatusFinished) || doc?.director_approved === true)) {
+            return true;
+        } else if (isAVP && ((doc?.avp_approved === false && documentStatusFinished) || doc?.avp_approved === true)) {
+            return true;
+        } else return false;
+    }
+
+
 
     return (
         <div className="flex flex-col items-center justify-start w-full relative px-3 sm:px-4 lg:px-6 pb-16">
@@ -445,6 +394,46 @@ export default function DocumentDetails() {
                     </svg>
                 </div>
                 {console.log("Document for details:", doc)}
+
+                {/* Actions: Approve / Decline (placed below the main view document) */}
+                <section className="mt-4">
+                    <div className="w-full flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
+                        <Button
+                            disabled={!documentId || disableBasedOnRole()}
+                            onClick={() => setApproveChoiceOpen(true)}
+                            className="w-full sm:w-auto"
+                        >
+                            <div className="flex gap-2 items-center justify-center">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="size-4 fill-white"
+                                    viewBox="0 0 640 640"
+                                >
+                                    <path d="M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z" />
+                                </svg>
+                                Approve Submission
+                            </div>
+                        </Button>
+                        <Button
+                            style="secondary"
+                            disabled={!documentId || disableBasedOnRole()}
+                            onClick={() => setDeclineModalOpen(true)}
+                            className="w-full sm:w-auto"
+                        >
+                            <div className="flex gap-2 items-center justify-center">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="size-4"
+                                    fill="current"
+                                    viewBox="0 0 640 640"
+                                >
+                                    <path d="M183.1 137.4C170.6 124.9 150.3 124.9 137.8 137.4C125.3 149.9 125.3 170.2 137.8 182.7L275.2 320L137.9 457.4C125.4 469.9 125.4 490.2 137.9 502.7C150.4 515.2 170.7 515.2 183.2 502.7L320.5 365.3L457.9 502.6C470.4 515.1 490.7 515.1 503.2 502.6C515.7 490.1 515.7 469.8 503.2 457.3L365.8 320L503.1 182.6C515.6 170.1 515.6 149.8 503.1 137.3C490.6 124.8 470.3 124.8 457.8 137.3L320.5 274.7L183.1 137.4z" />
+                                </svg>
+                                Decline Submission
+                            </div>
+                        </Button>
+                    </div>
+                </section>
                 {/* Status & Routing */}
                 <div className=' mt-4 '>
                     <h3 className="text-sm font-semibold text-gray-700 mb-3">
@@ -484,14 +473,16 @@ export default function DocumentDetails() {
                         Director
                     </div>
                     <div className={`flex items-center gap-1 py-1 px-3 rounded-full font-semibold text-xs shadow-sm border
-                        ${doc?.avp_approved ? 'bg-blue-100 text-blue-800 border-blue-300'
+                        ${doc?.avp_approved ? 'bg-green-100 text-green-800 border-green-300'
                             : 'bg-gray-100 text-gray-700 border-gray-300'}`}>
                         {doc?.avp_approved ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5 fill-blue-800" viewBox="http://www.w3.org/2000/svg"><circle cx="320" cy="320" r="256" /></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="size-4 fill-green-800" viewBox="0 0 640 640"><path d="M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z" /></svg>
+
                         ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5 fill-gray-400" viewBox="http://www.w3.org/2000/svg"><circle cx="320" cy="320" r="256" /></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="size-4 fill-gray-400" viewBox="http://www.w3.org/2000/svg"><path d="M320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320C64 178.6 178.6 64 320 64zM296 184L296 320C296 328 300 335.5 306.7 340L402.7 404C413.7 411.4 428.6 408.4 436 397.3C443.4 386.2 440.4 371.4 429.3 364L344 307.2L344 184C344 170.7 333.3 160 320 160C306.7 160 296 170.7 296 184z" /></svg>
+
                         )}
-                        To Director
+                        AVP
                     </div>
 
                     {/* Routing */}
@@ -612,6 +603,110 @@ export default function DocumentDetails() {
                     {getTabContent(activeTab)}
                 </div>
             </div>
+
+            {/* Decline Confirmation Modal (static backdrop) */}
+            {declineModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+                        {/* Header */}
+                        <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="h-9 w-9 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" className="h-5 w-5 fill-current"><path d="M183.1 137.4C170.6 124.9 150.3 124.9 137.8 137.4C125.3 149.9 125.3 170.2 137.8 182.7L275.2 320L137.9 457.4C125.4 469.9 125.4 490.2 137.9 502.7C150.4 515.2 170.7 515.2 183.2 502.7L320.5 365.3L457.9 502.6C470.4 515.1 490.7 515.1 503.2 502.6C515.7 490.1 515.7 469.8 503.2 457.3L365.8 320L503.1 182.6C515.6 170.1 515.6 149.8 503.1 137.3C490.6 124.8 470.3 124.8 457.8 137.3L320.5 274.7L183.1 137.4z" /></svg>
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-semibold text-gray-900">Confirm Decline</h3>
+                                    <p className="text-xs text-gray-500">Please provide remarks before rejecting the document.</p>
+                                </div>
+                            </div>
+                            <CloseButton onClick={() => setDeclineModalOpen(false)} />
+                        </div>
+
+                        {/* Body */}
+                        <div className="px-4 py-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Remarks<span className="text-red-600">*</span></label>
+                            <textarea
+                                rows={4}
+                                value={declineRemarks}
+                                onChange={(e) => setDeclineRemarks(e.target.value)}
+                                placeholder="Briefly explain why this document is being declined."
+                                className="w-full bg-white border border-gray-300 rounded-md p-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-300 placeholder:text-gray-400"
+                            />
+                            <p className="mt-1 text-xs text-gray-500">Your remarks will be visible to the submitter.</p>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-end gap-2 bg-white">
+                            <Button style="secondary" onClick={() => setDeclineModalOpen(false)}>Cancel</Button>
+                            <Button
+                                onClick={() => handleDocumentDecline()}
+                                disabled={!declineRemarks.trim()}
+                            >
+                                Confirm Decline
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Approve Choice Modal (static backdrop) */}
+            {approveChoiceOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+                        {/* Header */}
+                        <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="h-9 w-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" className="h-5 w-5 fill-current"><path d="M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z" /></svg>
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-semibold text-gray-900">Approve Submission</h3>
+                                    <p className="text-xs text-gray-500">Choose how to proceed with approval.</p>
+                                </div>
+                            </div>
+                            <CloseButton onClick={() => setApproveChoiceOpen(false)} />
+                        </div>
+
+                        {/* Body */}
+                        <div className="px-4 py-4 space-y-3">
+                            <button
+                                className="w-full text-left px-3 py-2 rounded-md border border-gray-300 hover:bg-gray-50 transition"
+                                onClick={() => handleDocumentApprove()}
+                            >
+                                <div className="flex items-start gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" className="h-5 w-5 mt-0.5 fill-gray-600"><path d="M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z" /></svg>
+                                    <div>
+                                        <div className="font-medium text-sm text-gray-900">Approve without signing</div>
+                                        <div className="text-xs text-gray-600">Record approval but skip watermarking/signature.</div>
+                                    </div>
+                                </div>
+                            </button>
+
+                            <button
+                                className="w-full text-left px-3 py-2 rounded-md border border-indigo-300 text-indigo-700 hover:bg-indigo-50 transition"
+                                onClick={() => {
+                                    setApproveChoiceOpen(false);
+                                    // Navigate to the watermark page
+                                    navigate(`/admin-documents/${documentId}/watermark`, { state: { documentId, url } });
+                                }}
+                            >
+                                <div className="flex items-start gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" className="h-5 w-5 mt-0.5 fill-indigo-600"><path d="M352 64L288 64 288 288 64 288 64 352 288 352 288 576 352 576 352 352 576 352 576 288 352 288 352 64z" /></svg>
+                                    <div>
+                                        <div className="font-medium text-sm">Approve with signing</div>
+                                        <div className="text-xs text-gray-600">Open the signing/watermark workflow to attach your signature.</div>
+                                    </div>
+                                </div>
+                            </button>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-end gap-2 bg-white">
+                            <Button style="secondary" onClick={() => setApproveChoiceOpen(false)}>Cancel</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

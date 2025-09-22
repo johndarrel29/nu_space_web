@@ -1,10 +1,10 @@
-import { TabSelector, Button, BackendTable, Backdrop, CloseButton, TextInput } from "../../../components";
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { DropIn } from "../../../animations/DropIn";
-import { useAdminDocuments, useAcademicYears } from "../../../hooks";
 import { toast } from "react-toastify";
+import { DropIn } from "../../../animations/DropIn";
+import { Backdrop, BackendTable, Button, CloseButton, TabSelector } from "../../../components";
+import { useAcademicYears, useAdminDocuments } from "../../../hooks";
 import { useUserStoreWithAuth } from '../../../store';
 
 // todo: change the data to PH standard time for start and end date.
@@ -118,10 +118,10 @@ export default function MainAdmin() {
 
     return (
         <div>
-            <div className="flex justify-between items-center w-full mb-4">
+            <div className="flex flex-col-reverse sm:flex-row justify-start sm:justify-between items-stretch sm:items-center w-full mb-4 gap-3">
                 <TabSelector tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} />
                 {(isUserAdmin || isCoordinator) && (
-                    <div className="flex gap-4">
+                    <div className="flex gap-2 sm:gap-4 flex-wrap sm:flex-nowrap">
                         <Button style={"secondary"} onClick={() => {
                             // Navigate to templates page
                             openDeadlineModal();

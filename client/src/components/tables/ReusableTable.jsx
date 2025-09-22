@@ -1,8 +1,9 @@
-import React, { useState } from "react";
-import { ReusableDropdown, Searchbar } from "../ui";
+import { useState } from "react";
 import DefaultPicture from "../../assets/images/default-profile.jpg";
-import Badge from "../ui/Badge"
+import { CardSkeleton } from "../../components";
 import { useActivities } from "../../hooks";
+import { ReusableDropdown, Searchbar } from "../ui";
+import Badge from "../ui/Badge";
 
 // Moved the inline array into constants + helper
 const SPECIAL_HEADING_KEYS = [
@@ -173,7 +174,7 @@ export default function ReusableTable({
                             <div className="overflow-x-auto">
                                 {isLoading ? (
                                     <div className="w-full flex justify-center">
-                                        {/* <CardSkeleton></CardSkeleton> */}
+                                        <CardSkeleton></CardSkeleton>
                                     </div>
                                 )
                                     :
