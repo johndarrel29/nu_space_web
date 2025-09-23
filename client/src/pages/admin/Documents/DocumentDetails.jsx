@@ -121,9 +121,13 @@ export default function DocumentDetails() {
     const [declineRemarks, setDeclineRemarks] = useState("");
     // Approve choice modal state
     const [approveChoiceOpen, setApproveChoiceOpen] = useState(false);
+    // Non-PDF warning modal state
+    const [nonPdfModalOpen, setNonPdfModalOpen] = useState(false);
 
     // Tabs: remove Action tab and keep only Remarks, per request
     const tabs = [{ label: "Remarks" }];
+
+    console.log("file type: ", doc?.file_path?.split('.').pop());
 
     const [activeTab, setActiveTab] = useState(0);
 
@@ -400,7 +404,14 @@ export default function DocumentDetails() {
                     <div className="w-full flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
                         <Button
                             disabled={!documentId || disableBasedOnRole()}
-                            onClick={() => setApproveChoiceOpen(true)}
+                            onClick={() => {
+                                const ext = (doc?.file_path?.split('.').pop() || '').toLowerCase();
+                                if (ext === 'pdf') {
+                                    setApproveChoiceOpen(true);
+                                } else {
+                                    setNonPdfModalOpen(true);
+                                }
+                            }}
                             className="w-full sm:w-auto"
                         >
                             <div className="flex gap-2 items-center justify-center">
@@ -703,6 +714,42 @@ export default function DocumentDetails() {
                         {/* Footer */}
                         <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-end gap-2 bg-white">
                             <Button style="secondary" onClick={() => setApproveChoiceOpen(false)}>Cancel</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Non-PDF Warning Modal (static backdrop) */}
+            {nonPdfModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+                        {/* Header */}
+                        <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="h-9 w-9 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" className="h-5 w-5 fill-current"><path d="M320 64C178.6 64 64 178.6 64 320 64 461.4 178.6 576 320 576 461.4 576 576 461.4 576 320 576 178.6 461.4 64 320 64zM352 448C352 465.7 337.7 480 320 480 302.3 480 288 465.7 288 448 288 430.3 302.3 416 320 416 337.7 416 352 430.3 352 448zM288 184C288 170.7 298.7 160 312 160L328 160C341.3 160 352 170.7 352 184L352 360C352 373.3 341.3 384 328 384L312 384C298.7 384 288 373.3 288 360L288 184z" /></svg>
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-semibold text-gray-900">Approval Unavailable</h3>
+                                    <p className="text-xs text-gray-500">Approvals are only supported for PDF files.</p>
+                                </div>
+                            </div>
+                            <CloseButton onClick={() => setNonPdfModalOpen(false)} />
+                        </div>
+
+                        {/* Body */}
+                        <div className="px-4 py-4 space-y-2">
+                            <p className="text-sm text-gray-700">
+                                This document cannot be approved because it is not a PDF file. Please ask the submitter to resubmit a PDF or convert the file to PDF and try again.
+                            </p>
+                            {doc?.file_path && (
+                                <p className="text-xs text-gray-500">Detected file: <span className="font-medium">{doc.file_path.split('.').pop()}</span></p>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-end gap-2 bg-white">
+                            <Button onClick={() => setNonPdfModalOpen(false)}>OK</Button>
                         </div>
                     </div>
                 </div>
