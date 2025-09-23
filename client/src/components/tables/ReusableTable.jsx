@@ -382,18 +382,18 @@ export default function ReusableTable({
             {/* pagination */}
             <div className='w-full bottom-20 mt-4'>
                 <nav>
-                    <ul className="flex justify-center space-x-2">
+                    <div className="flex justify-center space-x-2">
 
-                        <li className={`page-item mx-1 px-3 py-2 bg-white border border-mid-gray rounded-md font-semibold rounded`}>
+                        <div className={`page-item mx-1 px-3 py-2 bg-white border border-mid-gray rounded-md font-semibold rounded`}>
                             <button className='page-link' onClick={() => currentPageHandler(currentPage - 1)}>Prev</button>
-                        </li>
+                        </div>
                         <div className="px-4 py-2 font-semibold">
                             {pages.length > 0 ? `${currentPage} of ${pages.length}` : "0 of 0"}
                         </div>
-                        <li className={`page-item mx-1 px-3 py-2 bg-white border border-mid-gray rounded-md font-semibold rounded`}>
+                        <div className={`page-item mx-1 px-3 py-2 bg-white border border-mid-gray rounded-md font-semibold rounded`}>
                             <button className='page-link' onClick={() => currentPageHandler(currentPage + 1)}>Next</button>
-                        </li>
-                    </ul>
+                        </div>
+                    </div>
                 </nav>
             </div>
         </>

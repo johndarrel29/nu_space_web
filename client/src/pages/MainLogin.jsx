@@ -1,13 +1,10 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import classNames from 'classnames';
+import { Button, TextInput } from "../components";
 import { useAuth } from "../context/AuthContext";
-import { useLogin, useKeyBinding } from '../hooks';
-import { useTokenStore } from '../store';
-import { TextInput, Button } from "../components";
-import style from '../css/Login.module.css';
-import User from "../assets/images/user-icon.png";
+import { useKeyBinding, useLogin } from '../hooks';
+import { useFCMStore, useTokenStore } from '../store';
 
 const ROLE_REDIRECTS = {
     admin: "/dashboard",
@@ -19,6 +16,7 @@ const ROLE_REDIRECTS = {
 };
 
 export default function MainLogin() {
+    const fcmStore = useFCMStore.getState();
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         email: "",
@@ -102,6 +100,7 @@ export default function MainLogin() {
                 email: formData.email,
                 password: formData.password,
                 platform: "web",
+                deviceToken: fcmStore.deviceToken || null
             }, {
                 onSuccess: (data) => {
                     if (!data?.token) {

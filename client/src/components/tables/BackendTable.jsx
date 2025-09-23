@@ -355,6 +355,7 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
                         </label>
                         <ReusableDropdown
                             id="status-filter"
+                            placeholder={"Select Status"}
                             onChange={(e) => handleSorted(e.target.value)}
                             options={["All Organizations", "Approved", "Pending", "Rejected"]}
                         />
@@ -423,7 +424,7 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
                         Showing {activityRoleData?.totalActivities ? activityRoleData?.totalActivities : activityRoleData?.activities.length || 0} results
                     </span>
                 )}
-                <li className="flex justify-center">
+                <div className="flex justify-center">
                     <select
                         value={filters.limit}
                         onChange={(e) => setFilters(prev => ({ ...prev, limit: Number(e.target.value), page: 1 }))}
@@ -434,7 +435,7 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
                         <option value={20}>20 rows</option>
                         <option value={50}>50 rows</option>
                     </select>
-                </li>
+                </div>
             </div>
 
             {/* Activities Table Section (only when tab 2) */}
@@ -643,9 +644,9 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
                                             Prev
                                         </button>
                                     </li>
-                                    <div className="px-4 py-2 font-semibold">
-                                        {`1 of 1`}
-                                    </div>
+                                    <li className="px-4 py-2 font-semibold">
+                                        1 of 1
+                                    </li>
                                     <li className="page-item mx-1 px-3 py-2 bg-white border border-mid-gray rounded-md font-semibold rounded">
                                         <button className="page-link" disabled>
                                             Next
@@ -757,9 +758,9 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
                                             Prev
                                         </button>
                                     </li>
-                                    <div className="px-4 py-2 font-semibold">
+                                    <li className="px-4 py-2 font-semibold">
                                         {`${filters.page} of ${tableData?.pagination?.totalPages || 0}`}
-                                    </div>
+                                    </li>
                                     <li className="page-item mx-1 px-3 py-2 bg-white border border-mid-gray rounded-md font-semibold rounded">
                                         <button
                                             className="page-link"
@@ -788,7 +789,7 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
                                     Prev
                                 </button>
                             </li>
-                            <div className="px-4 py-2 font-semibold">{`${activityRoleData?.pagination?.page || 1} of ${activityRoleData?.pagination?.totalPages || 0}`}</div>
+                            <li className="px-4 py-2 font-semibold">{`${activityRoleData?.pagination?.page || 1} of ${activityRoleData?.pagination?.totalPages || 0}`}</li>
                             <li className="page-item mx-1 px-3 py-2 bg-white border border-mid-gray rounded-md font-semibold rounded">
                                 <button
                                     // onClick={() => fetchNextPage()}

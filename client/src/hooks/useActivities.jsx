@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from '../context/AuthContext';
 
 function useActivities(activityId, debouncedQuery, sorted, RSO, RSOType, college) {
@@ -497,6 +497,7 @@ function useActivities(activityId, debouncedQuery, sorted, RSO, RSOType, college
         data: viewActivityData,
         isSuccess: viewActivitySuccess,
         isLoading: viewActivityLoading,
+        refetch: refetchViewActivity,
         isError: viewActivityError
     } = useQuery({
         queryKey: ["activity", activityId],
@@ -686,6 +687,7 @@ function useActivities(activityId, debouncedQuery, sorted, RSO, RSOType, college
 
         viewActivityData,
         viewActivityError,
+        refetchViewActivity,
 
         declineActivityMutation,
         declinedActivity,

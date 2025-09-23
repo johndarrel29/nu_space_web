@@ -1,13 +1,12 @@
-import React, { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import DefaultPicture from "../../../assets/images/default-profile.jpg";
-import { TabSelector, ActivityCard, Button, CloseButton, BackendTable, ReusableRSODescription } from '../../../components';
-import TagSelector from '../../../components/TagSelector'
-import { selectedRSOStore, selectedRSOStatusStore } from '../../../store';
-import { useTagSelector, useModal, useUserProfile, useDocumentManagement, useAdminRSO, useAdminActivity } from '../../../hooks';
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { DropIn } from "../../../animations/DropIn";
+import DefaultPicture from "../../../assets/images/default-profile.jpg";
+import { ActivityCard, BackendTable, Button, CloseButton, ReusableRSODescription, TabSelector } from '../../../components';
 import { useAuth } from "../../../context/AuthContext";
+import { useAdminActivity, useAdminRSO, useDocumentManagement, useModal, useTagSelector, useUserProfile } from '../../../hooks';
+import { selectedRSOStatusStore, selectedRSOStore } from '../../../store';
 
 // TODO: get rso detail hook
 // link the rso detail to the rso id from state
@@ -242,6 +241,53 @@ function RSODetails() {
           <svg xmlns="http://www.w3.org/2000/svg" className='fill-gray-600 size-4 group-hover:fill-off-black' viewBox="0 0 448 512"><path d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.2 288 416 288c17.7 0 32-14.3 32-32s-14.3-32-32-32l-306.7 0L214.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z" /></svg>
         </div>
       </div>
+
+      {rsoDetailData?.data?.RSO_recognition_status?.status === "new_rso" ? (
+        <>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg px-6 py-4 shadow-sm flex items-start gap-3 mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
+            </svg>
+            <div className="flex flex-col">
+              <span className="text-blue-800 font-semibold text-base">Recognition in progress</span>
+              <span className="text-blue-600 text-sm">The RSO will be recognized once all requirements are met and is approved.</span>
+              <span className="text-blue-700 text-sm mt-1">
+                Status: <span className="font-semibold capitalize">{rsoDetailData?.data?.RSO_recognition_status?.status.replace(/_/g, " ").replace(/rso/gi, "RSO") || "unknown"}</span>
+              </span>
+            </div>
+          </div>
+        </>
+      ) : (rsoDetailData?.data?.RSO_recognition_status?.status === "recognized") ? (
+        <>
+          <div className="bg-green-50 border border-green-200 rounded-lg px-6 py-4 shadow-sm flex items-start gap-3 mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
+            </svg>
+            <div className="flex flex-col">
+              <span className="text-green-800 font-semibold text-base">RSO is now recognized</span>
+              <span className="text-green-600 text-sm">The RSO is now recognized and all requirements have been met.</span>
+              <span className="text-green-700 text-sm mt-1">
+                Status: <span className="font-semibold capitalize">{rsoDetailData?.data?.RSO_recognition_status?.status.replace(/_/g, " ").replace(/rso/gi, "RSO") || "unknown"}</span>
+              </span>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg px-6 py-4 shadow-sm flex items-start gap-3 mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
+            </svg>
+            <div className="flex flex-col">
+              <span className="text-blue-800 font-semibold text-base">Recognition in progress</span>
+              <span className="text-blue-600 text-sm">The RSO will be recognized once all requirements are met and is approved.</span>
+              <span className="text-blue-700 text-sm mt-1">
+                Status: <span className="font-semibold capitalize">{rsoDetailData?.data?.RSO_recognition_status?.status.replace(/_/g, " ").replace(/rso/gi, "RSO") || "unknown"}</span>
+              </span>
+            </div>
+          </div>
+        </>
+      )}
 
 
       <div className='flex flex-col md:flex-row items-start justify-between gap-4'>

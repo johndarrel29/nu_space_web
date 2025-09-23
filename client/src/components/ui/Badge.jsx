@@ -6,7 +6,7 @@ function Badge({ style, text }) {
     switch (style) {
       case "primary":
         // Golden Yellow: Associated with energy, optimism, and draws attention.
-        setHandleStyle("bg-yellow-100 text-yellow-900 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full dark:bg-gray-700 dark:text-yellow-300 border border-yellow-900");
+        setHandleStyle("bg-yellow-100 text-black text-xs font-medium me-2 px-2.5 py-0.5 rounded-full dark:bg-gray-700 dark:text-yellow-300");
         break;
       case "secondary":
         // Royal Blue: Trust, stability, and professionalism.
@@ -14,7 +14,7 @@ function Badge({ style, text }) {
         break;
       case "tertiary":
         // Emerald Green: Growth, harmony, and subtle positivity.
-        setHandleStyle("bg-green-100 text-green-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-sm dark:bg-gray-700 dark:text-green-400 border border-green-800");
+        setHandleStyle("bg-green-100 text-green-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-sm dark:bg-gray-700 dark:text-green-400");
         break;
       case "quarternary":
         // Warm Gray: Neutral, soft contrast for least priority.
@@ -22,11 +22,11 @@ function Badge({ style, text }) {
         break;
       case "error":
         // Red: Urgent, attention-grabbing for errors or critical issues.
-        setHandleStyle("bg-red-100 text-red-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full dark:bg-gray-700 dark:text-red-400 border border-red-400");
+        setHandleStyle("bg-red-100 text-black text-xs font-medium me-2 px-2.5 py-0.5 rounded-full dark:bg-gray-700 dark:text-red-400");
         break;
       case "success":
         // Light Green: Positive, success, or completion.
-        setHandleStyle("bg-green-100 text-green-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full dark:bg-gray-700 dark:text-green-400 border border-green-800");
+        setHandleStyle("bg-green-100 text-black text-xs font-medium me-2 px-2.5 py-0.5 rounded-full dark:bg-gray-700 dark:text-green-400");
         break;
       default:
         // Fallback to a calm neutral tone.
