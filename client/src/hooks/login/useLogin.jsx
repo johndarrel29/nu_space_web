@@ -1,8 +1,7 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { useAuth } from "../../context/AuthContext";
+import { useMutation } from "@tanstack/react-query";
 import { useTokenStore } from "../../store";
 
-const loginUserRequest = async ({ email, password, platform }) => {
+const loginUserRequest = async ({ email, password, platform, deviceToken }) => {
     console.log("Login request initiated with email:", email, "and platform:", platform, "password:", password);
     try {
 
@@ -11,7 +10,7 @@ const loginUserRequest = async ({ email, password, platform }) => {
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ email, password, platform }),
+            body: JSON.stringify({ email, password, platform, deviceToken }),
         });
 
 

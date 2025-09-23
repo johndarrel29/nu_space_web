@@ -11,14 +11,15 @@
 //     />
 // );
 //   }
-  
+
 //   export default TextInput;
 
 // In your components folder
-const TextInput = ({ id, name, type, placeholder, value, onChange, className, ...props }) => {
+const TextInput = ({ id, name, type, placeholder, value, onChange, className, disabled, ...props }) => {
   return (
     <input
       id={id}
+      disabled={disabled}
       name={name}
       type={type}
       placeholder={placeholder}
@@ -31,4 +32,3 @@ const TextInput = ({ id, name, type, placeholder, value, onChange, className, ..
 };
 
 export default TextInput;
-  

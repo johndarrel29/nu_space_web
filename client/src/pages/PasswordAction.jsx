@@ -1,9 +1,8 @@
-import { useNavigate } from "react-router-dom";
-import { TextInput, Button } from "../components";
-import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { useLogin } from "../hooks";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
+import { Button, TextInput } from "../components";
+import { useLogin } from "../hooks";
 
 export default function PasswordAction() {
     const navigate = useNavigate();
@@ -216,6 +215,7 @@ export default function PasswordAction() {
                         <label htmlFor="email" className="text-sm text-gray-600">Email</label>
                         <TextInput
                             placeholder={"Email"}
+                            disabled={formData.email ? true : false}
                             type="email"
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}

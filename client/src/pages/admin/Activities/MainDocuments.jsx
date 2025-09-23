@@ -420,25 +420,30 @@ export default function MainDocuments() {
             data-accordion-mode="exclusive"
             className="group block w-full"
           >
-            <div
+            <button
+              type="button"
+              id="accordion-trigger-basicAccordion1"
               data-accordion-toggle
               data-accordion-target="#basicAccordion1"
+              aria-controls="basicAccordion1"
               aria-expanded="false"
               className="cursor-pointer font-medium text-primary "
             >
               <div className="flex items-center gap-2">
                 More Filter
-                <svg data-accordion-icon-close xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="3" stroke="#312895" className="size-4">
+                <svg aria-hidden="true" focusable="false" data-accordion-icon-close xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="3" stroke="#312895" className="size-4">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.4-7.5h-15" />
                 </svg>
-                <svg data-accordion-icon-open xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="3" stroke="#312895" className="size-4">
+                <svg aria-hidden="true" focusable="false" data-accordion-icon-open xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="3" stroke="#312895" className="size-4">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" />
                 </svg>
               </div>
-            </div>
+            </button>
 
             <div
               id="basicAccordion1"
+              role="region"
+              aria-labelledby="accordion-trigger-basicAccordion1"
               className="overflow-hidden transition-all duration-300 border-b border-slate-200 pl-1 pr-1"
             >
               <div className="grid grid-cols-1 sm:grid-cols-3 py-2 gap-2">
@@ -448,19 +453,23 @@ export default function MainDocuments() {
                   </label>
                   <ReusableDropdown
                     icon={true}
+                    id="RSO"
+                    placeholder={"Select GPOA Option"}
                     options={["All", "GPOA Activities", "Non-GPOA Activities"]}
                     showAllOption={false}
                     onChange={(e) => handleGPOA(e.target.value)}
-                    value={gpoa.label || "All"}
+                    value={gpoa.label}
                     buttonClass="border-primary  text-primary "
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label htmlFor="RSO" className="text-sm font-medium text-gray-600">
+                  <label htmlFor="sort" className="text-sm font-medium text-gray-600">
                     Sort By
                   </label>
                   <ReusableDropdown
                     icon={true}
+                    id="sort"
+                    placeholder={"Select Sort Option"}
                     options={["All", "A-Z", "Most Joined", "Recently Added"]}
                     showAllOption={false}
                     onChange={(e) => handleSorted(e.target.value)}
@@ -474,6 +483,8 @@ export default function MainDocuments() {
                   </label>
                   <ReusableDropdown
                     id="RSOType"
+                    icon={true}
+                    placeholder={"Select RSO Type"}
                     options={["All", "Professional & Affiliates", "Professional", "Special Interest", "Probationary"]}
                     showAllOption={false}
                     onChange={(e) => handleRSOType(e.target.value)}
@@ -487,6 +498,7 @@ export default function MainDocuments() {
                   </label>
                   <ReusableDropdown
                     id="college"
+                    placeholder={"Select College"}
                     options={["All", "CCIT", "CBA", "COA", "COE", "CAH", "CEAS", "CTHM"]}
                     value={college}
                     showAllOption={false}

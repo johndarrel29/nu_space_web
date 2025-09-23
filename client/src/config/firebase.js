@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken, isSupported, onMessage } from "firebase/messaging";
 import { toast } from "react-toastify";
+import { useFCMStore } from "../store";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBAOT2Dezhk1_w-y44-wHEOv_TlJojBjZ0",
@@ -15,6 +16,8 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+
+const fcmStore = useFCMStore.getState();
 
 export const initFCM = async () => {
     try {
@@ -38,6 +41,7 @@ export const initFCM = async () => {
 
         if (currentToken) {
             console.log('FCM Token:', currentToken);
+            fcmStore.setDeviceToken(currentToken);
             return { messaging, token: currentToken };
         } else {
             console.warn('No registration token available. Request permission to generate one.');

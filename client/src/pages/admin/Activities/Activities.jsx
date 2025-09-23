@@ -1,14 +1,17 @@
+import { DateTimePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from "dayjs";
+import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { DropIn } from "../../../animations/DropIn";
 import defaultPic from '../../../assets/images/default-picture.png';
 import DefaultPicture from "../../../assets/images/default-profile.jpg";
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from "framer-motion";
-import { ReusableTable, Backdrop, Button, TabSelector, UploadBatchModal, TextInput, CloseButton } from '../../../components';
-import { DropIn } from "../../../animations/DropIn";
-import { useModal, useActivities, useAdminDocuments, useRSOActivities } from "../../../hooks";
+import { Backdrop, Button, CloseButton, ReusableTable, TabSelector, TextInput, UploadBatchModal } from '../../../components';
 import { useAuth } from "../../../context/AuthContext";
-import { toast } from 'react-toastify';
-import { useUserStoreWithAuth, useDocumentStore, useActivityStatusStore } from '../../../store';
+import { useActivities, useAdminActivity, useAdminDocuments, useModal, useRSOActivities } from "../../../hooks";
+import { useActivityStatusStore, useDocumentStore, useUserStoreWithAuth } from '../../../store';
 
 // TODO: Replace static participants and forms data with live backend data when available.
 
@@ -27,6 +30,20 @@ export default function Activities() {
     activityDocumentsError,
     activityDocumentsErrorMessage,
   } = useRSOActivities({ activityId });
+
+  const {
+    // set pre-document deadline
+    preDocumentDeadlineMutate,
+    isSettingPreDocumentDeadline,
+    isErrorSettingPreDocumentDeadline,
+    isPreDocumentDeadlineSet,
+
+    // set post-document deadline
+    postDocumentDeadlineMutate,
+    isSettingPostDocumentDeadline,
+    isErrorSettingPostDocumentDeadline,
+    isPostDocumentDeadlineSet,
+  } = useAdminActivity();
 
   console.log("Activity documents :", activityDocuments);
   // Modal control
@@ -48,6 +65,8 @@ export default function Activities() {
   const [filter, setFilter] = useState("All");
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [remarks, setRemarks] = useState("");
+  const [preDocDeadline, setPreDocDeadline] = useState(null);
+  const [postDocDeadline, setPostDocDeadline] = useState(null);
   const { isUserRSORepresentative, isUserAdmin, isCoordinator } = useUserStoreWithAuth();
   const {
     refetchSetAccreditationDeadline,
@@ -86,6 +105,7 @@ export default function Activities() {
     loading: isCreatingLoading,
 
     viewActivityData,
+    refetchViewActivity,
 
     declineActivityMutation,
     declinedActivity,
@@ -102,6 +122,53 @@ export default function Activities() {
 
   const activity = viewActivityData || {};
   console.log("Activity data:", activity);
+
+  const handleDateSelected = () => {
+
+    if (preDocDeadline) {
+      preDocumentDeadlineMutate({
+        activityId: activityId,
+        preDocumentDeadline: dayjs(preDocDeadline).toISOString(),
+      },
+        {
+          onSuccess: () => {
+            console.log('Pre-document deadline updated successfully');
+            toast.success('Pre-document deadline updated successfully');
+            refetchViewActivity();
+            // clear the select state and the date state
+            setPreDocDeadline(null);
+            setPostDocDeadline(null);
+            handleCloseModal();
+          },
+          onError: (error) => {
+            console.error('Error updating pre-document deadline:', error);
+            toast.error(error.message || 'Error updating pre-document deadline');
+          }
+        }
+      );
+    }
+    if (postDocDeadline) {
+      postDocumentDeadlineMutate({
+        activityId: activityId,
+        postDocumentDeadline: dayjs(postDocDeadline).toISOString(),
+      },
+        {
+          onSuccess: () => {
+            toast.success('Post-document deadline updated successfully');
+            // clear the select state and the date state
+            refetchViewActivity();
+            setPreDocDeadline(null);
+            setPostDocDeadline(null);
+            handleCloseModal();
+          },
+          onError: (error) => {
+            console.error('Error updating post-document deadline:', error);
+            toast.error(error.message || 'Error updating post-document deadline');
+          }
+        }
+      );
+    }
+  }
 
   // Ensure formsUsed is always an array to prevent runtime errors when mapping
   const mapFormsUsed = Array.isArray(activity?.formsUsed)
@@ -373,12 +440,15 @@ export default function Activities() {
           <div>
             {/* Banner: Pre and Post Documents Opened */}
             {(activity?.Activity_pre_document_deadline?.date_status === "ongoing" || activity?.Activity_post_document_deadline?.date_status === "ongoing") && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg px-6 py-4 shadow-sm flex items-start gap-3 mb-6">
+              <div
+                className={`${!isUserRSORepresentative ? "cursor-pointer" : ""} bg-blue-50 border border-blue-200 rounded-lg px-6 py-4 shadow-sm flex items-start gap-3 mb-6 group`}
+                onClick={!isUserRSORepresentative ? (() => { openModal(); setModalType("banner"); }) : null}
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
                 </svg>
                 <div className="flex flex-col">
-                  <span className="text-blue-800 font-semibold text-base">Pre and Post Documents Opened</span>
+                  <span className={`text-blue-800 font-semibold text-base ${!isUserRSORepresentative ? "group-hover:underline" : ""}`}>Pre and Post Documents Opened</span>
                   {/* <span className="text-blue-700 text-sm">You can now upload pre and post documents for this activity.</span> */}
                   <div className='flex items-center gap-2'>
                     <span className="text-blue-700 text-xs mt-1"><span className='font-semibold'>Pre Documents</span> from: {activity?.Activity_pre_document_deadline ? formatDate(activity.Activity_pre_document_deadline.start_deadline) : "No deadline set"}</span>
@@ -677,6 +747,86 @@ export default function Activities() {
                         Approve
                       </Button>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+
+        {/* Empty Modal for Banner Click */}
+        {modalType === "banner" && (
+          <>
+            <Backdrop className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" />
+            <motion.div
+              className="fixed inset-0 z-50 w-screen overflow-auto"
+              variants={DropIn}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              <div className="fixed inset-0 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 w-1/3 shadow-xl border border-mid-gray">
+
+                  <div className='flex justify-between items-center mb-6'>
+                    <h2 className="text-lg font-medium text-[#312895]">Set Activity Deadlines</h2>
+                    <CloseButton onClick={handleCloseModal} />
+                  </div>
+                  {/* Deadline fields */}
+                  <div className='space-y-4'>
+                    <div className="w-full">
+                      <div className="mb-4 w-full">
+                        <label htmlFor="activity-select" className="block text-sm font-medium text-gray-700">Activity Name</label>
+                        <div className='px-2 py-2 border border-gray-300 rounded-md mt-1 bg-gray-50'>
+                          <h1>{activity?.Activity_name || "No Activity Selected"}</h1>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="w-full">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Pre Document Deadline</label>
+                          <LocalizationProvider dateAdapter={AdapterDayjs}>
+                            <DateTimePicker
+                              value={preDocDeadline}
+                              onChange={setPreDocDeadline}
+                              className="w-full"
+                              slotProps={{
+                                textField: {
+                                  fullWidth: true,
+                                  size: 'small',
+                                  variant: 'outlined'
+                                }
+                              }}
+                            />
+                          </LocalizationProvider>
+                        </div>
+                        <div className="w-full">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Post Document Deadline</label>
+                          <LocalizationProvider dateAdapter={AdapterDayjs}>
+                            <DateTimePicker
+                              value={postDocDeadline}
+                              onChange={setPostDocDeadline}
+                              className="w-full"
+                              slotProps={{
+                                textField: {
+                                  fullWidth: true,
+                                  size: 'small',
+                                  variant: 'outlined'
+                                }
+                              }}
+                            />
+                          </LocalizationProvider>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Button to log deadlines */}
+                  <div className="flex justify-end mt-6 gap-3">
+                    <Button
+                      onClick={() => handleDateSelected()}
+                      style="primary"
+                    >
+                      Set Deadlines
+                    </Button>
                   </div>
                 </div>
               </div>

@@ -45,7 +45,7 @@ const fetchApplicants = async () => {
     }
 }
 
-const approveUserMembership = async ({ id }) => {
+const approveUserMembership = async ({ id, approval }) => {
     try {
         const token = useTokenStore.getState().getToken();
 
@@ -57,7 +57,7 @@ const approveUserMembership = async ({ id }) => {
                 Authorization: token,
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ approval: true }),
+            body: JSON.stringify({ approval }),
         });
 
         if (!response.ok) {

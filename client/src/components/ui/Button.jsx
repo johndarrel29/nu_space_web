@@ -1,8 +1,15 @@
 
 import classNames from "classnames";
+import { useOnlineStatus } from "../../hooks";
 
 function Button({ children, onClick, style, className, disabled, type = "button" }) {
   const isSecondary = style === "secondary";
+  const isOnline = useOnlineStatus();
+
+  // If offline, disable the button
+  if (!isOnline) {
+    disabled = true;
+  }
 
   // Base variants
   const primaryBase = "bg-[#312895] text-white font-bold py-2 px-4 rounded-md text-center transition duration-200 ease-in-out";

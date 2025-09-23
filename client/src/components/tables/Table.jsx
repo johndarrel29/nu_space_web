@@ -258,7 +258,7 @@ const Table = React.memo(({ searchQuery, selectedRole }) => {
           Showing {filteredRecords?.length} result{filteredRecords?.length !== 1 ? "s" : ""}
           {searchQuery && ` of ${safeSearchQuery}`}
         </span>
-        <li className="flex justify-center ">
+        <div className="flex justify-center ">
           <select
             className={`w-24 h-10 rounded-md bg-white border border-mid-gray p-1 font-bold  ${npage > 0 ? "text-off-black" : "text-gray-400 opacity-50"}`}
             onChange={(e) => changePageNum(e.target.value)}
@@ -268,7 +268,7 @@ const Table = React.memo(({ searchQuery, selectedRole }) => {
             <option value="20">20 rows</option>
             <option value="50">50 rows</option>
           </select>
-        </li>
+        </div>
       </div>
       {console.log("Table Data:", tableData)}
       {error ? (
@@ -376,18 +376,18 @@ const Table = React.memo(({ searchQuery, selectedRole }) => {
 
       <div className='w-full bottom-20 mt-4'>
         <nav>
-          <ul className="flex justify-center space-x-2">
+          <div className="flex justify-center space-x-2">
 
-            <li className={`page-item mx-1 px-3 py-2 bg-white border border-mid-gray rounded-md font-semibold rounded ${currentPage === 1 || npage === 0 ? "text-gray-400" : "text-gray-800"}`}>
+            <div className={`page-item mx-1 px-3 py-2 bg-white border border-mid-gray rounded-md font-semibold rounded ${currentPage === 1 || npage === 0 ? "text-gray-600" : "text-gray-800"}`}>
               <button className='page-link' onClick={prePage}>Prev</button>
-            </li>
+            </div>
             <div className="px-4 py-2 font-semibold">
               {npage > 0 ? `${currentPage} of ${npage}` : "0 of 0"}
             </div>
-            <li className={`page-item mx-1 px-3 py-2 bg-white border border-mid-gray rounded-md font-semibold rounded ${currentPage === npage || npage === 0 ? "text-gray-400" : "text-gray-800"}`}>
+            <div className={`page-item mx-1 px-3 py-2 bg-white border border-mid-gray rounded-md font-semibold rounded ${currentPage === npage || npage === 0 ? "text-gray-600" : "text-gray-800"}`}>
               <button className='page-link' onClick={nextPage}>Next</button>
-            </li>
-          </ul>
+            </div>
+          </div>
         </nav>
       </div>
     </div>
