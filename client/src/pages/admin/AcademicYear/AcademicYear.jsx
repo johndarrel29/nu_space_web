@@ -210,7 +210,8 @@ export default function AcademicYear() {
 
         if (mode === 'edit') {
             console.log('active year id:', activeYear?._id);
-            editAcademicYear({ academicYearData: academicYearData, yearId: activeYear?._id },
+            // editAcademicYear({ academicYearData: academicYearData, yearId: activeYear?._id },
+            editAcademicYear({ academicYearData: academicYearData, yearId: yearId },
                 {
                     onSuccess: () => {
                         toast.success("Academic Year updated successfully");
