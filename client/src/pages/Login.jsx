@@ -1,15 +1,15 @@
-import style from '../css/Login.module.css';
 import classNames from 'classnames';
-import Background from "../assets/images/login-background.png";
+import { Outlet } from 'react-router-dom';
 import Logo from "../assets/images/NUSpace_new.png";
 import { Header } from "../components";
-import { Outlet } from 'react-router-dom';
+import style from '../css/Login.module.css';
 
 
 export default function Login() {
 
     return (
-        <div className={classNames(style.container, style.clearfix)}>
+        // <div className={classNames(style.container, style.clearfix)}>
+        <div className='flex h-screen'>
             <div className={`${style["left-container"]} w-full md:w-1/3 pt-6`}>
                 <div className={style.heading}>
                     <Header theme="dark" />

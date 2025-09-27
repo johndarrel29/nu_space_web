@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useTokenStore, useUserStoreWithAuth } from "../../store";
+import { useLocation } from "react-router-dom";
 
 // for rso fetch members (pure API helper)
 const fetchMembers = async () => {
@@ -91,6 +92,8 @@ const fetchRSODetailsRequest = async () => {
 function useRSODetails() {
     const { isUserRSORepresentative } = useUserStoreWithAuth();
     const queryClient = useQueryClient();
+    const location = useLocation();
+    const isAccount = location.pathname === '/account';
 
     useEffect(() => {
         if (!isUserRSORepresentative) {
@@ -105,7 +108,7 @@ function useRSODetails() {
         isError: isUpdateOfficerError,
         isSuccess: isUpdateOfficerSuccess,
     } = useMutation({
-        enabled: isUserRSORepresentative,
+        enabled: isUserRSORepresentative && isAccount,
         mutationFn: updateOfficer,
         onSuccess: () => queryClient.invalidateQueries(["membersData"]),
     });
@@ -119,7 +122,7 @@ function useRSODetails() {
     } = useQuery({
         queryKey: ["membersData"],
         queryFn: fetchMembers,
-        enabled: isUserRSORepresentative,
+        enabled: isUserRSORepresentative && isAccount,
         onSuccess: (data) => queryClient.setQueryData(["membersData"], data),
     });
 
@@ -130,7 +133,7 @@ function useRSODetails() {
         isSuccess: isCreateOfficerSuccess,
     } = useMutation({
         mutationFn: createOfficer,
-        enabled: isUserRSORepresentative,
+        enabled: isUserRSORepresentative && isAccount,
         onSuccess: () => queryClient.invalidateQueries(["membersData"]),
     });
 
@@ -142,6 +145,11 @@ function useRSODetails() {
     } = useQuery({
         queryKey: ["rsoDetails"],
         queryFn: fetchRSODetailsRequest,
+        staleTime: Infinity,
+        cacheTime: Infinity,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
         enabled: isUserRSORepresentative,
     });
 

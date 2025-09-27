@@ -2,6 +2,7 @@ import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "../../context/AuthContext";
 import { useUserStoreWithAuth } from '../../store';
 import { useTokenStore } from "../../store/tokenStore";
+import { useLocation } from "react-router-dom";
 
 // admin fetch activity with parameters
 const fetchAdminActivity = async ({ queryKey, pageParam = 1 }) => {
@@ -197,6 +198,8 @@ function useAdminActivity({
 } = {}) {
     const { user } = useAuth();
     const { isUserAdmin, isCoordinator } = useUserStoreWithAuth();
+    const location = useLocation();
+    const isActivities = location.pathname.includes("activities") || location.pathname.includes("rsos");
 
     const filter = {
         query: debouncedQuery,
@@ -220,7 +223,7 @@ function useAdminActivity({
         isFetchingNextPage,
     } = useInfiniteQuery({
         queryKey: ["adminActivities", filter],
-        enabled: isUserAdmin || isCoordinator,
+        enabled: (isUserAdmin || isCoordinator) && isActivities,
         queryFn: fetchAdminActivity,
         // enabled: !!debouncedQuery || !!sorted || !!RSO || !!RSOType || !!college,
         getNextPageParam: (lastPage) => lastPage.nextPage,
@@ -233,7 +236,7 @@ function useAdminActivity({
         isSuccess: isActivityApproved,
     } = useMutation({
         mutationFn: approveActivity,
-        enabled: isUserAdmin || isCoordinator,
+        enabled: (isUserAdmin || isCoordinator) && isActivities,
         onSuccess: () => {
             console.log("Activity approved successfully");
         },
@@ -249,7 +252,7 @@ function useAdminActivity({
         isSuccess: isActivityRejected,
     } = useMutation({
         mutationFn: rejectActivity,
-        enabled: isUserAdmin || isCoordinator,
+        enabled: (isUserAdmin || isCoordinator) && isActivities,
         onSuccess: () => {
             console.log("Activity rejected successfully");
         },
@@ -265,7 +268,7 @@ function useAdminActivity({
         isSuccess: isPreDocumentDeadlineSet,
     } = useMutation({
         mutationFn: preDocumentDeadlineRequest,
-        enabled: isUserAdmin || isCoordinator,
+        enabled: (isUserAdmin || isCoordinator) && isActivities,
     });
 
     const {
@@ -275,7 +278,7 @@ function useAdminActivity({
         isSuccess: isPostDocumentDeadlineSet,
     } = useMutation({
         mutationFn: postDocumentDeadlineRequest,
-        enabled: isUserAdmin || isCoordinator,
+        enabled: (isUserAdmin || isCoordinator) && isActivities,
     });
 
     return {

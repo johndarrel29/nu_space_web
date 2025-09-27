@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from '../../context/AuthContext';
 import { useTokenStore, useUserStoreWithAuth } from "../../store";
 
@@ -423,7 +424,7 @@ const fetchActivityPostDocument = async ({ queryKey }) => {
 }
 
 function useAdminDocuments({
-
+    rsoID = "",
     documentId = "",
     page = 1,
     limit = 10,
@@ -441,9 +442,12 @@ function useAdminDocuments({
     documentType = "",
     templateSearch = ""
 } = {}) {
+
     const { user } = useAuth();
     const { isUserAdmin, isCoordinator } = useUserStoreWithAuth();
     const queryClient = useQueryClient();
+    const location = useLocation();
+    const isAdminDocuments = location.pathname === '/admin-documents';
 
     console.log("received documentid ", documentId)
 
@@ -483,7 +487,7 @@ function useAdminDocuments({
     } = useQuery({
         queryKey: ["documentTemplate", templateFilters],
         queryFn: fetchDocumentTemplate,
-        enabled: isUserAdmin || isCoordinator,
+        enabled: (isUserAdmin || isCoordinator) && isAdminDocuments,
     });
 
     const {
@@ -502,12 +506,7 @@ function useAdminDocuments({
         onError: (error) => {
             console.error("Error fetching all documents:", error);
         },
-        // enabled: isUserAdmin,
-        enabled: (() => {
-            const isEnabled = isUserAdmin || isCoordinator;
-            console.log("Query enabled:", isEnabled);
-            return isEnabled;
-        })(),
+        enabled: (isUserAdmin || isCoordinator) && isAdminDocuments,
     });
 
     const {
@@ -517,7 +516,7 @@ function useAdminDocuments({
         refetch: refetchSetAccreditationDeadline
     } = useMutation({
         mutationFn: setAccreditationDeadlineRequest,
-        enabled: isUserAdmin || isCoordinator,
+        enabled: (isUserAdmin || isCoordinator) && isAdminDocuments,
         onSuccess: (data) => {
             console.log("Accreditation deadline set successfully:", data);
         },
@@ -572,7 +571,7 @@ function useAdminDocuments({
         refetch: refetchDeleteSingleDocumentTemplate
     } = useMutation({
         mutationFn: deleteSingleDocumentTemplateRequest,
-        enabled: isUserAdmin || isCoordinator,
+        enabled: (isUserAdmin || isCoordinator) && isAdminDocuments,
         onSuccess: (data) => {
             console.log("Document template deleted successfully:", data);
         },
@@ -589,7 +588,7 @@ function useAdminDocuments({
     } = useMutation({
         queryKey: ['deleteDocumentTemplate'],
         mutationFn: deleteDocumentTemplateRequest,
-        enabled: isUserAdmin || isCoordinator,
+        enabled: (isUserAdmin || isCoordinator) && isAdminDocuments,
         onSuccess: (data) => {
             console.log("Document template deleted successfully:", data);
         },
@@ -605,7 +604,7 @@ function useAdminDocuments({
         refetch: refetchUploadDocumentTemplate
     } = useMutation({
         mutationFn: uploadDocumentTemplateRequest,
-        enabled: isUserAdmin || isCoordinator,
+        enabled: (isUserAdmin || isCoordinator) && isAdminDocuments,
         onSuccess: (data) => {
             console.log("Document template uploaded successfully:", data);
         },
@@ -623,6 +622,34 @@ function useAdminDocuments({
         queryKey: ["pdfSignedUrl", documentId],
         queryFn: () => fetchPDFSignedUrlRequest(documentId),
         enabled: !!documentId,
+    });
+
+    //Query to approve RSO documents
+    const {
+        mutate: approveDocumentMutate,
+        data: approveData,
+        isLoading: approveLoading,
+        isError: approveError,
+        error: approveQueryError,
+    } = useMutation({
+        mutationFn: ({ documentId, reviewedById }) => approveRSODocument(documentId, reviewedById),
+        onSuccess: () => {
+            queryClient.invalidateQueries(["rso-documents", rsoID]); // Refetch updated documents
+        },
+    });
+
+    //Query to reject RSO documents
+    const {
+        mutate: rejectDocumentMutate,
+        data: rejectData,
+        isLoading: rejectLoading,
+        isError: rejectError,
+        error: rejectQueryError,
+    } = useMutation({
+        mutationFn: ({ documentId, reviewedById }) => rejectRSODocument(documentId, reviewedById),
+        onSuccess: () => {
+            queryClient.invalidateQueries(["rso-documents", rsoID]); // Refetch updated documents
+        },
     });
 
     return {
@@ -688,7 +715,21 @@ function useAdminDocuments({
         ispdfSignedUrlError,
         pdfSignedUrlError,
         pdfSignedUrlData,
-        ispdfSignedUrlLoading
+        ispdfSignedUrlLoading,
+
+        // approve RSO documents
+        approveDocumentMutate,
+        approveData,
+        approveLoading,
+        approveError,
+        approveQueryError,
+
+        // reject RSO documents
+        rejectDocumentMutate,
+        rejectData,
+        rejectLoading,
+        rejectError,
+        rejectQueryError,
 
     };
 }

@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useUserStoreWithAuth } from '../../store';
 import { useTokenStore } from "../../store/tokenStore";
+import { useLocation } from "react-router-dom";
 
 // API call function
 const getAcademicYears = async () => {
@@ -118,6 +119,8 @@ const deleteAcademicYearRequest = async ({ yearId }) => {
 
 function useAdminAcademicYears() {
     const { isUserAdmin, isCoordinator } = useUserStoreWithAuth();
+    const location = useLocation();
+    const isAcademicYear = location.pathname.includes("academic-year");
 
     // custom hook to fetch academic years
     // admin only
@@ -132,7 +135,7 @@ function useAdminAcademicYears() {
     } = useQuery({
         queryKey: ["academicYears"],
         queryFn: getAcademicYears,
-        enabled: isUserAdmin || isCoordinator, // only run if user is admin or coordinator
+        enabled: (isUserAdmin || isCoordinator) && isAcademicYear, // only run if user is admin or coordinator and on academic-year route
     })
 
     const {
@@ -143,7 +146,7 @@ function useAdminAcademicYears() {
         isSuccess: isEditingAcademicYearSuccess,
     } = useMutation({
         mutationFn: editAcademicYearRequest,
-        enabled: isUserAdmin || isCoordinator,
+        enabled: (isUserAdmin || isCoordinator) && isAcademicYear,
         onSuccess: () => {
             refetchAcademicYears();
         },
@@ -160,7 +163,7 @@ function useAdminAcademicYears() {
         isSuccess: isDeletingAcademicYearSuccess,
     } = useMutation({
         mutationFn: deleteAcademicYearRequest,
-        enabled: isUserAdmin || isCoordinator,
+        enabled: (isUserAdmin || isCoordinator) && isAcademicYear,
         onSuccess: () => {
             refetchAcademicYears();
         },
@@ -177,7 +180,7 @@ function useAdminAcademicYears() {
         isSuccess: isCreatingAcademicYearSuccess,
     } = useMutation({
         mutationFn: createAcademicYearRequest,
-        enabled: isUserAdmin || isCoordinator,
+        enabled: (isUserAdmin || isCoordinator) && isAcademicYear,
         onSuccess: () => {
             refetchAcademicYears();
         },

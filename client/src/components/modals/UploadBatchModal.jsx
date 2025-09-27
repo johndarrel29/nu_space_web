@@ -1,9 +1,9 @@
-import { Button, CloseButton, ReusableDropdown } from '../../components';
 import { useCallback, useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { useDocumentManagement, useRSODocuments } from '../../hooks';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { Button, CloseButton, ReusableDropdown } from '../../components';
+import { useRSODocuments } from '../../hooks';
 
 // TODO: Implement forceful download of file to avoid redirects to file URL
 
@@ -16,10 +16,10 @@ function UploadBatchModal({ handleCloseModal, page, activityId }) {
     const [data, setData] = useState([]);
     // Add selectedTemplate state
     const [selectedTemplate, setSelectedTemplate] = useState([]);
-
-    const { documentTemplate } = useDocumentManagement({
+    const { documentTemplate } = useRSODocuments({
         documentFor: selectedTemplate
     });
+
 
     const {
         // uploadAccreditationDocument

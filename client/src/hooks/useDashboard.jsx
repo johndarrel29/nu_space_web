@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { useTokenStore } from "../store";
+import { useLocation } from "react-router-dom";
+import { useTokenStore, useUserStoreWithAuth } from "../store";
+
 
 const fetchAdminDocsRequest = async () => {
     try {
@@ -130,6 +132,7 @@ const fetchApplicantsRequest = async () => {
     try {
         const token = useTokenStore.getState().token;
 
+
         const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/dashboard/membership-applicants`, {
             method: "GET",
             headers: {
@@ -153,6 +156,10 @@ const fetchApplicantsRequest = async () => {
 
 
 const useDashboard = () => {
+    const location = useLocation();
+    const { isUserRSORepresentative, isUserAdmin, isCoordinator } = useUserStoreWithAuth();
+    const isDashboard = location.pathname === '/dashboard';
+
 
     const {
         data: adminDocs,
@@ -162,9 +169,12 @@ const useDashboard = () => {
     } = useQuery({
         queryKey: ['adminDocs'],
         queryFn: fetchAdminDocsRequest,
-        staleTime: 5 * 60 * 1000, // 5 minutes
+        staleTime: Infinity,
+        cacheTime: Infinity,
+        refetchOnMount: false,
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
+        enabled: isDashboard && (isUserAdmin || isCoordinator)
     });
 
     const {
@@ -175,9 +185,12 @@ const useDashboard = () => {
     } = useQuery({
         queryKey: ['accreditation'],
         queryFn: fetchAccreditationRequest,
-        staleTime: 5 * 60 * 1000,
+        staleTime: Infinity,
+        cacheTime: Infinity,
+        refetchOnMount: false,
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
+        enabled: isDashboard && (isUserAdmin || isCoordinator)
     });
 
     const {
@@ -188,9 +201,12 @@ const useDashboard = () => {
     } = useQuery({
         queryKey: ['activity'],
         queryFn: fetchActivityRequest,
-        staleTime: 5 * 60 * 1000,
+        staleTime: Infinity,
+        cacheTime: Infinity,
+        refetchOnMount: false,
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
+        enabled: isDashboard && isUserRSORepresentative
     });
 
     const {
@@ -201,9 +217,12 @@ const useDashboard = () => {
     } = useQuery({
         queryKey: ['createdActivities'],
         queryFn: fetchCreatedActivityRequest,
-        staleTime: 5 * 60 * 1000,
+        staleTime: Infinity,
+        cacheTime: Infinity,
+        refetchOnMount: false,
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
+        enabled: isDashboard && isUserRSORepresentative
     });
 
     const {
@@ -214,9 +233,12 @@ const useDashboard = () => {
     } = useQuery({
         queryKey: ['RSOMembers'],
         queryFn: fetchMembersRequest,
-        staleTime: 5 * 60 * 1000,
+        staleTime: Infinity,
+        cacheTime: Infinity,
+        refetchOnMount: false,
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
+        enabled: isDashboard && isUserRSORepresentative
     });
 
     const {
@@ -227,9 +249,12 @@ const useDashboard = () => {
     } = useQuery({
         queryKey: ['RSOApplicants'],
         queryFn: fetchApplicantsRequest,
-        staleTime: 5 * 60 * 1000,
+        staleTime: Infinity,
+        cacheTime: Infinity,
+        refetchOnMount: false,
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
+        enabled: isDashboard && isUserRSORepresentative
     });
 
     return {

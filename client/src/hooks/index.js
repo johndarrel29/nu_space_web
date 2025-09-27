@@ -1,25 +1,23 @@
+export { default as useAcademicYears } from './admin/useAdminAcademicYears';
+export { default as useActivities } from './useActivities';
+export { default as useAnnouncements } from './useAnnouncements';
+export { default as useDashboard } from './useDashboard';
+export { default as useKeyBinding } from './useKeyBinding';
 export { default as useModal } from './useModal';
-export { default as useTagSelector } from './useTagSelector';
+export { default as useNotification } from './useNotification';
+export { default as useOnlineStatus } from './useOnlineStatus';
 export { default as useRSO } from './useRSO';
 export { default as useSearchQuery } from './useSearchQuery';
-export { default as useActivities } from './useActivities';
-export { default as useUser } from './useUser';
-export { default as useDocumentManagement } from './useDocumentManagement';
-export { default as useKeyBinding } from './useKeyBinding';
-export { default as useUserProfile } from './useUserProfile';
-export { default as useTags } from './useTags';
-export { default as useAnnouncements } from './useAnnouncements';
-export { default as useSurvey } from './useSurvey';
-export { default as useAcademicYears } from './admin/useAdminAcademicYears';
-export { default as useDashboard } from './useDashboard';
-export { default as useNotification } from './useNotification';
 export { default as useSignature } from './useSignature';
-export { default as useOnlineStatus } from './useOnlineStatus';
+export { default as useTags } from './useTags';
+export { default as useTagSelector } from './useTagSelector';
+export { default as useUserProfile } from './useUserProfile';
 
-export * from './login';
 export * from './admin';
 export * from './avp';
 export * from './coordinator';
 export * from './director';
+export * from './login';
 export * from './rso';
 export * from './superadmin';
+

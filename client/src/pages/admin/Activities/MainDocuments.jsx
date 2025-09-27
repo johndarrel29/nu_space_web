@@ -16,7 +16,7 @@ import {
   ReusableDropdown,
   Searchbar
 } from "../../../components";
-import { useActivities, useAdminActivity, useRSO, useRSOActivities, useUser } from "../../../hooks";
+import { useAdminActivity, useRSO, useRSOActivities } from "../../../hooks";
 import { useUserStoreWithAuth } from '../../../store';
 
 // fix the rso path first to manipulate the activity data.
@@ -77,9 +77,7 @@ export default function MainDocuments() {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
-  const { data } = useUser();
   const { organizations } = useRSO();
-  const activityId = data?.activityId
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [sorted, setSorted] = useState("All");
   const [RSO, setRSO] = useState("All");
@@ -95,6 +93,8 @@ export default function MainDocuments() {
   const [preDocDeadline, setPreDocDeadline] = useState(null);
   const [postDocDeadline, setPostDocDeadline] = useState(null);
   const [selectedActivityId, setSelectedActivityId] = useState(null);
+
+
 
   // revised rso route
   const {
@@ -145,27 +145,10 @@ export default function MainDocuments() {
     isGPOA: gpoa.value,
   });
 
-  const {
-    activities,
-    loading,
-    error,
-    fetchActivity,
-    fetchLocalActivities,
-    adminActivity,
-
-    localActivities,
-    isLocalActivitiesLoading,
-    isLocalActivitiesError,
-    localActivitiesError,
-    refetchLocalActivities,
-    isLocalActivitiesSuccess,
-  } = useActivities(activityId, debouncedQuery, sorted, RSO, RSOType, college);
 
   const allActivities = adminPaginatedActivities?.pages?.flatMap(page => page?.activities || []) || [];
   console.log("Admin paginated activities:", adminPaginatedActivities?.pages?.[0]?.hasNextPage);
 
-
-  const rso = (organizations ?? []).map((orgs) => orgs.RSO_acronym);
 
   // set document error based on user role
   useEffect(() => {
@@ -514,7 +497,7 @@ export default function MainDocuments() {
       </div>
 
       {/* Activity Cards Section */}
-      {(isUserRSORepresentative ? isLocalActivitiesLoading : isAdminActivitiesLoading) ? (
+      {(isUserRSORepresentative ? null : isAdminActivitiesLoading) ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           <ActivitySkeleton count={8} />
         </div>
@@ -587,7 +570,7 @@ export default function MainDocuments() {
               )}
 
             </>
-          ) : (isLocalActivitiesLoading || isLocalActivityRefetching || isAdminActivitiesLoading || isAdminActivitiesFetching) ? (
+          ) : (isLocalActivityRefetching || isAdminActivitiesLoading || isAdminActivitiesFetching) ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               <ActivitySkeleton count={8} />
             </div>

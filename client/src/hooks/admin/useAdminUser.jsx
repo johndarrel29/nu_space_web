@@ -4,6 +4,7 @@ import { useUserStoreWithAuth } from '../../store';
 import { useAuth } from "../../context/AuthContext";
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
 
 // also include coordinator to allow edits to this path
 
@@ -123,10 +124,13 @@ const fetchAdminProfile = async () => {
 
 }
 
+
 function useAdminUser() {
     const { isUserAdmin, isUserCoordinator } = useUserStoreWithAuth();
     const { user } = useAuth();
     const queryClient = useQueryClient();
+    const location = useLocation();
+    const isUsersPage = location.pathname === '/users';
 
     useEffect(() => {
         if (!isUserAdmin && !isUserCoordinator) {
@@ -150,7 +154,7 @@ function useAdminUser() {
         // retry: 1,
         // staleTime: 0,
         // cacheTime: 0,
-        enabled: isUserAdmin || isUserCoordinator, // Only fetch if the user is an admin or coordinator
+        enabled: (isUserAdmin || isUserCoordinator) && isUsersPage, // Only fetch if the user is an admin or coordinator and on /users
     });
 
     const {
@@ -169,7 +173,7 @@ function useAdminUser() {
         onError: (error) => {
             console.error("Error updating user role:", error);
         },
-        enabled: isUserAdmin || isUserCoordinator,
+        enabled: (isUserAdmin || isUserCoordinator) && isUsersPage,
     });
 
     const {
@@ -187,7 +191,7 @@ function useAdminUser() {
         onError: (error) => {
             console.error("Error deleting user:", error);
         },
-        enabled: isUserAdmin || isUserCoordinator,
+        enabled: (isUserAdmin || isUserCoordinator) && isUsersPage,
     });
 
     const {
@@ -202,7 +206,7 @@ function useAdminUser() {
         queryFn: fetchAdminProfile,
         refetchOnWindowFocus: false,
         retry: false,
-        enabled: isUserAdmin || isUserCoordinator,
+        enabled: (isUserAdmin || isUserCoordinator) && isUsersPage,
     });
 
     return {

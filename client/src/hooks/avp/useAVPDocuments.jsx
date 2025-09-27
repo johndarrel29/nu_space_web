@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useTokenStore, useUserStoreWithAuth } from '../../store';
+import { useLocation } from "react-router-dom";
 
 const getAVPDocuments = async ({ queryKey }) => {
     try {
@@ -132,8 +133,11 @@ function useAVPDocuments({
     isGPOA = "All",
     page = 1,
 } = {}) {
+
     const { isAVP } = useUserStoreWithAuth();
     const queryClient = useQueryClient();
+    const location = useLocation();
+    const isAdminDocumentsPage = location.pathname === '/admin-documents';
 
     const filter = {
         query: debouncedQuery,
@@ -163,7 +167,7 @@ function useAVPDocuments({
     } = useQuery({
         queryKey: ["avpDocuments"],
         queryFn: getAVPDocuments,
-        enabled: isAVP,
+        enabled: isAVP && isAdminDocumentsPage,
     });
 
     const {
@@ -177,7 +181,7 @@ function useAVPDocuments({
             // Invalidate and refetch
             refetchDocuments();
         },
-        enabled: isAVP,
+        enabled: isAVP && isAdminDocumentsPage,
     });
 
     const {
@@ -189,7 +193,7 @@ function useAVPDocuments({
     } = useQuery({
         queryKey: ['avpActivityDocuments', filter],
         queryFn: getAVPActivityDocumentsRequest,
-        enabled: isAVP,
+        enabled: isAVP && isAdminDocumentsPage,
     });
 
     return {

@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import DefaultPicture from "../../assets/images/default-profile.jpg";
 import blueLogoText from "../../assets/images/NUSpace_blue.png";
 import whiteLogoText from "../../assets/images/NUSpace_new.png";
-import { Backdrop, Breadcrumb, Button, SidebarButton } from "../../components";
+import { Backdrop, Breadcrumb, Button, ProfileInitials, SidebarButton } from "../../components";
 import { useAuth } from "../../context/AuthContext";
 import { useSidebar } from "../../context/SidebarContext";
 import style from "../../css/Sidebar.module.css";
@@ -34,6 +34,7 @@ function MainLayout({ children }) {
   const rsoID = selectedRSOStore((state) => state.selectedRSO);
   const rsoStatus = selectedRSOStatusStore((state) => state.selectedRSOStatus);
   const activityStatus = useActivityStatusStore((state) => state.activityStatus);
+
 
   const {
     // approve activity
@@ -502,9 +503,7 @@ function MainLayout({ children }) {
                       />
                     ) :
                       (isUserAdmin || isSuperAdmin || isCoordinator || isDirector || isAVP) ? (
-                        <div>
-                          <svg xmlns="http://www.w3.org/2000/svg" className="size-8 fill-gray-700" viewBox="0 0 512 512"><path d="M399 384.2C376.9 345.8 335.4 320 288 320l-64 0c-47.4 0-88.9 25.8-111 64.2c35.2 39.2 86.2 63.8 143 63.8s107.8-24.7 143-63.8zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zm256 16a72 72 0 1 0 0-144 72 72 0 1 0 0 144z" /></svg>
-                        </div>
+                        <ProfileInitials firstName={profileData?.firstName} lastName={profileData?.lastName} />
                       )
                         :
                         (
@@ -531,7 +530,7 @@ function MainLayout({ children }) {
                             </div>
                           ) :
                             (isUserAdmin || isSuperAdmin || isCoordinator || isDirector || isAVP) ? (
-                              <svg xmlns="http://www.w3.org/2000/svg" className="size-8 fill-gray-700" viewBox="0 0 512 512"><path d="M399 384.2C376.9 345.8 335.4 320 288 320l-64 0c-47.4 0-88.9 25.8-111 64.2c35.2 39.2 86.2 63.8 143 63.8s107.8-24.7 143-63.8zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zm256 16a72 72 0 1 0 0-144 72 72 0 1 0 0 144z" /></svg>
+                              <ProfileInitials firstName={profileData?.firstName} lastName={profileData?.lastName} />
 
                             ) : (
                               <div className="rounded-full h-8 w-8 bg-gray-200">

@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useUserStoreWithAuth } from '../../store';
 import { useTokenStore } from "../../store/tokenStore";
+import { useLocation } from "react-router-dom";
 
 const fetchAllForms = async ({ queryKey }) => {
     try {
@@ -140,6 +141,9 @@ function useAdminCentralizedForms({
 } = {}) {
     const token = useTokenStore.getState().getToken();
     const { isUserAdmin, isCoordinator, isUserRSORepresentative } = useUserStoreWithAuth();
+    const location = useLocation();
+
+    const isForms = location.pathname.includes("forms") || location.pathname.includes("form");
 
     console.log(" useAdminCentralizedForms has been called ", { formId });
 
@@ -158,7 +162,7 @@ function useAdminCentralizedForms({
         queryKey: ["admin-centralized-forms", filter],
         queryFn: fetchAllForms,
         staleTime: 60000,
-        enabled: isUserAdmin || isCoordinator, // only run if user is admin or coordinator
+        enabled: (isUserAdmin || isCoordinator) && isForms, // only run if user is admin or coordinator and on forms route
     });
 
     const {
@@ -168,7 +172,7 @@ function useAdminCentralizedForms({
         error: createFormError
     } = useMutation({
         mutationFn: createCentralizedForm,
-        enabled: !!token && (isUserAdmin || isCoordinator),
+        enabled: !!token && (isUserAdmin || isCoordinator) && isForms,
         onSuccess: () => {
             // Invalidate and refetch
             refetchAllForms();
@@ -186,7 +190,7 @@ function useAdminCentralizedForms({
     } = useQuery({
         queryKey: ["admin-centralized-form", formId],
         queryFn: () => fetchSpecificForms(formId),
-        enabled: !!formId && (isUserAdmin || isCoordinator), // only run if formId is provided and user is admin or coordinator
+        enabled: !!formId && (isUserAdmin || isCoordinator) && isForms, // only run if formId is provided, user is admin/coordinator, and on forms route
     });
 
     const {
@@ -196,7 +200,7 @@ function useAdminCentralizedForms({
         error: editFormError
     } = useMutation({
         mutationFn: editCentralizedForm,
-        enabled: isUserAdmin || isCoordinator,
+        enabled: (isUserAdmin || isCoordinator) && isForms,
     });
 
     const {
@@ -206,7 +210,7 @@ function useAdminCentralizedForms({
         error: deleteFormError
     } = useMutation({
         mutationFn: deleteCentralizedForm,
-        enabled: isUserAdmin || isCoordinator,
+        enabled: (isUserAdmin || isCoordinator) && isForms,
     });
 
     return {

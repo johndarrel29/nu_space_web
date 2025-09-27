@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTokenStore } from "../../store/tokenStore";
 import { useUserStoreWithAuth } from '../../store';
 import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 // Create RSO function - clean implementation for React Query
 const createRSO = async (newOrg) => {
@@ -403,6 +404,8 @@ function useAdminRSO({
 } = {}) {
     const queryClient = useQueryClient();
     const { isUserAdmin, isUserCoordinator } = useUserStoreWithAuth();
+    const location = useLocation();
+    const isRSOsPage = location.pathname.startsWith('/rsos');
 
     console.log("id is ", rsoID);
 
@@ -440,7 +443,7 @@ function useAdminRSO({
         onError: (error) => {
             console.error("Error creating RSO:", error);
         },
-        enabled: isUserAdmin || isUserCoordinator,
+        enabled: (isUserAdmin || isUserCoordinator) && isRSOsPage,
     });
 
     const {
@@ -459,7 +462,7 @@ function useAdminRSO({
         onError: (error) => {
             console.error("Error updating RSO:", error);
         },
-        enabled: isUserAdmin || isUserCoordinator,
+        enabled: (isUserAdmin || isUserCoordinator) && isRSOsPage,
     });
 
     const {
@@ -478,7 +481,7 @@ function useAdminRSO({
         onError: (error) => {
             console.error("Error updating RSO status:", error);
         },
-        enabled: isUserAdmin || isUserCoordinator,
+        enabled: (isUserAdmin || isUserCoordinator) && isRSOsPage,
     });
 
     const {
@@ -496,7 +499,7 @@ function useAdminRSO({
         onError: (error) => {
             console.error("Error deleting RSO:", error);
         },
-        enabled: isUserAdmin || isUserCoordinator,
+        enabled: (isUserAdmin || isUserCoordinator) && isRSOsPage,
     });
 
     const {
@@ -512,7 +515,7 @@ function useAdminRSO({
         retry: 1,
         staleTime: 0,
         cacheTime: 0,
-        enabled: isUserAdmin || isUserCoordinator,
+        enabled: (isUserAdmin || isUserCoordinator) && isRSOsPage,
     });
 
     const {
@@ -531,7 +534,7 @@ function useAdminRSO({
         onError: (error) => {
             console.error("Error updating membership date:", error);
         },
-        enabled: isUserAdmin || isUserCoordinator,
+        enabled: (isUserAdmin || isUserCoordinator) && isRSOsPage,
     });
 
 
@@ -549,7 +552,7 @@ function useAdminRSO({
         retry: 1,
         staleTime: 0,
         cacheTime: 0,
-        enabled: isUserAdmin || isUserCoordinator,
+        enabled: (isUserAdmin || isUserCoordinator) && isRSOsPage,
     });
 
     const {
@@ -568,7 +571,7 @@ function useAdminRSO({
         onError: (error) => {
             console.error("Error closing membership date:", error);
         },
-        enabled: isUserAdmin || isUserCoordinator,
+        enabled: (isUserAdmin || isUserCoordinator) && isRSOsPage,
     });
 
     const {
@@ -587,7 +590,7 @@ function useAdminRSO({
         onError: (error) => {
             console.error("Error extending membership date:", error);
         },
-        enabled: isUserAdmin || isUserCoordinator,
+        enabled: (isUserAdmin || isUserCoordinator) && isRSOsPage,
     });
 
     const {
@@ -618,7 +621,7 @@ function useAdminRSO({
         onError: (error) => {
             console.error("Error restoring RSO:", error);
         },
-        enabled: isUserAdmin || isUserCoordinator,
+        enabled: (isUserAdmin || isUserCoordinator) && isRSOsPage,
     });
 
     const {
@@ -637,7 +640,7 @@ function useAdminRSO({
         onError: (error) => {
             console.error("Error deleting RSO:", error);
         },
-        enabled: isUserAdmin || isUserCoordinator,
+        enabled: (isUserAdmin || isUserCoordinator) && isRSOsPage,
     });
 
     const {
@@ -656,7 +659,7 @@ function useAdminRSO({
         onError: (error) => {
             console.error("Error hard deleting RSO:", error);
         },
-        enabled: isUserAdmin || isUserCoordinator,
+        enabled: (isUserAdmin || isUserCoordinator) && isRSOsPage,
     });
 
     const {
@@ -674,7 +677,7 @@ function useAdminRSO({
         onError: (error) => {
             console.error("Error recognizing RSO:", error);
         },
-        enabled: isUserAdmin || isUserCoordinator,
+        enabled: (isUserAdmin || isUserCoordinator) && isRSOsPage,
     });
 
 

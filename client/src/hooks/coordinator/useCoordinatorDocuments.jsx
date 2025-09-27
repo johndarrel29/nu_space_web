@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useUserStoreWithAuth } from '../../store';
 import { useTokenStore } from "../../store/tokenStore";
+import { useLocation } from "react-router-dom";
 
 const getCoordinatorDocuments = async ({ queryKey }) => {
     try {
@@ -77,8 +78,11 @@ function useCoordinatorDocuments({
     documentType = "",
     yearId = "",
 } = {}) {
+
     const { isCoordinator } = useUserStoreWithAuth();
     const queryClient = useQueryClient();
+    const location = useLocation();
+    const isAdminDocumentsPage = location.pathname === '/admin-documents';
 
     const filters = {
         page,
@@ -110,7 +114,7 @@ function useCoordinatorDocuments({
     } = useQuery({
         queryKey: ["coordinatorDocuments", filters],
         queryFn: getCoordinatorDocuments,
-        enabled: isCoordinator
+        enabled: isCoordinator && isAdminDocumentsPage
     });
 
     const {
@@ -127,7 +131,7 @@ function useCoordinatorDocuments({
         onError: (error) => {
             console.error("Error approving document:", error);
         },
-        enabled: isCoordinator
+        enabled: isCoordinator && isAdminDocumentsPage
     });
 
     return {

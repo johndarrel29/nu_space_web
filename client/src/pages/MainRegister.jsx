@@ -1,21 +1,13 @@
 import { TextInput, Button } from "../components";
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useUser } from '../hooks';
 import { useEffect } from 'react';
 import { toast } from "react-toastify";
 
 //observation when multiple error occurs, the error doesnt display at all.
 
-export default function MainLogin() {
+function MainRegister() {
     const navigate = useNavigate();
-    const {
-        registerUserMutate,
-        isRegisterError,
-        isRegisterLoading,
-        isRegisterSuccess,
-        registerError,
-    } = useUser();
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [email, setEmail] = useState("");
@@ -24,11 +16,8 @@ export default function MainLogin() {
     const [error, setError] = useState("");
 
     useEffect(() => {
-        if (isRegisterSuccess) {
-            navigate("/");
-        } else if (isRegisterError) {
-            console.log("Registration error:", registerError.message);
-        }
+        // Simulate registration effect
+        console.log("[Static] Registration effect triggered");
     })
 
     async function handleRegister() {
@@ -47,8 +36,8 @@ export default function MainLogin() {
 
         setError("");
 
-
-        console.log("Registering user with", {
+        // Simulate registration
+        console.log("[Static] Registering user with", {
             firstName,
             lastName,
             email,
@@ -56,20 +45,13 @@ export default function MainLogin() {
             confirmpassword,
             platform: "web",
         });
-        await registerUserMutate({
-            firstName: firstName,
-            lastName: lastName,
-            email: email,
-            password: password,
-            confirmpassword: confirmpassword,
-            platform: "web",
-        });
+        // Simulate registration result
+        console.log("[Static] Registration attempted");
     }
 
     useEffect(() => {
-        if (isRegisterSuccess) {
-            toast.success("Registration successful!");
-        }
+        // Simulate registration success toast
+        console.log("[Static] Registration success effect");
     })
 
     return (
@@ -158,9 +140,9 @@ export default function MainLogin() {
                 />
             </div>
 
-            {(isRegisterError || error) && (
+            {error && (
                 <p className="mt-2 text-sm text-red-600">
-                    {error || isRegisterError && (registerError?.details[0]?.msg || registerError?.message || "Registration failed")}
+                    {error}
                 </p>
             )}
 
@@ -168,8 +150,10 @@ export default function MainLogin() {
                 className={"w-full mt-6"}
                 onClick={handleRegister}
             >
-                {isRegisterLoading ? "loading" : "Register"}
+                Register
             </Button>
         </div>
     );
 }
+
+export default MainRegister;

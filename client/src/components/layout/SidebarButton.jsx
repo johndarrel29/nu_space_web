@@ -1,14 +1,17 @@
-import style from '../../css/SidebarButton.module.css';
-import sidebar from '../../css/Sidebar.module.css';
 import classNames from 'classnames';
 import { useState } from 'react';
+import sidebar from '../../css/Sidebar.module.css';
+import style from '../../css/SidebarButton.module.css';
+import { useUserStoreWithAuth } from '../../store';
 
 
 function SidebarButton({ icon, text, onClick, active, iconPath, isCollapsed }) {
+  console.log("iscollapsed", isCollapsed);
 
 
   // State to track whether the button is active or not
   const [isActive, setIsActive] = useState(false);
+  const { isUserRSORepresentative, isUserAdmin, isCoordinator, isSuperAdmin } = useUserStoreWithAuth();
 
   // Toggle active state on click
   const handleClick = () => {
@@ -23,7 +26,7 @@ function SidebarButton({ icon, text, onClick, active, iconPath, isCollapsed }) {
 
     <div
       title={text}
-      className={(user?.role === "rso_representative") ?
+      className={(isUserRSORepresentative) ?
         (classNames(isCollapsed ? style.hoverDivRSOExpanded : style.hoverDivRSO, 'relative flex items-center gap-2', sidebar.button, {
           [sidebar.activeButtonRSO]: active
         })
@@ -38,16 +41,16 @@ function SidebarButton({ icon, text, onClick, active, iconPath, isCollapsed }) {
         viewBox="0 0 576 512"
         height="20"
         width="20"
-        className={classNames(user?.role === "rso_representative" ? `fill-primary flex-shrink-0` : `fill-white flex-shrink-0`,
-          { [sidebar.activeIcon]: user?.role === "rso_representative" && active })}
+        className={classNames(isUserRSORepresentative ? `fill-primary flex-shrink-0` : `fill-white flex-shrink-0`,
+          { [sidebar.activeIcon]: isUserRSORepresentative && active })}
       >
         <path
           d={iconPath} />
       </svg>
-      {user?.role === 'rso_representative' &&
+      {isUserRSORepresentative &&
         (<h1 className={isCollapsed ? style.sidebarTextExpandedRSO : (style.sidebarTextRSO && 'hidden')}>{text}</h1>)
       }
-      {(user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'coordinator') &&
+      {(isUserAdmin || isSuperAdmin || isCoordinator) &&
         (
           (<h1 className={isCollapsed ? style.sidebarTextExpanded : (style.sidebarText && 'hidden')}>
             {text}

@@ -58,6 +58,7 @@ export default function Dashboard() {
   } = useSignature({ id: adminProfile?.user?._id || null });
 
 
+  console.log("Dashboard page mounted")
 
 
   console.log("get signature data", signatureData, "with id", adminProfile?.user?._id);

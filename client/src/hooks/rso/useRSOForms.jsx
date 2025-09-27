@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTokenStore, useUserStoreWithAuth } from "../../store";
+import { useLocation } from "react-router-dom";
 
 const getTemplateFormsRequest = async ({ queryKey }) => {
     try {
@@ -60,7 +61,10 @@ function useRSOForms({
     formType = "All",
     formId = null,
 } = {}) {
+
     const { isUserRSORepresentative } = useUserStoreWithAuth();
+    const location = useLocation();
+    const isFormsPage = location.pathname.startsWith('/forms') || location.pathname.startsWith('/form');
 
     console.log("calling useRSOForms with:", { search, formType, isUserRSORepresentative });
 
@@ -78,7 +82,7 @@ function useRSOForms({
         queryKey: ["rsoFormsTemplate", filter],
         queryFn: getTemplateFormsRequest,
         refetchOnWindowFocus: false,
-        enabled: !!isUserRSORepresentative, // Only run if the user is an RSO representative
+        enabled: !!isUserRSORepresentative && isFormsPage, // Only run if the user is an RSO representative and on forms page
     });
 
     const {
@@ -90,7 +94,7 @@ function useRSOForms({
         queryKey: ["specificForm", formId],
         queryFn: getSpecificFormRequest,
         refetchOnWindowFocus: false,
-        enabled: !!formId && !!isUserRSORepresentative, // Only run if formId is provided and the user is an RSO representative
+        enabled: !!formId && !!isUserRSORepresentative && isFormsPage, // Only run if formId is provided, user is an RSO representative, and on forms page
     });
 
     return {

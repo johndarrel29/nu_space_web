@@ -1,5 +1,6 @@
-import { useTokenStore } from "../../store";
+import { useTokenStore, useUserStoreWithAuth } from "../../store";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
 
 // only enable this if the user is super admin
 // this is for super admin to manage SDAO accounts
@@ -112,6 +113,10 @@ const updateSDAORoleRequest = async ({ userId, role }) => {
 }
 
 function useSuperAdminSDAO() {
+    const location = useLocation();
+    const isUsersPage = location.pathname === '/users';
+    const { isUserSuperAdmin } = useUserStoreWithAuth();
+
     const {
         data: sdaoAccounts,
         isLoading: accountsLoading,
@@ -123,6 +128,7 @@ function useSuperAdminSDAO() {
     } = useQuery({
         queryKey: ["sdaoAccounts"],
         queryFn: getSDAOAccounts,
+        enabled: isUsersPage && isUserSuperAdmin,
     });
 
     const {
@@ -135,6 +141,7 @@ function useSuperAdminSDAO() {
         onSuccess: () => {
             refetchAccounts();
         },
+        enabled: isUsersPage && isUserSuperAdmin,
     });
 
     const {
@@ -147,6 +154,7 @@ function useSuperAdminSDAO() {
         onSuccess: () => {
             refetchAccounts();
         },
+        enabled: isUsersPage && isUserSuperAdmin,
     });
 
     const {
@@ -159,6 +167,7 @@ function useSuperAdminSDAO() {
         onSuccess: () => {
             refetchAccounts();
         },
+        enabled: isUsersPage && isUserSuperAdmin,
     });
 
     return {

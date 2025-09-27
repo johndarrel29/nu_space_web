@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTokenStore, useUserStoreWithAuth } from '../../store';
+import { useLocation } from "react-router-dom";
 
 const fetchMembers = async () => {
     try {
@@ -79,10 +80,10 @@ const approveUserMembership = async ({ id, approval }) => {
     }
 }
 
-
-
 function useRSOUsers() {
     const { isUserRSORepresentative } = useUserStoreWithAuth();
+    const location = useLocation();
+    const isUsersPage = location.pathname === '/users';
 
     const {
         data: rsoMembers,
@@ -91,7 +92,7 @@ function useRSOUsers() {
         isRefetching: isRefetchingMembers,
         refetch: refetchMembers,
     } = useQuery({
-        enabled: isUserRSORepresentative,
+        enabled: isUserRSORepresentative && isUsersPage,
         queryKey: ["rsoMembers"],
         queryFn: fetchMembers
     });
@@ -103,7 +104,7 @@ function useRSOUsers() {
         isRefetching: isRefetchingApplicants,
         refetch: refetchApplicants,
     } = useQuery({
-        enabled: isUserRSORepresentative,
+        enabled: isUserRSORepresentative && isUsersPage,
         queryKey: ["rsoApplicants"],
         queryFn: fetchApplicants
     });
@@ -115,7 +116,7 @@ function useRSOUsers() {
         error: errorApprovingMembership,
         isSuccess: isSuccessApprovingMembership,
     } = useMutation({
-        enabled: isUserRSORepresentative,
+        enabled: isUserRSORepresentative && isUsersPage,
         mutationFn: approveUserMembership,
         onSuccess: () => {
             refetchApplicants();

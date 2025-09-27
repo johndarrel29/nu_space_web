@@ -5,7 +5,7 @@ import { DropIn } from "../../../animations/DropIn";
 import DefaultPicture from "../../../assets/images/default-profile.jpg";
 import { ActivityCard, BackendTable, Button, CloseButton, ReusableRSODescription, TabSelector } from '../../../components';
 import { useAuth } from "../../../context/AuthContext";
-import { useAdminActivity, useAdminRSO, useDocumentManagement, useModal, useTagSelector, useUserProfile } from '../../../hooks';
+import { useAdminActivity, useAdminDocuments, useAdminRSO, useModal, useTagSelector, useUserProfile } from '../../../hooks';
 import { selectedRSOStatusStore, selectedRSOStore } from '../../../store';
 
 // TODO: get rso detail hook
@@ -86,8 +86,6 @@ function RSODetails() {
 
   // change this to use the new auth role
   const isAdmin = authUser?.role === "admin" || authUser?.role === "coordinator" || authUser?.role === "super_admin";
-  const isRSORepresentative = authUser?.role === "rso_representative";
-  const showLink = true;
 
   // map this details to the ui
   useEffect(() => {
@@ -119,7 +117,7 @@ function RSODetails() {
 
     approveDocumentMutate,
     rejectDocumentMutate,
-  } = useDocumentManagement({ rsoID });
+  } = useAdminDocuments({ rsoID });
 
 
   const handleDateTime = (dateTime) => {
@@ -198,22 +196,6 @@ function RSODetails() {
     { label: "Activities" },
     { label: "Members" },
   ]
-
-  console.log("filtered documents: ", rsoDocuments);
-  const filteredDocuments = (rsoDocuments ?? []).map((doc) => {
-    const name = doc?.submittedBy?.firstName + " " + doc?.submittedBy?.lastName;
-    return {
-      _id: doc._id,
-      title: doc.title || "Untitled Document",
-      file: doc.file,
-      url: doc.url,
-      contentType: doc.contentType || "no content type",
-      status: doc.status || "Pending",
-      submittedBy: name || "Unknown",
-      createdAt: handleDateTime(doc.createdAt) || "Unknown",
-      updatedAt: handleDateTime(doc.updatedAt) || "Unknown",
-    }
-  })
 
   const handleEditClick = () => {
     navigate(`/rsos/rso-action`, { state: { mode: "edit", data: user, from: user.RSO_name, id: rsoID } });

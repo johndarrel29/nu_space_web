@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useUserStoreWithAuth } from '../../store';
 import { useTokenStore } from "../../store/tokenStore";
+import { useLocation } from "react-router-dom";
 
 const fetchDirectorDocuments = async ({ queryKey }) => {
     try {
@@ -128,8 +129,11 @@ function useDirectorDocuments({
     RSOType = "",
     college = "",
 } = {}) {
+
     const { isDirector } = useUserStoreWithAuth();
     const queryClient = useQueryClient();
+    const location = useLocation();
+    const isAdminDocumentsPage = location.pathname === '/admin-documents';
 
     const filters = {
         page,
@@ -172,7 +176,7 @@ function useDirectorDocuments({
     } = useQuery({
         queryKey: ["directorDocuments", filters],
         queryFn: fetchDirectorDocuments,
-        enabled: isDirector,
+        enabled: isDirector && isAdminDocumentsPage,
     });
 
     const {
@@ -189,7 +193,7 @@ function useDirectorDocuments({
         onError: (error) => {
             console.error("Error approving document:", error);
         },
-        enabled: isDirector,
+        enabled: isDirector && isAdminDocumentsPage,
     });
 
     const {
@@ -201,7 +205,7 @@ function useDirectorDocuments({
     } = useQuery({
         queryKey: ['directorActivityDocuments', filter],
         queryFn: getDirectorActivityDocumentsRequest,
-        enabled: isDirector,
+        enabled: isDirector && isAdminDocumentsPage,
     });
 
     return {

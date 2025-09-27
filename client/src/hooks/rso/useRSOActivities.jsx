@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from '../../context/AuthContext';
 import { useTokenStore, useUserStoreWithAuth } from "../../store";
+import { useLocation } from "react-router-dom";
 
 const getActivityDocumentsRequest = async ({ queryKey }) => {
     try {
@@ -285,6 +286,8 @@ function useRSOActivities({ sorted, search, activityId } = {}) {
     const { user } = useAuth();
     const { isUserRSORepresentative } = useUserStoreWithAuth();
     const queryClient = useQueryClient();
+    const location = useLocation();
+    const isActivitiesPage = location.pathname.startsWith('/activities');
 
     console.log("useRSOActivities called with activityId:", activityId);
 
@@ -298,7 +301,7 @@ function useRSOActivities({ sorted, search, activityId } = {}) {
 
     } = useMutation({
         mutationFn: createActivityAPI,
-        enabled: isUserRSORepresentative,
+        enabled: isUserRSORepresentative && isActivitiesPage,
         onSuccess: (data) => {
             console.log("Activity created successfully:", data);
             queryClient.invalidateQueries(["activities"]);
@@ -314,7 +317,7 @@ function useRSOActivities({ sorted, search, activityId } = {}) {
         isError: isActivityUpdateError,
         error: activityUpdateError,
     } = useMutation({
-        enabled: isUserRSORepresentative,
+        enabled: isUserRSORepresentative && isActivitiesPage,
         mutationFn: updateActivityAPI,
         onSuccess: (data) => {
             console.log("Activity updated successfully:", data);
@@ -334,7 +337,7 @@ function useRSOActivities({ sorted, search, activityId } = {}) {
         isError: isActivityDeletionError,
         error: activityDeletionError,
     } = useMutation({
-        enabled: isUserRSORepresentative,
+        enabled: isUserRSORepresentative && isActivitiesPage,
         mutationFn: deleteActivityAPI,
         onSuccess: (data) => {
             console.log("Activity deleted successfully:", data);
@@ -353,7 +356,7 @@ function useRSOActivities({ sorted, search, activityId } = {}) {
     } = useQuery({
         queryKey: ["activities", { sorted, search }],
         queryFn: fetchLocalActivityAPI,
-        enabled: isUserRSORepresentative,
+        enabled: isUserRSORepresentative && isActivitiesPage,
         onSuccess: (data) => {
             console.log("Activities fetched successfully:", data);
         },
@@ -408,7 +411,7 @@ function useRSOActivities({ sorted, search, activityId } = {}) {
         isError: createActivityDocumentError,
         error: createActivityDocumentErrorMessage,
     } = useMutation({
-        enabled: isUserRSORepresentative,
+        enabled: isUserRSORepresentative && isActivitiesPage,
         mutationFn: createActivityDocumentAPI,
         onSuccess: () => {
             if (activityId) queryClient.invalidateQueries(["activityDocuments", { activityId }]);
@@ -422,7 +425,7 @@ function useRSOActivities({ sorted, search, activityId } = {}) {
         isError: deleteActivityDocumentError,
         error: deleteActivityDocumentErrorMessage,
     } = useMutation({
-        enabled: isUserRSORepresentative,
+        enabled: isUserRSORepresentative && isActivitiesPage,
         mutationFn: deleteActivityDocumentAPI,
         onSuccess: () => {
             if (activityId) queryClient.invalidateQueries(["activityDocuments", { activityId }]);
