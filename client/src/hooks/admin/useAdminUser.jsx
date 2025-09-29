@@ -1,21 +1,20 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { useTokenStore } from "../../store/tokenStore";
-import { useUserStoreWithAuth } from '../../store';
-import { useAuth } from "../../context/AuthContext";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
+import { useUserStoreWithAuth } from '../../store';
+import { useTokenStore } from "../../store/tokenStore";
 
 // also include coordinator to allow edits to this path
 
 // for admin fetching users
-const fetchUsersRequest = async () => {
+const fetchUsersRequest = async ({ queryKey }) => {
     try {
-        console.log("Fetching users...");
-        const token = localStorage.getItem("token");
+        const token = useTokenStore.getState().token;
+        // destructure queryKey to get filters
+        const [_key, filters] = queryKey;
+        const params = new URLSearchParams(filters).toString();
 
-
-        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/admin/user/fetchUsers`, {
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/admin/user/fetchUsers?${params}`, {
             method: "GET",
             headers: {
                 Authorization: token,
@@ -33,7 +32,7 @@ const fetchUsersRequest = async () => {
         // return regular data
         console.log("Fetched users data in UseUser:", json);
 
-        return json?.students;
+        return json;
 
     } catch (error) {
         console.error("Error fetching users:", error);
@@ -125,20 +124,32 @@ const fetchAdminProfile = async () => {
 }
 
 
-function useAdminUser() {
-    const { isUserAdmin, isUserCoordinator } = useUserStoreWithAuth();
-    const { user } = useAuth();
+function useAdminUser({
+    search = "",
+    role = "",
+    limit = 10,
+    page = 1,
+} = {}) {
+    const { isUserAdmin, isCoordinator, isSuperAdmin, isDirector, isAVP, isUserRSORepresentative } = useUserStoreWithAuth();
     const queryClient = useQueryClient();
     const location = useLocation();
     const isUsersPage = location.pathname === '/users';
 
     useEffect(() => {
-        if (!isUserAdmin && !isUserCoordinator) {
+        if (!isUserAdmin && !isCoordinator) {
             queryClient.removeQueries(['users']);
         }
     }, [isUserAdmin, queryClient]);
 
     console.log("useAdminUser hook isUserAdmin:", isUserAdmin);
+
+    const filters = {
+        search,
+        role,
+        limit,
+        page,
+    }
+
 
     const {
         data: usersData,
@@ -148,13 +159,12 @@ function useAdminUser() {
         refetch: refetchUsersData,
     } = useQuery({
         // initialData: null,
-        queryKey: ["users", user?.id],
+        queryKey: ["users", filters],
         queryFn: fetchUsersRequest,
-        // refetchOnWindowFocus: false,
-        // retry: 1,
-        // staleTime: 0,
-        // cacheTime: 0,
-        enabled: (isUserAdmin || isUserCoordinator) && isUsersPage, // Only fetch if the user is an admin or coordinator and on /users
+        refetchOnWindowFocus: false,
+        staleTime: Infinity,
+        cacheTime: Infinity,
+        enabled: (isUserAdmin || isCoordinator) && isUsersPage, // Only fetch if the user is an admin or coordinator and on /users
     });
 
     const {
@@ -173,7 +183,7 @@ function useAdminUser() {
         onError: (error) => {
             console.error("Error updating user role:", error);
         },
-        enabled: (isUserAdmin || isUserCoordinator) && isUsersPage,
+        enabled: (isUserAdmin || isCoordinator) && isUsersPage,
     });
 
     const {
@@ -191,7 +201,7 @@ function useAdminUser() {
         onError: (error) => {
             console.error("Error deleting user:", error);
         },
-        enabled: (isUserAdmin || isUserCoordinator) && isUsersPage,
+        enabled: (isUserAdmin || isCoordinator) && isUsersPage,
     });
 
     const {
@@ -206,7 +216,7 @@ function useAdminUser() {
         queryFn: fetchAdminProfile,
         refetchOnWindowFocus: false,
         retry: false,
-        enabled: (isUserAdmin || isUserCoordinator) && isUsersPage,
+        enabled: !isUserRSORepresentative,
     });
 
     return {

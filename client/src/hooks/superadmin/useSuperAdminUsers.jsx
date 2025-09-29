@@ -1,6 +1,6 @@
-import { useTokenStore, useUserStoreWithAuth } from "../../store";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
+import { useTokenStore, useUserStoreWithAuth } from "../../store";
 
 // only enable this if the user is super admin
 // this is for super admin to manage SDAO accounts
@@ -59,10 +59,14 @@ const createSDAOAccount = async (formData) => {
     }
 }
 
-const getSDAOAccounts = async () => {
+const getSDAOAccounts = async ({ queryKey }) => {
     try {
         const token = useTokenStore.getState().getToken();
-        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/super-admin/user/fetchSDAOaccounts`, {
+        // destructure queryKey to get filters
+        const [_key, filters] = queryKey;
+        const params = new URLSearchParams(filters).toString();
+
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/super-admin/user/fetchSDAOaccounts?${params}`, {
             method: "GET",
             headers: {
                 Authorization: token || "",
@@ -112,10 +116,22 @@ const updateSDAORoleRequest = async ({ userId, role }) => {
     }
 }
 
-function useSuperAdminSDAO() {
+function useSuperAdminSDAO({
+    search = "",
+    role = "",
+    limit = 10,
+    page = 1,
+} = {}) {
     const location = useLocation();
     const isUsersPage = location.pathname === '/users';
-    const { isUserSuperAdmin } = useUserStoreWithAuth();
+    const { isSuperAdmin } = useUserStoreWithAuth();
+
+    const filters = {
+        search,
+        role,
+        limit,
+        page,
+    }
 
     const {
         data: sdaoAccounts,
@@ -126,9 +142,9 @@ function useSuperAdminSDAO() {
         isRefetching: isRefetchingAccounts,
         isFetched: isAccountsFetched,
     } = useQuery({
-        queryKey: ["sdaoAccounts"],
+        queryKey: ["sdaoAccounts", filters],
         queryFn: getSDAOAccounts,
-        enabled: isUsersPage && isUserSuperAdmin,
+        enabled: isUsersPage && isSuperAdmin,
     });
 
     const {
@@ -141,20 +157,20 @@ function useSuperAdminSDAO() {
         onSuccess: () => {
             refetchAccounts();
         },
-        enabled: isUsersPage && isUserSuperAdmin,
+        enabled: isUsersPage && isSuperAdmin,
     });
 
     const {
         mutate: deleteAdminAccount,
         isLoading: isDeletingAccount,
-        isError: isDeleteError,
+        isError: isDeleteAccountError,
         error: deleteErrorMessage,
     } = useMutation({
         mutationFn: deleteSDAOAccount,
         onSuccess: () => {
             refetchAccounts();
         },
-        enabled: isUsersPage && isUserSuperAdmin,
+        enabled: isUsersPage && isSuperAdmin,
     });
 
     const {
@@ -167,7 +183,7 @@ function useSuperAdminSDAO() {
         onSuccess: () => {
             refetchAccounts();
         },
-        enabled: isUsersPage && isUserSuperAdmin,
+        enabled: isUsersPage && isSuperAdmin,
     });
 
     return {
@@ -189,7 +205,7 @@ function useSuperAdminSDAO() {
         // SDAO delete
         deleteAdminAccount,
         isDeletingAccount,
-        isDeleteError,
+        isDeleteAccountError,
         deleteErrorMessage,
 
         // SDAO update role

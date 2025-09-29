@@ -3,16 +3,16 @@
 import "survey-core/survey-core.css";
 import "survey-creator-core/survey-creator-core.css";
 
-import { useState, useEffect } from "react";
-import { SurveyCreator, SurveyCreatorComponent } from "survey-creator-react";
-import SurveyCreatorTheme from "survey-creator-core/themes";
-import { registerCreatorTheme } from "survey-creator-core";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { registerCreatorTheme } from "survey-creator-core";
+import SurveyCreatorTheme from "survey-creator-core/themes";
+import { SurveyCreator, SurveyCreatorComponent } from "survey-creator-react";
 
-import PreLoader from "../components/Preloader";
 import { Button, TextInput } from "../components";
-import { useUserProfile, useModal, useAdminCentralizedForms } from "../hooks";
+import PreLoader from "../components/Preloader";
+import { useAdminCentralizedForms, useModal } from "../hooks";
 
 // Allowed form fields
 const ALLOWED_FORM_ELEMENTS = [
@@ -31,7 +31,6 @@ export default function SurveyCreatorWidget(props) {
     // Hooks and state initialization
     const location = useLocation();
     const navigate = useNavigate();
-    const { userProfile } = useUserProfile();
     const { isOpen, openModal, closeModal } = useModal();
 
     const [creator, setCreator] = useState(null);

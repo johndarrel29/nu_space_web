@@ -1,33 +1,51 @@
 import { Tooltip } from 'react-tooltip';
 import editIcon from '../../assets/icons/pen-to-square-solid.svg';
 import deleteIcon from '../../assets/icons/trash-solid.svg';
-import { useUserProfile } from "../../hooks";
+import { useAdminUser, useRSODetails } from "../../hooks";
+import { useUserStoreWithAuth } from '../../store';
 import { FormatDate } from '../../utils';
 import { Badge } from '../ui';
 
 const TableRow = ({ userRow, onOpenModal, index }) => {
-  const { user, userProfile } = useUserProfile();
+  const {
+    // RSO Details
+    rsoDetails,
+    isRSODetailsLoading,
+    isRSODetailsError,
+    isRSODetailsSuccess,
+  } = useRSODetails();
+  const {
+    // fetching admin profile
+    adminProfile,
+    isAdminProfileLoading,
+    isAdminProfileError,
+    adminProfileError,
+    refetchAdminProfile,
+    isAdminProfileRefetching,
+  } = useAdminUser();
+  const { isUserRSORepresentative, isUserAdmin, isCoordinator, isSuperAdmin } = useUserStoreWithAuth();
 
   const handleActionClick = (action) => () => {
     onOpenModal(action, userRow);
   };
 
-  const isAdmin = userProfile?.user?.role === 'admin';
-  const isSuperAdmin = userProfile?.user?.role === 'super_admin';
-
   // tooltip style dependency
-  const tooltipId = `edit-tooltip-${userRow._id}`;
-  const isRestricted = isAdmin && (userRow?.role === "admin" || userRow?.role === "super_admin");
-  const restrictOwnAccount = userRow?._id === user?._id;
-
-
+  const isRestricted = isUserAdmin && (isUserAdmin || isSuperAdmin);
 
   const fullName = [userRow.firstName, userRow.lastName].filter(Boolean).join(' ');
 
   const formattedDate = FormatDate(userRow.createdAt);
 
+  function profileOnRole() {
+    if (isUserAdmin || isCoordinator || isSuperAdmin) {
+      return adminProfile?.user?._id;
+    } else if (isUserRSORepresentative) {
+      return rsoDetails?.user?._id;
+    }
+  }
+
   function handleStyle(userRole) {
-    console.log("userRow role: " + userRole)
+
 
     switch (userRole) {
       case 'super_admin':
@@ -63,6 +81,8 @@ const TableRow = ({ userRow, onOpenModal, index }) => {
     }
   }
 
+  console.log("data received ?", userRow ? "yes" : "no");
+
 
   return (
     <tr className='hover:bg-gray-200 transition duration-300 ease-in-out' >
@@ -85,10 +105,8 @@ const TableRow = ({ userRow, onOpenModal, index }) => {
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
 
-        {!(userRow.role === 'super_admin' || userRow.role === 'admin' || userRow.role === 'student') && (
+        {!(isSuperAdmin || isUserAdmin || isUserRSORepresentative) && (
           <div className="flex items-center justify-center">
-            {console.log("results: " + userRow)}
-            {console.log("role: " + userRow.role)}
             <Badge style={handleStyle(userRow.role)} text={userRow?.assigned_rso?.RSO_acronym} />
           </div>
         )}
@@ -98,7 +116,7 @@ const TableRow = ({ userRow, onOpenModal, index }) => {
         <div className='space-x-2 flex flex-row justify-center items-center'>
 
           {/* prevents user from editing or deleting their own profile */}
-          {userRow?._id === userProfile?.user?._id ? ("") :
+          {userRow?._id === profileOnRole() ? ("") :
             (
               <>
                 <div

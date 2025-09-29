@@ -1,8 +1,8 @@
-import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useUserStoreWithAuth } from '../../store';
 import { useTokenStore } from "../../store/tokenStore";
-import { useLocation } from "react-router-dom";
 
 // admin fetch activity with parameters
 const fetchAdminActivity = async ({ queryKey, pageParam = 1 }) => {
@@ -186,6 +186,34 @@ const rejectActivity = async ({ activityId, remark }) => {
     }
 }
 
+// Pure API: view activity details (role-aware)
+const viewActivityAPI = async ({ queryKey }) => {
+    const [_key, { activityId }] = queryKey;
+    if (!activityId) throw new Error("activityId is required");
+
+    const token = localStorage.getItem("token");
+    const formattedToken = token?.startsWith("Bearer ") ? token.slice(7) : token;
+
+    // Always use the admin route
+    const url = `${process.env.REACT_APP_BASE_URL}/api/admin/activities/${activityId}`;
+
+    const response = await fetch(url, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": token ? `Bearer ${formattedToken}` : "",
+        },
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `Error: ${response.status} - ${response.statusText}`);
+    }
+
+    const json = await response.json();
+    return json.activity ?? json;
+};
+
 function useAdminActivity({
     debouncedQuery = "",
     limit = 12,
@@ -195,6 +223,8 @@ function useAdminActivity({
     college = "",
     isGPOA = "All",
     page = 1,
+
+    activityId
 } = {}) {
     const { user } = useAuth();
     const { isUserAdmin, isCoordinator } = useUserStoreWithAuth();
@@ -281,6 +311,24 @@ function useAdminActivity({
         enabled: (isUserAdmin || isCoordinator) && isActivities,
     });
 
+    const {
+        data: viewAdminActivityData,
+        isSuccess: viewAdminActivitySuccess,
+        isLoading: viewAdminActivityLoading,
+        refetch: refetchViewAdminActivity,
+        isError: viewAdminActivityError
+    } = useQuery({
+        queryKey: ["activity", activityId],
+        queryFn: () => viewActivityAPI({ activityId }),
+        enabled: !!activityId && (isUserAdmin || isCoordinator),
+        onSuccess: (data) => {
+            console.log("Activities fetched successfully:", data);
+        },
+        onError: (error) => {
+            console.error("Error fetching activities:", error);
+        },
+    })
+
     return {
         // fetch admin activities
         adminPaginatedActivities,
@@ -314,6 +362,13 @@ function useAdminActivity({
         isSettingPostDocumentDeadline,
         isErrorSettingPostDocumentDeadline,
         isPostDocumentDeadlineSet,
+
+        // view admin activity details
+        viewAdminActivityData,
+        viewAdminActivitySuccess,
+        viewAdminActivityLoading,
+        refetchViewAdminActivity,
+        viewAdminActivityError,
     }
 
 }

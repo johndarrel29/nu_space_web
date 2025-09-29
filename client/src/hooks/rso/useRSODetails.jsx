@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { useTokenStore, useUserStoreWithAuth } from "../../store";
 import { useLocation } from "react-router-dom";
+import { useTokenStore, useUserStoreWithAuth } from "../../store";
 
 // for rso fetch members (pure API helper)
 const fetchMembers = async () => {
@@ -89,6 +89,32 @@ const fetchRSODetailsRequest = async () => {
     return response.json();
 };
 
+const deleteOfficer = async (officerId) => {
+    const token = localStorage.getItem("token");
+    const formattedToken = token?.startsWith("Bearer ") ? token.slice(7) : token;
+
+    const headers = {
+        "Content-Type": "application/json",
+        "Authorization": token ? `Bearer ${formattedToken}` : "",
+    };
+
+    try {
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/rsoRep/rso/deleteRSOOfficer/${officerId}`, {
+            method: "DELETE",
+            headers,
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error: ${response.status} - ${response.statusText}`);
+        }
+
+
+        return response.json();
+    } catch (err) {
+        console.error("Error deleting officer:", err);
+    }
+}
+
 function useRSODetails() {
     const { isUserRSORepresentative } = useUserStoreWithAuth();
     const queryClient = useQueryClient();
@@ -153,6 +179,21 @@ function useRSODetails() {
         enabled: isUserRSORepresentative,
     });
 
+    const {
+        mutate: deleteOfficerMutate,
+        isLoading: isDeleting,
+        isError: isDeleteError,
+        isSuccess: isDeleteSuccess,
+    } = useMutation({
+        mutationFn: deleteOfficer,
+        onSuccess: () => {
+            queryClient.invalidateQueries(["membersData"]);
+        },
+        onError: (err) => {
+            console.error("Error deleting officer:", err);
+        }
+    });
+
     return {
         // Update Officer
         updateOfficerMutate,
@@ -178,7 +219,15 @@ function useRSODetails() {
         isRSODetailsLoading,
         isRSODetailsError,
         isRSODetailsSuccess,
+
+        // Delete Officer
+        deleteOfficerMutate,
+        isDeleting,
+        isDeleteError,
+        isDeleteSuccess,
     };
 }
+
+
 
 export default useRSODetails;

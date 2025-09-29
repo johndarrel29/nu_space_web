@@ -165,7 +165,7 @@ export default function PasswordAction() {
                     } else if (role === "super_admin") {
                         navigate("/users");
                     } else if (role === "director" || role === "avp") {
-                        navigate("/admin-documents");
+                        navigate("/general-documents");
                     } else {
                         toast.error("Invalid role or access denied.");
                     }
@@ -231,6 +231,7 @@ export default function PasswordAction() {
                         <TextInput
                             placeholder={"Current Password"}
                             value={formData.password}
+                            type={"password"}
                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                             id="password"
                         />
@@ -241,6 +242,7 @@ export default function PasswordAction() {
                     <TextInput
                         placeholder="New Password"
                         value={formData.newPassword}
+                        type={"password"}
                         onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
                         id="new-password"
                     />
@@ -250,6 +252,7 @@ export default function PasswordAction() {
                     <TextInput
                         placeholder="Confirm Password"
                         value={formData.confirmPassword}
+                        type={"password"}
                         onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                         id="confirm-password"
                     />

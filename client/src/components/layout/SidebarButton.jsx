@@ -6,7 +6,6 @@ import { useUserStoreWithAuth } from '../../store';
 
 
 function SidebarButton({ icon, text, onClick, active, iconPath, isCollapsed }) {
-  console.log("iscollapsed", isCollapsed);
 
 
   // State to track whether the button is active or not

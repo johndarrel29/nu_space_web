@@ -1,13 +1,14 @@
-import { MainLayout, Button, TextInput, Badge, Backdrop, CloseButton, TabSelector, ReusableRSODescription } from "../../../components";
-import { useEffect, useState, useCallback, useRef } from "react";
-import { useUserProfile, useModal, useRSO, useRSODetails } from "../../../hooks";
-import DefaultPicture from "../../../assets/images/default-profile.jpg";
-import { motion, AnimatePresence } from "framer-motion";
-import { DropIn } from "../../../animations/DropIn";
-import ErrorBoundary from '../../../components/ErrorBoundary';
+import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Cropper from "react-easy-crop";
-import getCroppedImg from '../../../utils/cropImage';
 import { toast } from "react-toastify";
+import { DropIn } from "../../../animations/DropIn";
+import DefaultPicture from "../../../assets/images/default-profile.jpg";
+import { Backdrop, Badge, Button, CloseButton, ReusableRSODescription, TabSelector, TextInput } from "../../../components";
+import ErrorBoundary from '../../../components/ErrorBoundary';
+import { useAdminUser, useModal, useRSODetails } from "../../../hooks";
+import { useUserStoreWithAuth } from '../../../store';
+import getCroppedImg from '../../../utils/cropImage';
 
 const tabs = [
   { label: "Officers" },
@@ -19,36 +20,70 @@ const adminTabs = [
 ]
 
 export default function Account() {
-  const {
-    userProfile,
-    userProfileError,
-    isUserProfileLoading,
-    isUserProfileError,
-    refetchUserProfile,
+  const { isUserRSORepresentative, isUserAdmin, isCoordinator, isSuperAdmin } = useUserStoreWithAuth();
 
-    deleteOfficerMutate,
-    isDeleting,
-    isDeleteError,
-    isDeleteSuccess
-  } = useUserProfile();
+
 
   const {
     rsoDetails,
     isRSODetailsLoading,
     isRSODetailsError,
-    isRSODetailsSuccess
-  } = useRSODetails();
+    isRSODetailsSuccess,
 
-  const {
+    // Update Officer
     updateOfficerMutate,
     isUpdatingOfficer,
     isUpdateOfficerError,
     isUpdateOfficerSuccess,
 
+    // Create Officer
     createOfficerMutate,
-    isCreatingOfficerError,
-    isCreatingSuccess,
-  } = useRSO();
+    isCreatingOfficer,
+    isCreateOfficerError,
+    isCreateOfficerSuccess,
+
+    deleteOfficerMutate,
+    isDeleting,
+    isDeleteError,
+    isDeleteSuccess,
+  } = useRSODetails();
+
+  const {
+    // fetching admin profile
+    adminProfile,
+    isAdminProfileLoading,
+    isAdminProfileError,
+    adminProfileError,
+    refetchAdminProfile,
+    isAdminProfileRefetching,
+  } = useAdminUser();
+
+
+  function refetchOnRole() {
+    if (isUserAdmin || isCoordinator || isSuperAdmin) {
+      return refetchAdminProfile();
+    } else if (isUserRSORepresentative) {
+      return refetchAdminProfile(); // fallback, or implement RSO-specific refetch if needed
+    }
+  }
+
+  function profileOnRole() {
+    if (isUserAdmin || isCoordinator || isSuperAdmin) {
+      return adminProfile?.user;
+    } else if (isUserRSORepresentative) {
+      return rsoDetails?.rso;
+    }
+    return null;
+  }
+
+  function profileOnRole() {
+    if (isUserAdmin || isCoordinator || isSuperAdmin) {
+      return adminProfile?.user;
+    } else if (isUserRSORepresentative) {
+      return rsoDetails?.rso;
+    }
+  }
+
   const user = JSON.parse(localStorage.getItem("user"));
   const { isOpen, openModal, closeModal } = useModal();
   const [officerName, setOfficerName] = useState("");
@@ -73,9 +108,6 @@ export default function Account() {
     OfficerPosition: "",
   });
 
-  // make the data dynamic for rso details
-  // based from the data structure of rsoDetails from useRSODetails since the component is used in other places as well
-
   const rsoDetailData = {
     data: {
       RSO_snapshot: {
@@ -96,9 +128,6 @@ export default function Account() {
     }
   }
 
-  useEffect(() => {
-    refetchUserProfile();
-  }, [refetchUserProfile]);
 
   useEffect(() => {
     // Handle errors
@@ -106,43 +135,42 @@ export default function Account() {
       toast.error("Error updating officer. Please try again.");
     } else if (isDeleteError) {
       toast.error("Error deleting officer. Please try again.");
-    } else if (isCreatingOfficerError) {
+    } else if (isCreatingOfficer) {
       toast.error("Error creating officer. Please try again.");
     }
 
     // Handle success states
     if (isUpdateOfficerSuccess) {
       toast.success("Officer updated successfully!");
-      refetchUserProfile();
+      refetchOnRole();
       handleCloseModal();
-    } else if (isCreatingSuccess) {
+    } else if (isCreateOfficerSuccess) {
       toast.success("Officer created successfully!");
-      refetchUserProfile();
+      refetchOnRole();
       handleCloseModal();
     } else if (isDeleteSuccess) {
-      refetchUserProfile();
+      refetchOnRole();
       toast.success("Officer deleted successfully!");
     }
   }, [
-    isUpdateOfficerError, isDeleteError, isCreatingOfficerError,
-    isUpdateOfficerSuccess, isCreatingSuccess, isDeleteSuccess
+    isUpdateOfficerError, isDeleteError, isCreatingOfficer,
+    isUpdateOfficerSuccess, isCreateOfficerSuccess, isDeleteSuccess
   ]);
 
   // Set profile data based on user role
   useEffect(() => {
-    if (user?.role === 'rso_representative') {
+    if (isUserRSORepresentative) {
       console.log("User is RSO representative, setting profile to  ", rsoDetails?.rso);
       setProfileData(rsoDetails?.rso);
-    } else if (user?.role === 'admin' || user?.role === 'coordinator' || user?.role === 'super_admin') {
-      console.log("User is admin, coordinator or super admin, setting profile to ", userProfile.user);
-      setProfileData(userProfile.user);
+    } else if (isUserAdmin || isCoordinator || isSuperAdmin) {
+      console.log("User is admin, coordinator or super admin, setting profile to ", profileOnRole());
+      setProfileData(profileOnRole());
     } else {
       console.log("User role is not recognized, setting profile to null");
       setProfileData(null);
     }
-  }, [user, userProfile]);
+  }, [user, adminProfile, rsoDetails]);
 
-  console.log("profile data ", profileData)
 
   const handleOfficer = (officer) => {
     if (!officer) {
@@ -198,7 +226,7 @@ export default function Account() {
 
     if (create) {
       console.log("Creating new officer...");
-      { console.log("userProfile", userProfile) }
+      { console.log("profileOnRole", profileOnRole()) }
       { console.log("formDataToSubmit", formDataToSubmit) }
       { console.log("officerId: ", officerId) }
 
@@ -209,7 +237,7 @@ export default function Account() {
       }
 
       createOfficerMutate({
-        // id: userProfile?.rso?._id,
+        // id: profileOnRole()?._id,
         createdOfficer: formDataToSubmit
       });
     } else {
@@ -232,13 +260,6 @@ export default function Account() {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-
-
-  const isStudentRSO = user?.role === "rso_representative";
-  const isAdmin = user?.role === "admin" || user?.role === "coordinator";
-  const isSuperAdmin = user?.role === "super_admin";
-
-
 
   const handleCloseModal = () => {
     setOfficerName("");
@@ -301,7 +322,7 @@ export default function Account() {
         {/* Profile Overview */}
         <div className="flex flex-col md:flex-row items-start gap-6 mb-6">
           <div className="flex flex-col items-start gap-2">
-            {isStudentRSO ? (
+            {isUserRSORepresentative ? (
               <img
                 src={profileData?.RSO_picture || DefaultPicture}
                 alt="Profile"
@@ -314,28 +335,28 @@ export default function Account() {
           </div>
           <div className="flex flex-col gap-1">
             <div className="flex gap-2">
-              {isAdmin ? (
+              {isUserAdmin ? (
                 <Badge text="Admin" style="secondary" />
               ) : isSuperAdmin &&
               (<Badge text="Super Admin" style="primary" />)
               }
-              {isStudentRSO && (
+              {isUserRSORepresentative && (
                 <Badge text="RSO" style="secondary" />
               )}
             </div>
             <h1 className="text-2xl font-bold text-gray-800">
-              {isStudentRSO
+              {isUserRSORepresentative
                 ? (profileData?.RSO_name || "loading...")
-                : (isAdmin || isSuperAdmin)
+                : (isUserAdmin || isSuperAdmin)
                   ? (
                     profileData?.firstName + " " + profileData?.lastName || "loading..."
                   )
                   : "loading..."}
             </h1>
             <p className="text-base text-gray-600">
-              {isStudentRSO
+              {isUserRSORepresentative
                 ? (profileData?.RSO_acronym || "loading...")
-                : (isAdmin || isSuperAdmin)
+                : (isUserAdmin || isSuperAdmin)
                   ? ('')
                   : "loading..."}
             </p>
@@ -344,7 +365,7 @@ export default function Account() {
 
         {/* Edit Form */}
         <div className="w-full">
-          {isStudentRSO && (
+          {isUserRSORepresentative && (
             <>
               <TabSelector tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab}></TabSelector>
               {activeTab === 0 && (

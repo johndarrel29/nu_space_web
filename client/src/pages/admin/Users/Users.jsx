@@ -1,89 +1,45 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { memo, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Select from 'react-select';
 import { toast } from "react-toastify";
 import { DropIn } from "../../../animations/DropIn";
-import { Backdrop, Button, CloseButton, CreateUserModal, ReusableTable, Searchbar, Table } from "../../../components";
-import { useModal, useRSO, useRSOUsers, useUserProfile } from "../../../hooks";
+import { Backdrop, Button, CloseButton, CreateUserModal, ReusableDropdown, ReusableTable } from "../../../components";
+import { useAdminRSO, useAdminUser, useModal, useRSODetails, useRSOUsers, useSuperAdminUsers } from "../../../hooks";
 import { useUserStoreWithAuth } from "../../../store";
 import { FormatDate } from "../../../utils";
 
-// approval status fix
-// it returns rejected even if its approved
-// doesnt refetch after approving
-
-// todo: fix mapping of the json.
-
-//add error preferrably from query
-
-// function to handle the search and filter
-// Lightweight filter bar (search + role dropdown). Create button moved to main header banner.
-const UserFilter = memo(({ searchQuery, setSearchQuery, setSelectedRole, selectedRole }) => {
-
-  const { isUserRSORepresentative, isUserAdmin, isSuperAdmin, isCoordinator, isDirector, isAVP } = useUserStoreWithAuth();
-  return (
-    <>
-      {/* search query */}
-      <div className="mt-4 w-full flex flex-col space-x-0 md:flex-row md:space-x-2 md:space-y-0 sm:flex-col sm:space-y-2 sm:space-x-0">
-        <div className="w-full lg:w-full md:w-full">
-          <label
-            htmlFor="roleFilter"
-            className="block mb-2 text-sm font-medium text-gray-600 dark:text-white"
-          >
-            Search
-          </label>
-          <Searchbar
-            placeholder="Search a user"
-            searchQuery={searchQuery || ''}
-            setSearchQuery={setSearchQuery}
-          />
-        </div>
-
-        {/* dropdown role filter */}
-        <div className="w-full lg:w-1/2 md:w-full">
-          <label
-            htmlFor="roleFilter"
-            className="block mb-2 mt-2 md:mt-0 text-sm font-medium text-gray-600 dark:text-white"
-          >
-            Filter by Role
-          </label>
-          <select
-            value={selectedRole}
-            onChange={(e) => setSelectedRole(e.target.value)}
-            className="w-full h-10 border border-mid-gray rounded-md p-1 bg-textfield focus:outline-none focus:ring-off-black  focus:ring-1"
-          >
-            <option value="">All</option>
-            {(isUserAdmin || isCoordinator) && (
-              <>
-                <option value="student">Student</option>
-                <option value="rso_representative">RSO Representative</option>
-              </>
-            )}
-            {(isSuperAdmin) && (
-              <>
-                <option value="admin">Admin</option>
-                <option value="coordinator">Coordinator</option>
-                <option value="super_admin">Super Admin</option>
-              </>
-            )}
-          </select>
-        </div>
-      </div>
-
-
-    </>
-
-
-  );
-});
 
 export default function Users() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRole, setSelectedRole] = useState("");
   const { isOpen, openModal, closeModal } = useModal();
-  const user = JSON.parse(localStorage.getItem("user"));
-  const { userProfile } = useUserProfile();
+  const [filters, setFilters] = useState({
+    search: "",
+    role: "",
+    limit: 10,
+    page: 1,
+  });
+  const {
+    rsoDetails,
+    isRSODetailsLoading,
+    isRSODetailsError,
+    isRSODetailsSuccess,
+  } = useRSODetails();
+  const {
+    rsoData,
+    isRSOLoading,
+    isRSOError,
+    rsoError,
+    refetchRSOData,
+  } = useAdminRSO();
   const { isUserRSORepresentative, isUserAdmin, isSuperAdmin, isCoordinator, isDirector, isAVP } = useUserStoreWithAuth();
 
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      search: searchQuery,
+      page: 1, // Optionally reset page on new search
+    }));
+  }, [searchQuery]);
   const {
     rsoMembers,
     isErrorFetchingMembers,
@@ -104,14 +60,61 @@ export default function Users() {
     isSuccessApprovingMembership,
   } = useRSOUsers();
 
-  console.log("and the applicants are ", rsoApplicants?.applicants?.map(applicant => ({
-    forms: applicant.answers,
-    studentInfo: applicant.studentId,
-  })) || null);
+  const {
+    // fetching users admin
+    usersData,
+    isUsersLoading,
+    isUsersError,
+    usersError,
+    refetchUsersData,
+    updateError,
+
+    // updating users
+    updateUserMutate,
+    isUpdateError,
+    isUpdateLoading,
+    isUpdateSuccess,
+
+    // deleting users
+    deleteStudentAccount,
+    isDeleteError,
+    isDeleteLoading,
+    isDeleteSuccess,
+    deleteError,
+  } = useAdminUser(filters);
 
   const {
-    membersData,
-  } = useRSO();
+    // SDAO accounts data
+    sdaoAccounts,
+    accountsLoading,
+    accountsError,
+    accountsErrorMessage,
+    refetchAccounts,
+    isRefetchingAccounts,
+    isAccountsFetched,
+
+    // SDAO create 
+    createAccount,
+    isCreatingAccount,
+    isCreateError,
+    createErrorMessage,
+
+    // SDAO delete
+    deleteAdminAccount,
+    isDeletingAccount,
+    isDeleteAccountError,
+    deleteErrorMessage,
+
+    // SDAO update role
+    updateAdminRole,
+    isUpdatingSDAORole,
+    isUpdateSDAORoleError,
+    updateSDAORoleErrorMessage
+  } = useSuperAdminUsers(filters);
+
+
+
+  console.log("searchquery is ", searchQuery, "filters are ", filters);
 
   const applicants = rsoApplicants?.applicants || [];
 
@@ -128,7 +131,32 @@ export default function Users() {
     }
   }) || [];
 
-  console.log(" tableRow ", tableRow);
+  const adminTableRow = usersData?.students?.map((user, index) => {
+    return {
+      index: (filters.page - 1) * filters.limit + index + 1,
+      id: user?._id,
+      email: user?.email || "no email",
+      role: user?.role || "N/A",
+      assignedRSO: user?.assigned_rso?.RSO_acronym || "",
+      createdAt: FormatDate(user?.createdAt) || "N/A",
+      fullName: `${user?.firstName || 'N/A'} ${user?.lastName || 'N/A'}`,
+    }
+  }) || [];
+
+  const superAdminTableRow = sdaoAccounts?.SDAOAccounts?.map((user, index) => {
+    return {
+      index: (filters.page - 1) * filters.limit + index + 1,
+      id: user?._id,
+      email: user?.email || "no email",
+      role: user?.role || "N/A",
+      assignedRSO: user?.assigned_rso?.RSO_acronym || "",
+      createdAt: FormatDate(user?.createdAt) || "N/A",
+      fullName: `${user?.firstName || 'N/A'} ${user?.lastName || 'N/A'}`,
+    }
+  }) || [];
+
+  console.log("adminTableRow is ", adminTableRow, "usersData is ", usersData);
+
 
   function tableHeading() {
     return [
@@ -137,6 +165,27 @@ export default function Users() {
       { name: "Approval Status", key: "approvalStatus" },
     ];
   }
+
+  function tableAdminHeading() {
+    return [
+      { name: "Name", key: "fullName" },
+      { name: "Role", key: "role" },
+      { name: "Assigned RSO", key: "assignedRSO" },
+      { name: "Date Created", key: "createdAt" },
+      { name: "Actions", key: "actions" },
+    ]
+  }
+
+  function tableSuperAdminHeading() {
+    return [
+      { name: "Name", key: "fullName" },
+      { name: "Role", key: "role" },
+      { name: "Date Created", key: "createdAt" },
+      { name: "Actions", key: "actions" },
+    ]
+  }
+
+  console.log("users data is ", usersData);
 
 
   const tableRowFiltered = useMemo(() => {
@@ -167,20 +216,29 @@ export default function Users() {
     pages: [] // added
   });
 
-  // --- Banner stats (mirroring Activities style) ---
-  const totalApplicants = applicants.length;
-  // Attempt to derive members count; fall back gracefully
-  const totalMembers = (rsoMembers?.members && Array.isArray(rsoMembers.members))
-    ? rsoMembers.members.length
-    : (Array.isArray(rsoMembers) ? rsoMembers.length : 0);
+  // Edit Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editModalData, setEditModalData] = useState({
+    id: '',
+    email: '',
+    fullName: '',
+    role: '',
+    assignedRSO: '',
+  });
+  const [checkerData, setCheckerData] = useState({
+    id: '',
+    email: '',
+    fullName: '',
+    role: '',
+    assignedRSO: '',
+  });
 
-  // Reusable small stat pill (kept local for simplicity)
-  const StatPill = ({ label, value }) => (
-    <div className="min-w-[110px] px-4 py-2 rounded-md border border-gray-200 bg-white shadow-sm">
-      <p className="text-[10px] font-medium tracking-wide text-gray-500 uppercase">{label}</p>
-      <p className="text-base font-semibold text-gray-900">{value}</p>
-    </div>
-  );
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteModalData, setDeleteModalData] = useState({
+    id: '',
+    fullName: '',
+  });
 
   const handleOpenUserModal = (row) => {
     console.log("row is ", row);
@@ -211,7 +269,6 @@ export default function Users() {
   };
 
   const handleApproveMembership = () => {
-    console.log("Approve Membership clicked for user ID:", userModalData.applicationId);
 
     approveMembership({ id: userModalData.applicationId, approval: true }, {
       onSuccess: () => {
@@ -244,9 +301,257 @@ export default function Users() {
     })
   }
 
+  console.log("editModalData is ", editModalData.assignedRSO);
+
   const handleCloseUserModal = () => {
     setIsUserModalOpen(false);
   };
+
+  const handleFilterChange = (value) => {
+    console.log("Filter changed to:", value);
+
+    if (value == "Student") {
+      setFilters((prev) => ({
+        ...prev,
+        role: 'student',
+        page: 1,
+      }));
+    }
+    if (value == "RSO") {
+      setFilters((prev) => ({
+        ...prev,
+        role: 'rso_representative',
+        page: 1, // Reset to first page on filter change
+      }));
+    }
+
+    if (value == "All") {
+      setFilters((prev) => ({
+        ...prev,
+        role: "",
+        page: 1, // Reset to first page on filter change
+      }));
+    }
+  }
+
+  const handleSuperAdminFilterChange = (value) => {
+    console.log("Filter changed to:", value);
+
+    if (value == "Admin") {
+      setFilters((prev) => ({
+        ...prev,
+        role: 'admin',
+        page: 1,
+      }));
+    }
+    if (value == "Coordinator") {
+      setFilters((prev) => ({
+        ...prev,
+        role: 'coordinator',
+        page: 1,
+      }));
+    }
+    if (value == "Director") {
+      setFilters((prev) => ({
+        ...prev,
+        role: 'director',
+        page: 1,
+      }));
+    }
+    if (value == "AVP") {
+      setFilters((prev) => ({
+        ...prev,
+        role: 'avp',
+        page: 1,
+      }));
+    }
+
+    if (value == "All") {
+      setFilters((prev) => ({
+        ...prev,
+        role: "",
+        page: 1,
+      }));
+    }
+  }
+
+  const handleLimitChange = (newLimit) => {
+    setFilters((prev) => ({
+      ...prev,
+      limit: Number(newLimit),
+      page: 1,
+    }));
+  };
+
+  const handlePageChange = (newPage) => {
+    if (sdaoAccounts?.query.remainingPages === 0) return;
+    console.log("Page changed to:", newPage);
+    setFilters((prev) => ({
+      ...prev,
+      page: newPage,
+    }));
+  };
+
+
+  // Handlers for edit and delete modals
+  const handleEditClick = (row) => {
+    setEditModalData({
+      id: row.id,
+      email: row.email,
+      fullName: row.fullName,
+      role: row.role,
+      assignedRSO: row.assignedRSO,
+    });
+
+    setCheckerData({
+      id: row.id,
+      email: row.email,
+      fullName: row.fullName,
+      role: row.role,
+      assignedRSO: row.assignedRSO,
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteClick = (row) => {
+    setDeleteModalData({
+      id: row.id,
+      fullName: row.fullName,
+    });
+    setIsDeleteModalOpen(true);
+  };
+
+  const closeEditModal = () => setIsEditModalOpen(false);
+  const closeDeleteModal = () => setIsDeleteModalOpen(false);
+
+  const rsoOptions = rsoData?.rsos?.map(r => ({
+    value: r.rsoId,
+    label: r.RSO_snapshot?.acronym
+  }));
+
+  const roleOptions = [
+    { value: 'student', label: 'Student' },
+    { value: 'rso_representative', label: 'RSO Representative' },
+  ];
+
+  const roleSDAOOptions = [
+    { value: 'admin', label: 'Admin' },
+    { value: 'coordinator', label: 'Coordinator' },
+    { value: 'director', label: 'Director' },
+    { value: 'avp', label: 'AVP' },
+    { value: 'super_admin', label: 'Super Admin' }
+  ];
+
+  const handleSaveEdit = () => {
+    // Prepare the data to be sent to the server
+    const removeRSO = editModalData.role !== 'rso_representative' ? true : false;
+
+
+    const updatedData = {
+      id: editModalData.id,
+      role: editModalData.role,
+      ...(!isSuperAdmin && {
+        assignedRSO: removeRSO ? '' : editModalData.assignedRSO,
+      }),
+
+    };
+
+    // don't continue if role is rso representative and assignedRSO is empty
+    if (editModalData.role === 'rso_representative' && !editModalData.assignedRSO) {
+      toast.error("Please assign an RSO to the RSO Representative.");
+      return;
+    }
+
+    // don't continue if no changes were made
+    if (
+      checkerData.role === editModalData.role &&
+      checkerData.assignedRSO === editModalData.assignedRSO
+    ) {
+      toast.info("No changes were made.");
+      setIsEditModalOpen(false);
+      return;
+    }
+    if (isSuperAdmin) {
+      updateAdminRole({ userId: updatedData.id, role: updatedData.role }, {
+        onSuccess: () => {
+          toast.success("User updated successfully.");
+          setIsEditModalOpen(false);
+          setCheckerData({
+            id: '',
+            email: '',
+            fullName: '',
+            role: '',
+            assignedRSO: '',
+          });
+          refetchAccounts();
+        },
+        onError: (error) => {
+          console.error("Error updating user:", error);
+          toast.error("Failed to update user. Please try again.");
+        }
+      });
+    }
+    if (isCoordinator || isUserAdmin) {
+      updateUserMutate({ userId: updatedData.id, userData: updatedData }, {
+        onSuccess: () => {
+          toast.success("User updated successfully.");
+          setIsEditModalOpen(false);
+          setCheckerData({
+            id: '',
+            email: '',
+            fullName: '',
+            role: '',
+            assignedRSO: '',
+          });
+
+          refetchUsersData();
+        },
+        onError: (error) => {
+          console.error("Error updating user:", error);
+          toast.error("Failed to update user. Please try again.");
+        }
+      });
+    }
+  }
+
+  const handleDeleteUser = () => {
+
+    if (isSuperAdmin) {
+      deleteAdminAccount(deleteModalData.id, {
+        onSuccess: () => {
+          toast.success("User deleted successfully.");
+          setIsDeleteModalOpen(false);
+          setDeleteModalData({
+            id: '',
+            fullName: '',
+          });
+          refetchAccounts();
+        },
+        onError: (error) => {
+          console.error("Error deleting user:", error);
+          toast.error("Failed to delete user. Please try again.");
+        }
+      });
+    }
+
+    if (isUserAdmin || isCoordinator) {
+      deleteStudentAccount(deleteModalData.id, {
+        onSuccess: () => {
+          toast.success("User deleted successfully.");
+          setIsDeleteModalOpen(false);
+          setDeleteModalData({
+            id: '',
+            fullName: '',
+          });
+          refetchUsersData();
+        },
+        onError: (error) => {
+          console.error("Error deleting user:", error);
+          toast.error("Failed to delete user. Please try again.");
+        }
+      });
+    }
+  }
 
   return (
     <>
@@ -265,18 +570,56 @@ export default function Users() {
         </div>
 
         {/* table for admin & super admin */}
-        {(isUserAdmin || isCoordinator || isSuperAdmin) && (
+        {(isUserAdmin || isCoordinator) && (
           <>
-            <UserFilter searchQuery={searchQuery} setSearchQuery={setSearchQuery} setSelectedRole={setSelectedRole} />
-            <Table
+            <ReusableTable
+              options={["All", "Student", "RSO"]}
+              totalData={usersData ? usersData?.total : 0}
+              onChange={(e) => handleFilterChange(e.target.value)}
+              tableRow={adminTableRow || []}
               searchQuery={searchQuery}
-              selectedRole={selectedRole} />
+              setSearchQuery={setSearchQuery}
+              placeholder={"Search a user"}
+              tableHeading={tableAdminHeading()}
+              isLoading={isUsersLoading || accountsLoading}
+              onEditClick={handleEditClick}
+              onActionClick={handleDeleteClick}
+              columnNumber={6}
+              limit={filters.limit}
+              page={filters.page}
+              onLimitChange={handleLimitChange}
+              onPageChange={handlePageChange}
+              pageNumber={usersData?.query?.remainingPages || null}
+            />
+
+          </>
+        )}
+        {isSuperAdmin && (
+          <>
+            <ReusableTable
+              options={["All", "Admin", "Coordinator", "Director", "AVP"]}
+              totalData={usersData ? usersData?.total : 0}
+              onChange={(e) => handleSuperAdminFilterChange(e.target.value)}
+              tableRow={superAdminTableRow || []}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              placeholder={"Search a user"}
+              tableHeading={tableSuperAdminHeading()}
+              isLoading={isUsersLoading || accountsLoading}
+              onEditClick={handleEditClick}
+              onActionClick={handleDeleteClick}
+              columnNumber={6}
+              limit={filters.limit}
+              page={filters.page}
+              onLimitChange={handleLimitChange}
+              onPageChange={handlePageChange}
+              pageNumber={usersData?.query?.remainingPages || null}
+            />
+
           </>
         )}
         {isUserRSORepresentative && (
           <>
-
-
             {/* redesigned banner (using membership data from old banner) */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg px-6 py-4 shadow-sm flex items-start gap-3 mb-6">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -286,21 +629,21 @@ export default function Users() {
                 <span className="text-blue-800 font-semibold text-base">RSO Membership</span>
                 <div className='mt-1 flex flex-col sm:flex-row sm:items-center gap-2'>
                   <span className="inline-flex items-center gap-2 text-blue-700 text-xs">
-                    <span className={`w-2 h-2 rounded-full ${userProfile?.rso?.yearlyData?.RSO_membershipStatus === true ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                    <span className={`w-2 h-2 rounded-full ${rsoDetails?.rso?.yearlyData?.RSO_membershipStatus === true ? 'bg-green-500' : 'bg-red-500'}`}></span>
                     <span>
                       Membership Status: {" "}
-                      <span className={`font-semibold ${userProfile?.rso?.yearlyData?.RSO_membershipStatus === true ? 'text-green-700' : 'text-red-700'}`}>
-                        {userProfile?.rso?.yearlyData?.RSO_membershipStatus === true ? 'Active' : 'Inactive'}
+                      <span className={`font-semibold ${rsoDetails?.rso?.yearlyData?.RSO_membershipStatus === true ? 'text-green-700' : 'text-red-700'}`}>
+                        {rsoDetails?.rso?.yearlyData?.RSO_membershipStatus === true ? 'Active' : 'Inactive'}
                       </span>
                     </span>
                   </span>
-                  {userProfile?.rso?.yearlyData?.RSO_membershipEndDate && (
+                  {rsoDetails?.rso?.yearlyData?.RSO_membershipEndDate && (
                     <div className='hidden sm:block h-4 w-px bg-blue-200'></div>
                   )}
-                  {userProfile?.rso?.yearlyData?.RSO_membershipEndDate && (
+                  {rsoDetails?.rso?.yearlyData?.RSO_membershipEndDate && (
                     <span className="text-blue-700 text-xs">
                       End Date: {" "}
-                      <span className="font-semibold text-blue-900">{FormatDate(userProfile?.rso?.yearlyData?.RSO_membershipEndDate)}</span>
+                      <span className="font-semibold text-blue-900">{FormatDate(rsoDetails?.rso?.yearlyData?.RSO_membershipEndDate)}</span>
                     </span>
                   )}
                 </div>
@@ -308,7 +651,7 @@ export default function Users() {
             </div>
 
             {/* show error if rso membership is inactive */}
-            {userProfile?.rso?.yearlyData?.RSO_membershipStatus === false && (
+            {rsoDetails?.rso?.yearlyData?.RSO_membershipStatus === false && (
               <div className="mt-4 text-red-600">
                 <p className="text-sm">RSO Membership is currently inactive. You are not allowed to update user membership.</p>
               </div>
@@ -333,9 +676,9 @@ export default function Users() {
 
       </div>
 
-      {/* User Info Modal */}
+      {/* Edit Modal */}
       <AnimatePresence>
-        {isUserModalOpen && (
+        {isEditModalOpen && (
           <>
             <Backdrop className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30" />
             <motion.div
@@ -345,115 +688,88 @@ export default function Users() {
               animate="visible"
               exit="exit"
             >
-              <div className="bg-white rounded-lg w-full max-w-[95%] sm:max-w-3xl md:max-w-5xl shadow-lg flex flex-col md:flex-row gap-6 p-6 sm:p-8 max-h:[85vh] md:max-h-[85vh] overflow-hidden">
-                {/* Main Content: Form Review */}
-                <div className="flex-1 flex flex-col min-h-0">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-semibold text-[#312895]">Application Review</h2>
-                  </div>
-                  {/* Scrollable responses container */}
-                  <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar max-h-[70vh]">
-                    {userModalData.pages.length === 0 && (
-                      <p className="text-sm text-gray-500">No responses available.</p>
-                    )}
-                    {/* Pages rendered as form sections */}
-                    {userModalData.pages.map((page) => (
-                      <div
-                        key={page.pageIndex}
-                        className="border border-gray-200 rounded-lg p-5 bg-white shadow-sm"
-                      >
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-sm font-semibold text-gray-800 capitalize">
-                            {page.title || `Untitled Page`}
-                          </h3>
-                          <span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">
-                            {page.elements.length} item{page.elements.length !== 1 && 's'}
-                          </span>
-                        </div>
-                        {page.elements.length === 0 && (
-                          <p className="text-sm text-gray-500 italic">No content available.</p>
-                        )}
-                        {page.elements.length > 0 && (
-                          <dl className="divide-y divide-gray-100">
-                            {page.elements.map((item, idx) => (
-                              <div
-                                key={item.elementIndex || idx}
-                                className="py-3 grid grid-cols-12 gap-4"
-                              >
-                                <dt className="col-span-12 md:col-span-5 text-[11px] font-medium uppercase tracking-wide text-gray-500">
-                                  {item.title || `Question ${idx + 1}`}
-                                </dt>
-                                <dd
-                                  className="col-span-12 md:col-span-7 text-sm text-gray-900 whitespace-pre-wrap break-words"
-                                  title={item.answer}
-                                >
-                                  {item.answer === "" || item.answer === null
-                                    ? <span className="italic text-gray-400">No answer</span>
-                                    : item.answer}
-                                </dd>
-                              </div>
-                            ))}
-                          </dl>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
+              <div className="bg-white rounded-lg w-full max-w-md shadow-lg flex flex-col gap-6 p-6 max-h-[85vh] overflow-hidden">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-lg font-semibold text-[#312895]">Edit User</h2>
+                  <CloseButton onClick={closeEditModal} />
                 </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                    <input className="w-full border rounded px-2 py-1 mt-1" value={editModalData.fullName} readOnly />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Email</label>
+                    <input className="w-full border rounded px-2 py-1 mt-1" value={editModalData.email} readOnly />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Role</label>
+                    {/* <input className="w-full border rounded px-2 py-1 mt-1" value={editModalData.role} readOnly /> */}
+                    {(isSuperAdmin) ? (
+                      <ReusableDropdown
+                        options={roleSDAOOptions}
+                        value={editModalData.role}
+                        onChange={e => setEditModalData({ ...editModalData, role: e.target.value || '' })}
+                      />
+                    ) : (
+                      <ReusableDropdown
+                        options={roleOptions}
+                        value={editModalData.role}
+                        onChange={e => setEditModalData({ ...editModalData, role: e.target.value || '' })}
+                      />
+                    )}
 
-                {/* Sidebar: Member Info + Actions */}
-                <div className="w-full md:w-72 flex-shrink-0">
-                  <div className="w-full flex justify-end mb-4">
-                    <CloseButton onClick={handleCloseUserModal} />
                   </div>
-                  <div className="border border-gray-200 rounded-lg p-5 space-y-6">
+                  {!isSuperAdmin && (
                     <div>
-                      <h3 className="text-sm font-semibold text-gray-700 tracking-wide mb-3">Member Info</h3>
-                      <table className="w-full text-sm">
-                        <tbody>
-                          <tr>
-                            <td className="py-2 pr-4 text-gray-500 align-top">Full Name</td>
-                            <td className="py-2 font-medium">{userModalData.fullName}</td>
-                          </tr>
-                          <tr>
-                            <td className="py-2 pr-4 text-gray-500 align-top">Applicant No.</td>
-                            <td className="py-2 font-medium">{userModalData.index}</td>
-                          </tr>
-                        </tbody>
-                      </table>
+                      <label className="block text-sm font-medium text-gray-700">Assigned RSO</label>
+                      {/* <input className="w-full border rounded px-2 py-1 mt-1" value={editModalData.assignedRSO} readOnly /> */}
+                      <Select
+                        defaultValue={rsoOptions?.find(opt => opt.label === editModalData.assignedRSO) || null}
+                        options={rsoOptions}
+                        isDisabled={editModalData.role === 'rso_representative' ? false : true}
+                        onChange={editModalData.role === 'rso_representative' ? (e => setEditModalData({ ...editModalData, assignedRSO: e?.value || '' })) : (e => setEditModalData({ ...editModalData, assignedRSO: '' || '' }))}
+                        menuPortalTarget={document.body}
+                        styles={{
+                          menuPortal: base => ({ ...base, zIndex: 9999 })
+                        }}
+                      />
                     </div>
-                    <div className="pt-4 border-t border-gray-200">
-                      <h4 className="text-sm font-semibold text-gray-700 mb-2">Action</h4>
-                      <Button
-                        onClick={handleApproveMembership}
-                        className="w-full"
-                      >
-                        <div className="flex items-center justify-center gap-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="size-4 text-off-black" viewBox="0 0 640 640"><path d="M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z" /></svg>
-                          Approve Membership
-                        </div>
-                      </Button>
-                      <Button
-                        onClick={handleRejectMembership}
-                        style={"secondary"}
-                        className="w-full"
-                      >
-                        <div className="flex items-center justify-center gap-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="size-4 text-off-black" viewBox="0 0 640 640"><path d="M183.1 137.4C170.6 124.9 150.3 124.9 137.8 137.4C125.3 149.9 125.3 170.2 137.8 182.7L275.2 320L137.9 457.4C125.4 469.9 125.4 490.2 137.9 502.7C150.4 515.2 170.7 515.2 183.2 502.7L320.5 365.3L457.9 502.6C470.4 515.1 490.7 515.1 503.2 502.6C515.7 490.1 515.7 469.8 503.2 457.3L365.8 320L503.1 182.6C515.6 170.1 515.6 149.8 503.1 137.3C490.6 124.8 470.3 124.8 457.8 137.3L320.5 274.7L183.1 137.4z" /></svg>
-                          Reject Membership
-                        </div>
-                      </Button>
-                    </div>
-                    <div>
-                      <Button
-                        onClick={handleCloseUserModal}
-                        style="secondary"
-                        className="w-full"
-                      >
-                        Close
-                      </Button>
-                    </div>
-                  </div>
+                  )}
+                </div>
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button style="secondary" onClick={closeEditModal}>Close</Button>
+                  <Button onClick={handleSaveEdit}>Save</Button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Modal */}
+      <AnimatePresence>
+        {isDeleteModalOpen && (
+          <>
+            <Backdrop className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30" />
+            <motion.div
+              className="fixed inset-0 z-50 w-screen overflow-auto flex items-center justify-center p-4"
+              variants={DropIn}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              <div className="bg-white rounded-lg w-full max-w-sm shadow-lg flex flex-col gap-6 p-6 max-h-[85vh] overflow-hidden">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-lg font-semibold text-[#b91c1c]">Delete User</h2>
+                  <CloseButton onClick={closeDeleteModal} />
+                </div>
+                <div className="space-y-4">
+                  <p className="text-gray-700">Are you sure you want to delete <span className="font-semibold">{deleteModalData.fullName}</span>?</p>
+                </div>
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button style="secondary" onClick={closeDeleteModal}>Cancel</Button>
+                  <Button style="danger" onClick={handleDeleteUser}>Delete</Button>
                 </div>
               </div>
             </motion.div>

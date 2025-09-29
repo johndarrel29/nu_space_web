@@ -11,8 +11,8 @@ const ROLE_REDIRECTS = {
     coordinator: "/dashboard",
     rso_representative: "/dashboard",
     super_admin: "/users",
-    director: "/admin-documents",
-    avp: "/admin-documents",
+    director: "/general-documents",
+    avp: "/general-documents",
 };
 
 export default function MainLogin() {
@@ -218,9 +218,9 @@ export default function MainLogin() {
                 <Button
                     type="submit"
                     className="w-full mt-6 flex items-center justify-center"
-                    disabled={isLoading}
+                    disabled={isLoginLoading}
                 >
-                    {isLoading ? (
+                    {isLoginLoading ? (
                         <LoadingSpinner />
                     ) : (
                         "Login"

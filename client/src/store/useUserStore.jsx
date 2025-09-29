@@ -23,8 +23,6 @@ export default function useUserStoreWithAuth() {
         isAVP: user?.role === "avp",
     }), [user?.role]);
 
-
-
     return {
         user,
         isAuthenticated,

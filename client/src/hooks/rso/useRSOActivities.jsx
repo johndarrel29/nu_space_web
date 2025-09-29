@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
 import { useAuth } from '../../context/AuthContext';
 import { useTokenStore, useUserStoreWithAuth } from "../../store";
-import { useLocation } from "react-router-dom";
 
 const getActivityDocumentsRequest = async ({ queryKey }) => {
     try {
@@ -247,23 +247,14 @@ const fetchLocalActivityAPI = async ({ queryKey }) => {
 
 // Pure API: view activity details (role-aware)
 const viewActivityAPI = async ({ queryKey }) => {
-    const [_key, { activityId, role }] = queryKey;
+    const [_key, { activityId }] = queryKey;
     if (!activityId) throw new Error("activityId is required");
 
     const token = localStorage.getItem("token");
     const formattedToken = token?.startsWith("Bearer ") ? token.slice(7) : token;
 
-    let url = "";
-    switch (role) {
-        case "admin":
-            url = `${process.env.REACT_APP_BASE_URL}/api/admin/activities/${activityId}`;
-            break;
-        case "rso_representative":
-            url = `${process.env.REACT_APP_BASE_URL}/api/rsoRep/activities/viewRSOActivity/${activityId}`;
-            break;
-        default:
-            throw new Error("No URL defined for role: " + role);
-    }
+    // Always use the rsoRep route
+    const url = `${process.env.REACT_APP_BASE_URL}/api/rsoRep/activities/viewRSOActivity/${activityId}`;
 
     const response = await fetch(url, {
         method: "GET",
@@ -386,11 +377,11 @@ function useRSOActivities({ sorted, search, activityId } = {}) {
 
     // Optionally fetch role-aware activity view/details
     const {
-        data: activityView,
-        isLoading: activityViewLoading,
-        isError: activityViewError,
-        error: activityViewQueryError,
-        refetch: refetchActivityView,
+        data: activityRSOView,
+        isLoading: activityRSOViewLoading,
+        isError: activityRSOViewError,
+        error: activityRSOViewQueryError,
+        refetch: refetchActivityRSOView,
     } = useQuery({
         queryKey: ["activityView", { activityId, role: user?.role }],
         queryFn: viewActivityAPI,
@@ -487,11 +478,11 @@ function useRSOActivities({ sorted, search, activityId } = {}) {
         refetchActivityDetails,
 
         // activity view
-        activityView,
-        activityViewLoading,
-        activityViewError,
-        activityViewQueryError,
-        refetchActivityView,
+        activityRSOView,
+        activityRSOViewLoading,
+        activityRSOViewError,
+        activityRSOViewQueryError,
+        refetchActivityRSOView,
 
         // activity document mutations
         createActivityDocumentMutation,

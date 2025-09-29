@@ -16,7 +16,7 @@ import {
   ReusableDropdown,
   Searchbar
 } from "../../../components";
-import { useAdminActivity, useRSO, useRSOActivities } from "../../../hooks";
+import { useAdminActivity, useRSOActivities } from "../../../hooks";
 import { useUserStoreWithAuth } from '../../../store';
 
 // fix the rso path first to manipulate the activity data.
@@ -77,7 +77,6 @@ export default function MainDocuments() {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
-  const { organizations } = useRSO();
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [sorted, setSorted] = useState("All");
   const [RSO, setRSO] = useState("All");

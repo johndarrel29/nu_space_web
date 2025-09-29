@@ -1,21 +1,18 @@
-import React, { useState, useCallback, useEffect, act } from 'react';
-import { TextInput, Button, Backdrop, CloseButton, ReusableDropdown } from '../../../components';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useRSOActivities } from '../../../hooks';
-import { useRef } from 'react';
-import { motion, AnimatePresence } from "framer-motion";
-import { DropIn } from "../../../animations/DropIn";
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import dayjs from 'dayjs';
-import DefaultPicture from '../../../assets/images/default-picture.png';
-import { toast } from 'react-toastify';
+import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Cropper from "react-easy-crop";
-import getCroppedImg from '../../../utils/cropImage';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { DropIn } from "../../../animations/DropIn";
+import DefaultPicture from '../../../assets/images/default-picture.png';
+import { Backdrop, Button, CloseButton, ReusableDropdown, TextInput } from '../../../components';
+import { useRSOActivities } from '../../../hooks';
 import { useSelectedFormStore } from '../../../store';
-
-// TODO: replace hooks from useActivities to useRSOActivities
+import getCroppedImg from '../../../utils/cropImage';
 
 
 function DocumentAction() {

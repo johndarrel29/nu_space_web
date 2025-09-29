@@ -5,16 +5,8 @@ import { DropIn } from "../../../animations/DropIn";
 import DefaultPicture from "../../../assets/images/default-profile.jpg";
 import { ActivityCard, BackendTable, Button, CloseButton, ReusableRSODescription, TabSelector } from '../../../components';
 import { useAuth } from "../../../context/AuthContext";
-import { useAdminActivity, useAdminDocuments, useAdminRSO, useModal, useTagSelector, useUserProfile } from '../../../hooks';
+import { useAdminActivity, useAdminDocuments, useAdminRSO, useAdminUser, useModal, useTagSelector } from '../../../hooks';
 import { selectedRSOStatusStore, selectedRSOStore } from '../../../store';
-
-// TODO: get rso detail hook
-// link the rso detail to the rso id from state
-// map the response into the UI.
-// RSO details for admin
-
-// use the metadata to know if the activity fetched is related to rso. if not, dont display.
-
 
 
 function RSODetails() {
@@ -28,7 +20,15 @@ function RSODetails() {
   const [selected, setSelected] = useState("");
   const [modalMode, setModalMode] = useState("officers");
   const [selectedDocument, setSelectedDocument] = useState(null);
-  const { user: userProfile } = useUserProfile();
+  const {
+    // fetching admin profile
+    adminProfile,
+    isAdminProfileLoading,
+    isAdminProfileError,
+    adminProfileError,
+    refetchAdminProfile,
+    isAdminProfileRefetching,
+  } = useAdminUser();
   const [successMessage, setSuccessMessage] = useState("");
   const rsoID = user?.id || "";
   const [checked, setChecked] = React.useState(null);
@@ -165,16 +165,14 @@ function RSODetails() {
     if (action === "approve") {
       setSuccessMessage("Document Approved Successfully!");
       // Call the approve function with the documentId
-      console.log("Approving document with ID:", documentId);
-      console.log("User Profile ID: ", userProfile?._id);
 
       //add the id of the logged in user to the approveData function
-      approveDocumentMutate({ documentId: documentId, reviewedById: userProfile?._id });
+      approveDocumentMutate({ documentId: documentId, reviewedById: adminProfile?._id });
     } else if (action === "reject") {
       setSuccessMessage("Document Rejected Successfully!");
       // Call the reject function with the documentId
-      console.log("Rejecting document with ID:", documentId, " and ", "userProfile?._id: ", userProfile?._id);
-      rejectDocumentMutate({ documentId: documentId, reviewedById: userProfile?._id });
+      console.log("Rejecting document with ID:", documentId, " and ", "adminProfile?._id: ", adminProfile?._id);
+      rejectDocumentMutate({ documentId: documentId, reviewedById: adminProfile?._id });
       // Add your reject logic here
     }
   }

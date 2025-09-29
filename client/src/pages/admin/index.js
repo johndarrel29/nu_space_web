@@ -17,12 +17,13 @@
 // export { default as AdminTemplates } from './Documents/AdminTemplates';
 // export { default as DocumentDetails } from './Documents/DocumentDetails';
 
+export * from './AcademicYear';
 export * from './Account';
 export * from './Activities';
 export * from './Announcements';
 export * from './Dashboard';
 export * from './Documents';
 export * from './Forms';
+export * from './Notifications';
 export * from './RSO';
 export * from './Users';
-export * from './AcademicYear';

@@ -10,16 +10,10 @@ import { Backdrop, Breadcrumb, Button, ProfileInitials, SidebarButton } from "..
 import { useAuth } from "../../context/AuthContext";
 import { useSidebar } from "../../context/SidebarContext";
 import style from "../../css/Sidebar.module.css";
-import { useAdminActivity, useAdminRSO, useOnlineStatus, useRSODetails, useUserProfile } from "../../hooks";
+import { useAdminActivity, useAdminRSO, useAdminUser, useOnlineStatus, useRSODetails } from "../../hooks";
 import { selectedRSOStatusStore, selectedRSOStore, useActivityStatusStore, useDocumentStore, useUserStoreWithAuth } from '../../store';
 import Sidebar from "./Sidebar";
 
-// ======bug=====
-// when logging director, coord, or avp, the profile dropdown name shows the admin first name last name
-// instead of the currently assigned role's name
-// fix recognition status. it should remove the "recognized" status after april 30
-
-// mobile sidebar fix responsive issue only showing icon for collapsed sidebar
 
 function MainLayout({ children }) {
   // Navigation & auth
@@ -57,28 +51,42 @@ function MainLayout({ children }) {
     recognizeRSOError,
   } = useAdminRSO();
 
-  // RSO hooks
+  // User roles / store
+  const { isUserRSORepresentative, isUserAdmin, isSuperAdmin, isCoordinator, isDirector, isAVP } = useUserStoreWithAuth();
+
+
+  function profileOnRole() {
+    if (isUserAdmin || isCoordinator || isSuperAdmin) {
+      return adminProfile;
+    } else if (isUserRSORepresentative) {
+      return rsoDetails;
+    }
+  }
+
   const {
+    // RSO Details
     rsoDetails,
     isRSODetailsLoading,
     isRSODetailsError,
     isRSODetailsSuccess,
   } = useRSODetails();
-
-  // User roles / store
-  const { isUserRSORepresentative, isUserAdmin, isSuperAdmin, isCoordinator, isDirector, isAVP } = useUserStoreWithAuth();
-
-  // User profile hook
   const {
-    userProfile,
-    userProfileError,
-    isUserProfileLoading,
-    isUserProfileError,
-    refetchUserProfile,
-    deleteOfficerMutate,
-    isDeleting,
-    isDeleteError,
-  } = useUserProfile();
+    // fetching admin profile
+    adminProfile,
+    isAdminProfileLoading,
+    isAdminProfileError,
+    adminProfileError,
+    refetchAdminProfile,
+    isAdminProfileRefetching,
+  } = useAdminUser();
+
+  function profileOnRole() {
+    if (!isUserRSORepresentative) {
+      return adminProfile;
+    } else if (isUserRSORepresentative) {
+      return rsoDetails;
+    }
+  }
 
   // Sidebar / layout context
   const { isCollapsed } = useSidebar();
@@ -101,9 +109,8 @@ function MainLayout({ children }) {
   // Computed values
   const excludedPaths = ["/documents", `/documents/${documentId}`];
   // only set for new rso for now
-  const isUserStatusActive = (isUserRSORepresentative && userProfile?.rso?.yearlyData?.RSO_recognition_status?.status === 'new_rso')
+  const isUserStatusActive = (isUserRSORepresentative && profileOnRole()?.rso?.yearlyData?.RSO_recognition_status?.status === 'new_rso')
   const shouldShowOverlay = isUserStatusActive && !excludedPaths.includes(currentPath) && !currentPath.startsWith('/documents/');
-  console.log("excluded paths startwith documents", userProfile);
 
   useEffect(() => {
     if (rsoDetails) {
@@ -112,17 +119,6 @@ function MainLayout({ children }) {
     }
   }, [rsoDetails]);
 
-
-  useEffect(() => {
-    if (userProfile) {
-      console.log("User profile loaded successfully:", userProfile);
-      console.log("rso:", userProfile?.rso);
-    }
-  }, [userProfile]);
-
-  useEffect(() => {
-    refetchUserProfile();
-  }, [refetchUserProfile]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -134,22 +130,17 @@ function MainLayout({ children }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   })
 
-  console.log("User profile data:", userProfile);
+  console.log("User profile data:", profileOnRole());
 
   useEffect(() => {
     if (isUserRSORepresentative) {
       setProfileData(rsoDetails?.rso || null);
       console.log("RSO Profile Data:", rsoDetails?.rso);
     } else if (isUserAdmin || isSuperAdmin || isCoordinator || isDirector || isAVP) {
-      setProfileData(userProfile?.user || null);
+      setProfileData(profileOnRole()?.user || null);
     }
-  }, [isUserRSORepresentative, isUserAdmin, isSuperAdmin, isCoordinator, isDirector, isAVP, rsoDetails, userProfile]);
+  }, [isUserRSORepresentative, isUserAdmin, isSuperAdmin, isCoordinator, isDirector, isAVP, rsoDetails, adminProfile]);
 
-  useEffect(() => {
-    if (userProfileError) {
-      console.log("Profile load userProfileError state is now:", userProfileError);
-    }
-  }, [userProfileError]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -170,12 +161,11 @@ function MainLayout({ children }) {
 
   };
 
-  const isOnAnnouncementPage = currentPath.includes("/announcement");
+  const isOnNotificationPage = currentPath.includes("/notifications");
   const isOnDashboardPage = currentPath.includes("/dashboard");
 
   // compute recognition banner visibility only after profile finished loading
-  const recognitionStatus = userProfile?.rso?.yearlyData?.RSO_recognition_status?.status;
-  const showViewOnlyBanner = !isUserProfileLoading && !!recognitionStatus && recognitionStatus !== "recognized";
+  const recognitionStatus = profileOnRole()?.rso?.yearlyData?.RSO_recognition_status?.status;
 
   // Add this variable for activity details page
   const isActivityDetailsPage = location.pathname.startsWith('/activities/') && activityId && (isUserAdmin || isCoordinator);
@@ -364,9 +354,9 @@ function MainLayout({ children }) {
                 isCollapsed={true}
                 iconPath={"M0 64C0 28.7 28.7 0 64 0L224 0l0 128c0 17.7 14.3 32 32 32l128 0 0 288c0 35.3-28.7 64-64 64L64 512c-35.3 0-64-28.7-64-64L0 64zm384 64l-128 0L256 0 384 128z"}
                 text="Documents"
-                active={location.pathname.startsWith("/admin-documents")}
+                active={location.pathname.startsWith("/general-documents")}
                 onClick={() => {
-                  navigate("/admin-documents");
+                  navigate("/general-documents");
                   setMobileSidebarOpen(false);
                 }}
               />
@@ -442,27 +432,6 @@ function MainLayout({ children }) {
             {/* group notification module and profile picture */}
             <div className="flex items-center gap-4">
 
-
-              <Button
-                onClick={() => navigate(isOnAnnouncementPage ? -1 : "/announcements")}
-                style={"secondary"}
-                className={`${isOnAnnouncementPage ? "bg-gray-100" : ""}`}
-              >
-                <div className={`flex items-center gap-2 text-sm font-light`}>
-                  {isOnAnnouncementPage ? (
-                    <div className="flex items-center gap-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="size-4" fill="currentColor" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
-                      Cancel
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="size-4" fill="currentColor" viewBox="0 0 448 512"><path d="M224 0c-17.7 0-32 14.3-32 32l0 19.2C119 66 64 130.6 64 208l0 18.8c0 47-17.3 92.4-48.5 127.6l-7.4 8.3c-8.4 9.4-10.4 22.9-5.3 34.4S19.4 416 32 416l384 0c12.6 0 24-7.4 29.2-18.9s3.1-25-5.3-34.4l-7.4-8.3C401.3 319.2 384 273.9 384 226.8l0-18.8c0-77.4-55-142-128-156.8L256 32c0-17.7-14.3-32-32-32zm45.3 493.3c12-12 18.7-28.3 18.7-45.3l-64 0-64 0c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7z" /></svg>
-                      Announcements
-                    </div>
-                  )}
-                </div>
-              </Button>
-
               {(isSuperAdmin || isDirector || isAVP) && (
                 <Button
                   onClick={() => navigate(isOnDashboardPage ? -1 : "/dashboard")}
@@ -486,6 +455,25 @@ function MainLayout({ children }) {
                 </Button>
               )}
 
+              <div
+                data-tooltip-id="global-tooltip"
+                data-tooltip-content={`${isOnNotificationPage ? "Close Notifications" : "Notifications"}`}
+                onClick={() => navigate(isOnNotificationPage ? -1 : "/notifications")}
+                className={`aspect-square border border-mid-gray rounded rounded-full p-3 ${isOnNotificationPage ? "bg-gray-100" : ""}`}
+              >
+                <div className={`flex items-center gap-2 text-sm font-light cursor-pointer`}>
+                  {isOnNotificationPage ? (
+                    <div className="flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="size-4" fill="currentColor" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="size-4" fill="currentColor" viewBox="0 0 448 512"><path d="M224 0c-17.7 0-32 14.3-32 32l0 19.2C119 66 64 130.6 64 208l0 18.8c0 47-17.3 92.4-48.5 127.6l-7.4 8.3c-8.4 9.4-10.4 22.9-5.3 34.4S19.4 416 32 416l384 0c12.6 0 24-7.4 29.2-18.9s3.1-25-5.3-34.4l-7.4-8.3C401.3 319.2 384 273.9 384 226.8l0-18.8c0-77.4-55-142-128-156.8L256 32c0-17.7-14.3-32-32-32zm45.3 493.3c12-12 18.7-28.3 18.7-45.3l-64 0-64 0c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7z" /></svg>
+
+                    </div>
+                  )}
+                </div>
+              </div>
 
               <div className='flex items-center justify-between text-center pr-6 '>
 
@@ -502,7 +490,7 @@ function MainLayout({ children }) {
                         className="rounded-full h-full w-full object-cover"
                       />
                     ) :
-                      (isUserAdmin || isSuperAdmin || isCoordinator || isDirector || isAVP) ? (
+                      (!isUserRSORepresentative) ? (
                         <ProfileInitials firstName={profileData?.firstName} lastName={profileData?.lastName} />
                       )
                         :
@@ -598,11 +586,11 @@ function MainLayout({ children }) {
               </div>
             </div>
           </div>
-          {console.log("user profile status in rso", userProfile?.rso?.yearlyData?.RSO_recognition_status?.status)}
+          {console.log("user profile status in rso", profileOnRole()?.rso?.yearlyData?.RSO_recognition_status?.status)}
 
-          {/* fix that this should open if rso and userProfile?.rso?.yearlyData?.RSO_recognition_status?.status === null */}
-          {console.log("user profile status in rso", userProfile?.rso?.yearlyData?.RSO_recognition_status?.status)}
-          {(isUserRSORepresentative && userProfile?.rso?.yearlyData?.RSO_recognition_status?.status === 'new_rso') && (
+          {/* fix that this should open if rso and profileOnRole()?.rso?.yearlyData?.RSO_recognition_status?.status === null */}
+          {console.log("user profile status in rso", profileOnRole()?.rso?.yearlyData?.RSO_recognition_status?.status)}
+          {(isUserRSORepresentative && profileOnRole()?.rso?.yearlyData?.RSO_recognition_status?.status === 'new_rso') && (
             <div className="fixed top-16 xl:left-[4%] bg-white w-full h-8  z-30">
               <div className="flex items-center justify-center h-full bg-yellow-100 text-yellow-800">
                 <h1 className="text-sm font-semibold">
@@ -614,7 +602,7 @@ function MainLayout({ children }) {
               </div>
             </div>
           )}
-          {(isUserRSORepresentative && userProfile?.rso?.yearlyData?.RSO_recognition_status?.status === 'pending') && (
+          {(isUserRSORepresentative && profileOnRole()?.rso?.yearlyData?.RSO_recognition_status?.status === 'pending') && (
             <div className="fixed top-16 md:left-[4%] bg-white w-full h-8  z-30">
               <div className="flex items-center justify-center h-full bg-yellow-100 text-yellow-800">
                 <h1 className="text-sm font-semibold">

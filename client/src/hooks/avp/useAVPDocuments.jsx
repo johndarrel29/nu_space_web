@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { useTokenStore, useUserStoreWithAuth } from '../../store';
 import { useLocation } from "react-router-dom";
+import { useTokenStore, useUserStoreWithAuth } from '../../store';
 
 const getAVPDocuments = async ({ queryKey }) => {
     try {
@@ -137,7 +137,7 @@ function useAVPDocuments({
     const { isAVP } = useUserStoreWithAuth();
     const queryClient = useQueryClient();
     const location = useLocation();
-    const isAdminDocumentsPage = location.pathname === '/admin-documents';
+    const isAdminDocumentsPage = location.pathname === '/general-documents';
 
     const filter = {
         query: debouncedQuery,

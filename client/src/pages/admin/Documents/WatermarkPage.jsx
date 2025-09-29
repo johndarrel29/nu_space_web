@@ -100,7 +100,7 @@ export default function WaterMarkPage() {
 
     if (nullWatermarkImage) {
         toast.warn("No signature/watermark image available. Please create one first at Dashboard Page.");
-        navigate(`/admin-documents/${documentId}`, { state: { documentId, url } });
+        navigate(`/general-documents/${documentId}`, { state: { documentId, url } });
     }
 
     // const pdfUrl = (`http://localhost:5000/api/admin/documents/pdf/${documentId}`);
@@ -327,7 +327,7 @@ export default function WaterMarkPage() {
     }
 
     const handleBackClick = () => {
-        navigate(`/admin-documents/${documentId}`, { state: { documentId, url } });
+        navigate(`/general-documents/${documentId}`, { state: { documentId, url } });
     };
 
     if (isLoading) return (
@@ -430,7 +430,7 @@ export default function WaterMarkPage() {
             onSuccess: () => {
                 toast.success('Document approved successfully.');
                 // navigate to home documents page
-                navigate('/admin-documents');
+                navigate('/general-documents');
             },
             onError: (error) => {
                 toast.error(`Error approving document: ${error.message || 'Unknown error'}`);

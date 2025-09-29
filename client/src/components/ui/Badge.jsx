@@ -38,7 +38,7 @@ function Badge({ style, text }) {
   return (
     <>
 
-      <div className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full color-off-black ${handleStyle}`}>
+      <div className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full color-off-black truncate ${handleStyle}`}>
         {text}
       </div>
     </>

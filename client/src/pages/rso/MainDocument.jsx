@@ -11,9 +11,7 @@ import {
     TabSelector, UploadBatchModal
 } from '../../components';
 import { useModal, useRSODocuments } from '../../hooks';
-import useNotification from '../../utils/useNotification';
 
-// add modal confirmation before deleting
 
 function MainDocument() {
     // State and hooks initialization
@@ -27,8 +25,6 @@ function MainDocument() {
         deleteAccreditationDocument,
     } = useRSODocuments();
 
-
-    const { handleNotification } = useNotification();
     const [activeTab, setActiveTab] = useState(0);
     const { isOpen, openModal, closeModal } = useModal();
     const [modalType, setModalType] = useState("");

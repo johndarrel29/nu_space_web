@@ -1,8 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTokenStore } from "../../store/tokenStore";
-import { useUserStoreWithAuth } from '../../store';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { useUserStoreWithAuth } from '../../store';
+import { useTokenStore } from "../../store/tokenStore";
 
 // Create RSO function - clean implementation for React Query
 const createRSO = async (newOrg) => {
@@ -400,12 +400,14 @@ function useAdminRSO({
     isDeleted = false,
     recognitionStatus = "",
     search = "",
-    category = ""
+    category = "",
+    manualEnable = false,
 } = {}) {
     const queryClient = useQueryClient();
     const { isUserAdmin, isUserCoordinator } = useUserStoreWithAuth();
     const location = useLocation();
     const isRSOsPage = location.pathname.startsWith('/rsos');
+    const isUsersPage = location.pathname.startsWith('/users');
 
     console.log("id is ", rsoID);
 
@@ -515,7 +517,7 @@ function useAdminRSO({
         retry: 1,
         staleTime: 0,
         cacheTime: 0,
-        enabled: (isUserAdmin || isUserCoordinator) && isRSOsPage,
+        enabled: ((isUserAdmin || isUserCoordinator) && (isRSOsPage || isUsersPage)) || manualEnable,
     });
 
     const {

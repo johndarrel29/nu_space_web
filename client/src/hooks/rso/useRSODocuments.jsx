@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
 import { useAuth } from '../../context/AuthContext';
 import { useTokenStore, useUserStoreWithAuth } from "../../store";
-import { useLocation } from "react-router-dom";
 
 // for rso representative
 // looks like this url is no longer available in backend
@@ -233,7 +233,7 @@ function useRSODocuments({ documentFor = "", documentId = "" } = {}) {
     } = useQuery({
         queryKey: ["documents"],
         queryFn: fetchDocuments,
-        enabled: !!isUserRSORepresentative && !!token && isDocumentsPage,
+        enabled: isUserRSORepresentative && !!token && isDocumentsPage,
         onSuccess: (data) => {
             console.log("Documents fetched successfully:", data);
         },

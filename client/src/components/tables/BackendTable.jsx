@@ -277,7 +277,7 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
 
     const handleRowClick = (row) => {
         console.log("Row clicked:", row);
-        const route = isOnRSODetailsPage ? `/admin-documents/${row._id}` : `${row._id}`;
+        const route = isOnRSODetailsPage ? `/general-documents/${row._id}` : `${row._id}`;
         navigate(route, {
             state: {
                 documentId: row._id,

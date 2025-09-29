@@ -5,18 +5,29 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { toast } from 'react-toastify';
 import { ActionModal, CardSkeleton, TableRow } from '../../components';
-import { useAuth } from "../../context/AuthContext";
 import { useAdminUser, useModal, useSuperAdminUsers } from "../../hooks";
 import { useUserStoreWithAuth } from "../../store";
+
+// TODO: Implement filtering logic
+// BUGS: Data flickering. Still don't know if it's from react-query or from the component itself
 
 // Table Component
 const Table = React.memo(({ searchQuery, selectedRole }) => {
 
+  const { isUserRSORepresentative, isUserAdmin, isSuperAdmin, isCoordinator, isDirector, isAVP } = useUserStoreWithAuth();
   const [mode, setMode] = useState('delete');
-  const { usersData, isUsersLoading, updateUserMutate, deleteStudentAccount, error, refetch, isLoading, refetchAdminProfile, refetchUsersData } = useAdminUser();
+  const [filters, setFilters] = useState({
+    page: 1,
+    limit: 10,
+    search: searchQuery || '',
+    role: selectedRole || '',
+  });
+
+  const { usersData, isUsersLoading, updateUserMutate, deleteStudentAccount, refetch, isLoading, refetchAdminProfile, refetchUsersData } = useAdminUser(
+    (isUserAdmin || isCoordinator) ? filters : undefined
+  );
   const { sdaoAccounts, createAccount, deleteAdminAccount, updateAdminRole, refetchAccounts, accountsLoading } = useSuperAdminUsers();
 
-  const { isUserRSORepresentative, isUserAdmin, isSuperAdmin, isCoordinator, isDirector, isAVP } = useUserStoreWithAuth();
   const [selectedUser, setSelectedUser] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [postsPerPage, setPostsPerPage] = useState(10);
@@ -24,10 +35,12 @@ const Table = React.memo(({ searchQuery, selectedRole }) => {
   const { isOpen, openModal, closeModal } = useModal();
   const [success, setSuccess] = useState(false);
   const [filterError, setFilterError] = useState(null);
-  const { user } = useAuth();
   const [tableData, setTableData] = useState([]);
+  const [error, setError] = useState(null);
 
-  console.log("admin user data", usersData);
+  console.log("users data at table level:", usersData);
+  // console.log("sdao accounts at table level:", sdaoAccounts?.SDAOAccounts);
+
 
   // Effect to fetch accounts on first load
   useEffect(() => {
@@ -48,18 +61,16 @@ const Table = React.memo(({ searchQuery, selectedRole }) => {
   // Effect to set table data based on user role
   useEffect(() => {
     if (isSuperAdmin) {
+      // For superadmin, just log the filter states
+      console.log("SuperAdmin filter states:", filters);
       setTableData(sdaoAccounts?.SDAOAccounts || []);
       return;
     }
     if (isUserAdmin || isCoordinator) {
-      console.log("Admin user detected, using admin hook");
-      setTableData(usersData || []);
-
-      // Use admin hook
-      console.log("Admin users:", usersData);
+      setTableData(usersData?.students || []);
       return;
     }
-  }, [user, isSuperAdmin, isUserAdmin, sdaoAccounts, usersData, isCoordinator]);
+  }, [isSuperAdmin, isUserAdmin, isCoordinator, usersData, sdaoAccounts, filters]);
 
   console.log("Table Data:", tableData);
 
@@ -73,39 +84,15 @@ const Table = React.memo(({ searchQuery, selectedRole }) => {
   const indexOfLastPost = currentPage * postsPerPage;
   const indexOfFirstPost = indexOfLastPost - postsPerPage;
 
+  // Filtering is now handled by backend for admin/coordinator. For superadmin, just use tableData as is.
   const filteredRecords = useMemo(() => {
-    try {
-      console.log("users data:", tableData);
-      setFilterError(null);
-
-      if (!Array.isArray(tableData)) {
-        console.error("Users is not an array:", tableData);
-
-        return [];
-      }
-
-      return tableData.filter(user => {
-        const matchesSearch = ['firstName', 'lastName', 'email'].some(field =>
-          typeof user[field] === 'string' && user[field].toLowerCase().includes(safeSearchQuery.toLowerCase())
-        );
-
-        const matchesRole = !selectedRole ||
-          (selectedRole === "student" ? user.role?.toLowerCase() === "student" :
-            selectedRole === "rso_representative" ? user.role?.toLowerCase() === "rso_representative" :
-              selectedRole === "admin" ? user.role?.toLowerCase() === "admin" :
-                selectedRole === "coordinator" ? user.role?.toLowerCase() === "coordinator" :
-                  selectedRole === "super_admin" ? user.role?.toLowerCase() === "super_admin" :
-                    false
-          );
-        return matchesSearch && matchesRole;
-      });
-    } catch (error) {
-      console.error(`Error filtering records: ${error.message}`);
-      setFilterError(error.message);
-      return [];
+    if (isSuperAdmin) {
+      // No frontend filtering for superadmin, just return tableData
+      return Array.isArray(tableData) ? tableData : [];
     }
-
-  }, [tableData, safeSearchQuery, selectedRole]);
+    // For admin/coordinator, backend already filtered, just return tableData
+    return Array.isArray(tableData) ? tableData : [];
+  }, [tableData, isSuperAdmin]);
 
   const records = useMemo(() => {
     const indexOfLastPost = currentPage * postsPerPage;
@@ -161,8 +148,6 @@ const Table = React.memo(({ searchQuery, selectedRole }) => {
         // Update logic remains the same
         const updateUserOnRole = isUserAdmin || isCoordinator ? updateUserMutate : isSuperAdmin ? updateAdminRole : null;
         const refetchBasedOnRole = (isUserAdmin || isCoordinator) ? refetchUsersData : isSuperAdmin ? refetchAdminProfile : null;
-
-        console.log("passing data: ", { userId: _id, role: updatedData.role });
 
         updateUserOnRole({ userId: _id, userData: updatedData }, {
           onSuccess: () => {
@@ -224,6 +209,10 @@ const Table = React.memo(({ searchQuery, selectedRole }) => {
   const prePage = useCallback(() => setCurrentPage(prev => prev > 1 ? prev - 1 : prev), []);
   const nextPage = useCallback(() => setCurrentPage(prev => prev < npage ? prev + 1 : prev), [npage]);
 
+  const isTableLoading = false;
+  // (isUserAdmin || isCoordinator) ? isUsersLoading
+  //   : isSuperAdmin ? accountsLoading
+  //     : false;
 
   return (
     <div className=' min-w-full mt-2 sm:min-w-1/2 '>
@@ -291,88 +280,82 @@ const Table = React.memo(({ searchQuery, selectedRole }) => {
             {typeof error === 'string' ? error : error?.message || 'An unknown error occurred'}
           </p>
         </div>
-      ) : ((isUserAdmin || isCoordinator) ? isUsersLoading : accountsLoading) ? (
-        <CardSkeleton />
       )
-        : filterError ? (
-          <div className="p-4 bg-red-50 text-red-600 rounded-lg flex flex-col items-center mb-4">
-            <p className="text-red-500 font-medium text-center">
-              Error filtering data: {filterError}
-            </p>
-          </div>
-        ) :
-          tableData?.length > 0 ? (
-            <div className="w-full">
-              <div className=' overflow-x-auto w-full border border-mid-gray rounded-md'>
-                <table className=" lg:min-w-full divide-y divide-gray-200 rounded-md ">
-                  <thead className="border-b border-mid-gray bg-textfield ">
-                    <tr className='rounded-md text-left text-xs font-medium font-bold uppercase tracking-wider '>
-                      <th scope="col" className='px-6 py-3'>
-                        <div className="flex items-center justify-center">
-                          Name
-                        </div>
-                      </th>
-                      <th scope="col" className='px-6 py-3'>
-                        <div className="flex items-center justify-center">
-                          Date Created
-                        </div>
-                      </th>
-                      <th scope="col" className='px-6 py-3'>
-                        <div className="flex items-center justify-center">
-                          Role
-                        </div>
-                      </th>
-                      <th scope="col" className='px-6 py-3'>
-                        {!isSuperAdmin && (
-                          <div className="flex items-center justify-center">
-                            Assigned RSO
-                          </div>
-                        )}
-                      </th>
-                      <th scope="col" className='px-6 py-3'>
-                        <div className="flex items-center justify-center">
-                          Actions
-                        </div>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-card-bg divide-y divide-gray-200">
-                    {records?.length > 0 ? records?.map((user, index) => (
-
-
-                      <TableRow key={index} userRow={user} onOpenModal={handleOpenModal} index={(currentPage - 1) * postsPerPage + index + 1} />
-                    )) : (
-                      <tr>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-center" colSpan={5}>
-                          No records found
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : (
-            <div className="p-4 bg-gray-50 text-gray-800 rounded-lg flex flex-col items-center mb-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-12 w-12 text-gray-400 mb-2"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <p className="text-gray-800 font-medium text-center max-w-md px-4">
-                No data available
+        : (isTableLoading) ? (
+          <CardSkeleton />
+        )
+          : filterError ? (
+            <div className="p-4 bg-red-50 text-red-600 rounded-lg flex flex-col items-center mb-4">
+              <p className="text-red-500 font-medium text-center">
+                Error filtering data: {filterError}
               </p>
             </div>
-          )}
+          )
+            :
+            tableData.length > 0 ? (
+              <div className="w-full">
+                <div className=' overflow-x-auto w-full border border-mid-gray rounded-md'>
+                  <table className=" lg:min-w-full divide-y divide-gray-200 rounded-md ">
+                    <thead className="border-b border-mid-gray bg-textfield ">
+                      <tr className='rounded-md text-left text-xs font-medium font-bold uppercase tracking-wider '>
+                        <th scope="col" className='px-6 py-3'>
+                          <div className="flex items-center justify-center">
+                            Name
+                          </div>
+                        </th>
+                        <th scope="col" className='px-6 py-3'>
+                          <div className="flex items-center justify-center">
+                            Date Created
+                          </div>
+                        </th>
+                        <th scope="col" className='px-6 py-3'>
+                          <div className="flex items-center justify-center">
+                            Role
+                          </div>
+                        </th>
+                        <th scope="col" className='px-6 py-3'>
+                          {!isSuperAdmin && (
+                            <div className="flex items-center justify-center">
+                              Assigned RSO
+                            </div>
+                          )}
+                        </th>
+                        <th scope="col" className='px-6 py-3'>
+                          <div className="flex items-center justify-center">
+                            Actions
+                          </div>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-card-bg divide-y divide-gray-200">
+                      {tableData.map((user, index) => (
+                        <TableRow key={index} userRow={user} onOpenModal={handleOpenModal} index={index + 1} />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-gray-50 text-gray-800 rounded-lg flex flex-col items-center mb-4">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-12 w-12 text-gray-400 mb-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <p className="text-gray-800 font-medium text-center max-w-md px-4">
+                  No data available
+                </p>
+              </div>
+            )}
 
       <div className='w-full bottom-20 mt-4'>
         <nav>

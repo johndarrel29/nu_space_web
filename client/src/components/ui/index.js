@@ -7,6 +7,7 @@ export { default as CloseButton } from './CloseButton';
 export { default as Dropdown } from './Dropdown';
 export { default as DropdownSearch } from './DropdownSearch';
 export { default as FormCard } from './FormCard';
+export { default as GlobalTooltip } from './GlobalTooltip';
 export { default as Notification } from './Notification';
 export { default as NumberPane } from './NumberPane';
 export { default as OTPInput } from './OTPInput';
@@ -16,3 +17,4 @@ export { default as Searchbar } from './Searchbar';
 export { default as SearchResultsList } from './SearchResultsList';
 export { default as TabSelector } from './TabSelector';
 export { default as TextInput } from './TextInput';
+

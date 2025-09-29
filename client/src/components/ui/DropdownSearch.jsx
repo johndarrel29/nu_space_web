@@ -1,35 +1,28 @@
 import { useEffect, useState } from 'react';
 import Select from 'react-select';
-import useRSO from '../../hooks/useRSO';
+import { useAdminRSO } from '../../hooks';
 
 export default function DropdownSearch({ isDisabled, category, setSelectedCategory, selectedCategory, isSorting, setSelectedSorting, role, valueType = "label" }) {
-  const { loading, RSOData, fetchData } = useRSO();
-  const [selectedOption, setSelectedOption] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [defaultCategory] = useState(category);
 
-  console.log("RSOData", RSOData);
+  const [selectedOption, setSelectedOption] = useState(null);
+
+  const {
+    rsoData,
+    isRSOLoading,
+    isRSOError,
+    rsoError,
+    refetchRSOData,
+  } = useAdminRSO();
+
 
   // Extract only RSO_acronym values
-  const options = RSOData?.rsos?.map((org) => {
+  const options = rsoData?.rsos?.map((org) => {
     const snapshot = org.RSO_snapshot || {};
     return {
       value: org.rsoId,
       label: snapshot.acronym,
     };
   }) || [];
-
-  console.log("DropdownSearch options:", options);
-  console.log("clicked dropdown item:", selectedOption);
-
-  useEffect(() => {
-    fetchData();
-  }, [RSOData]);
-
-
-  useEffect(() => {
-    setIsLoading(loading);
-  }, [loading]);
 
   useEffect(() => {
     if (isDisabled || role === "student") {
@@ -42,7 +35,7 @@ export default function DropdownSearch({ isDisabled, category, setSelectedCatego
     <Select
       placeholder={category ? category : "Select an RSO"}
       options={options}
-      isLoading={isLoading}
+      isLoading={isRSOLoading}
       isDisabled={isDisabled || role === "student"}
       isClearable={true}
       isSearchable={true}

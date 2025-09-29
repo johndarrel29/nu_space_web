@@ -1,22 +1,20 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from "framer-motion";
-import { TabSelector, ReusableTable, Button, CloseButton } from "../../../components";
-import { DropIn } from "../../../animations/DropIn";
-import useSearchQuery from "../../../hooks/useSearchQuery";
-import { useRSO, useKeyBinding, useAdminRSO } from "../../../hooks";
-import { FormatDate, useNotification } from "../../../utils";
 import Switch from '@mui/material/Switch';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-import timezone from 'dayjs/plugin/timezone';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { DemoContainer } from '@mui/x-date-pickers/internals/demo';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import { toast } from "react-toastify";
-import { useAuth } from "../../../context/AuthContext";
-import { CardSkeleton } from '../../../components';
+import { DropIn } from "../../../animations/DropIn";
+import { Button, CardSkeleton, CloseButton, ReusableTable, TabSelector } from "../../../components";
+import { useAdminRSO, useKeyBinding } from "../../../hooks";
+import useSearchQuery from "../../../hooks/useSearchQuery";
+import { FormatDate } from "../../../utils";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -60,23 +58,31 @@ export default function MainRSO() {
     isRestoreRSOError,
     restoreRSOError,
     resetRestoreRSO,
-  } = useAdminRSO(filters);
 
-
-  // RSO data and operations
-  const {
-    organizations,
-    error,
-    loading,
-    fetchData,
-    createRSO,
-    updateRSO,
-    // rsoData,
-    fetchWebRSOError,
-    updateMembershipDateMutate,
+    // for admin get membership date
     membershipDateData,
+    isMembershipDateLoading,
+    isMembershipDateSuccess,
+    isMembershipDateError,
+    membershipDateError,
+    refetchMembershipDate,
+
+    // for admin close membership date
     closeMembershipDateMutate,
-  } = useRSO();
+    isCloseMembershipDateLoading,
+    isCloseMembershipDateSuccess,
+    isCloseMembershipDateError,
+    closeMembershipDateError,
+    resetCloseMembershipDate,
+
+    // for admin update membership date
+    updateMembershipDateMutate,
+    isUpdateMembershipDateLoading,
+    isUpdateMembershipDateSuccess,
+    isUpdateMembershipDateError,
+    updateMembershipDateError,
+    resetUpdateMembershipDate,
+  } = useAdminRSO(filters);
 
   const tabs = [
     { label: "All" },
@@ -178,8 +184,6 @@ export default function MainRSO() {
     return filteredList;
   };
 
-  // Effects
-  useEffect(() => { fetchData(); }, [fetchData]);
 
   console.log("Membership Date Data:", membershipDateData);
 
@@ -392,8 +396,8 @@ export default function MainRSO() {
           tableRow={tableRow}
           onClick={handleSelectedUser}
           onActionClick={handleActionClick}
-          error={fetchWebRSOError}
-          isLoading={loading}
+          error={isRSOError}
+          isLoading={isRSOLoading}
 
 
         />

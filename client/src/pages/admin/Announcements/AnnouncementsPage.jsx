@@ -1,12 +1,12 @@
-import { TextInput, Button, ReusableTable, Backdrop, CloseButton, TabSelector } from "../../../components";
+import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
-import { useNotification, useModal, useAdminRSO } from "../../../hooks";
 import Select from 'react-select';
+import { toast } from "react-toastify";
+import { DropIn } from "../../../animations/DropIn";
+import { Backdrop, Button, CloseButton, ReusableTable, TabSelector, TextInput } from "../../../components";
+import { useAdminNotification, useAdminRSO, useModal, useRSONotification } from "../../../hooks";
 import { useUserStoreWithAuth } from '../../../store';
 import { FormatDate } from "../../../utils";
-import { AnimatePresence, motion } from "framer-motion";
-import { DropIn } from "../../../animations/DropIn";
-import { toast } from "react-toastify";
 
 function AnnouncementsPage() {
     const [title, setTitle] = useState("");
@@ -23,7 +23,7 @@ function AnnouncementsPage() {
         isRSOError,
         rsoError,
         refetchRSOData,
-    } = useAdminRSO();
+    } = useAdminRSO({ manualEnable: true }); // manual enable to control when to fetch
 
     console.log("RSO Data: ", rsoData);
 
@@ -33,23 +33,6 @@ function AnnouncementsPage() {
         notificationsLoading,
         notificationsError,
         notificationsErrorDetails,
-
-        // post notification
-        postNotification,
-        postNotificationLoading,
-        postNotificationError,
-        postNotificationErrorDetails,
-
-        // get sent notifications
-        sentNotificationsData,
-        sentNotificationsLoading,
-        sentNotificationsError,
-        sentNotificationsErrorDetails,
-
-        postSpecificRSONotification,
-        postSpecificRSONotificationLoading,
-        postSpecificRSONotificationError,
-        postSpecificRSONotificationErrorDetails,
 
         postRSONotification,
         postRSONotificationLoading,
@@ -61,7 +44,24 @@ function AnnouncementsPage() {
         rsoCreatedNotificationsError,
         rsoCreatedNotificationsErrorDetails,
         refetchRSOCreatedNotifications
-    } = useNotification({ userId: user?.id });
+    } = useRSONotification({ userId: user?.id });
+
+    const {
+        postNotification,
+        postNotificationLoading,
+        postNotificationError,
+        postNotificationErrorDetails,
+
+        sentNotificationsData,
+        sentNotificationsLoading,
+        sentNotificationsError,
+        sentNotificationsErrorDetails,
+
+        postSpecificRSONotification,
+        postSpecificRSONotificationLoading,
+        postSpecificRSONotificationError,
+        postSpecificRSONotificationErrorDetails,
+    } = useAdminNotification({ userId: user?.id });
 
     console.log("Notifications for rso Data: ", rsoCreatedNotificationsData);
 
@@ -134,7 +134,8 @@ function AnnouncementsPage() {
         }))
         : [];
 
-    const rowsToDisplay = activeTab === 0 ? tableRow : isUserRSORepresentative && activeTab === 1 ? tableRowRSO : tableRowSent;
+    // const rowsToDisplay = activeTab === 0 ? tableRow : isUserRSORepresentative && activeTab === 1 ? tableRowRSO : tableRowSent;
+    const rowsToDisplay = tableRowSent;
 
     console.log("selectedRSOs:", selectedRSOs);
 
@@ -235,7 +236,6 @@ function AnnouncementsPage() {
 
     const notificationTab =
         [
-            { label: "Received" },
             { label: "Sent" }
         ];
 

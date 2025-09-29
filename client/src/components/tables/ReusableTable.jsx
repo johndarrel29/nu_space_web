@@ -1,9 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import DefaultPicture from "../../assets/images/default-profile.jpg";
-import { CardSkeleton } from "../../components";
-import { useActivities } from "../../hooks";
+import { Badge, CardSkeleton } from "../../components";
 import { ReusableDropdown, Searchbar } from "../ui";
-import Badge from "../ui/Badge";
 
 // Moved the inline array into constants + helper
 const SPECIAL_HEADING_KEYS = [
@@ -17,12 +16,17 @@ const SPECIAL_HEADING_KEYS = [
     "RSO_isDeleted",
     "message",
     "notifType",
+    "fullName",
+    "email",
+    "role",
+    "assignedRSO",
 ];
 
 const isSpecialHeadingKey = (key) => SPECIAL_HEADING_KEYS.includes(key);
 
 export default function ReusableTable({
     columnNumber,
+    totalData,
     tableHeading,
     tableRow,
     options,
@@ -30,6 +34,7 @@ export default function ReusableTable({
     onChange,
     showAllOption,
     onActionClick,
+    onEditClick,
     onClick,
     children,
     placeholder,
@@ -40,14 +45,27 @@ export default function ReusableTable({
     activityId = null,
     searchQuery,
     setSearchQuery,
+    limit,
+    page,
+    onLimitChange,
+    onPageChange,
+    pageNumber,
 }) {
-    const [currentPage, setCurrentPage] = useState(1);
-    const [postsPerPage, setPostsPerPage] = useState(10);
+    const [currentPage, setCurrentPage] = useState(page || 1);
+    const [postsPerPage, setPostsPerPage] = useState(limit || 10);
     const [showSearch, setShowSearch] = useState(false);
-    const { deleteActivityDoc } = useActivities();
+    const location = useLocation();
 
-    console.log("loading", isLoading);
-    console.log("error", error);
+    const isOnUsersPage = location.pathname === '/users';
+
+    useEffect(() => {
+        if (typeof page === "number") setCurrentPage(page);
+    }, [page]);
+
+    useEffect(() => {
+        if (typeof limit === "number") setPostsPerPage(limit);
+    }, [limit]);
+
 
     const lastPostIndex = currentPage * postsPerPage;
     const firstPostIndex = lastPostIndex - postsPerPage;
@@ -64,16 +82,26 @@ export default function ReusableTable({
     });
 
 
+    function handleStyle(userRole) {
 
-    const handleDelete = (activityId, documentId) => {
-        if (activityId && documentId) {
-            console.log("passing id: ", activityId, " and doc id ", documentId);
-            deleteActivityDoc({ activityId, documentId });
-        } else {
-            console.error("Activity ID or Document ID is missing");
+
+        switch (userRole) {
+            case 'super_admin':
+                return 'primary';
+            case 'admin':
+                return 'secondary';
+            case 'coordinator':
+                return 'secondary';
+            case 'rso_representative':
+                return 'success';
+            case 'student':
+                return 'quarternary';
+            default:
+                return '';
+
         }
-
     }
+
 
     const handleBadge = (badge) => {
         if (badge === "pending") {
@@ -87,18 +115,48 @@ export default function ReusableTable({
         }
     }
 
-    const currentPosts = filteredRows.slice(firstPostIndex, lastPostIndex);
+    const currentPosts = onPageChange ? tableRow : filteredRows.slice(firstPostIndex, lastPostIndex);
+    // const currentPosts = tableRow;
+
 
     const pages = Array.from({ length: Math.ceil(filteredRows.length / postsPerPage) }, (_, i) => i + 1);
 
     const currentPageHandler = (selectedPage) => {
-        if (selectedPage < 1 || selectedPage > pages.length) return; // Prevent going out of bounds
-        setCurrentPage(selectedPage);
+        if (onPageChange ? (selectedPage < 1 || selectedPage > currentPage.length) : (selectedPage < 1 || selectedPage > pages.length)) return; // Prevent going out of bounds
+
+        if (onPageChange) {
+            console.log("Calling onPageChange with:", selectedPage);
+            onPageChange(selectedPage);
+        } else {
+            setCurrentPage(selectedPage);
+        }
     }
 
     const handlePostsPerPageChange = (event) => {
         const value = event.target.value;
-        setPostsPerPage(value); // Reset to the first page when changing posts per page
+        if (onLimitChange) {
+            onLimitChange(value);
+        } else {
+            setPostsPerPage(value); // Reset to the first page when changing posts per page
+            setCurrentPage(1);
+        }
+    }
+
+    function handleRoleName(userRole) {
+        switch (userRole) {
+            case 'super_admin':
+                return 'Super Admin';
+            case 'admin':
+                return 'Admin';
+            case 'coordinator':
+                return 'Coordinator';
+            case 'rso_representative':
+                return 'RSO Representative';
+            case 'student':
+                return 'Student';
+            default:
+                return userRole;
+        }
     }
 
     return (
@@ -123,7 +181,7 @@ export default function ReusableTable({
 
                     <div className="flex justify-between items-center mb-4 w-full">
                         <span className="text-gray-700 font-semibold">
-                            Showing {filteredRows.length > 0 ? filteredRows.length : "0"} results
+                            Showing {totalData ? totalData : filteredRows.length > 0 ? filteredRows.length : "0"} results
                         </span>
                         <li className="flex justify-center ">
                             <select
@@ -206,7 +264,7 @@ export default function ReusableTable({
                                                     currentPosts.map((row, index) => (
                                                         <tr
                                                             key={row.id}
-                                                            onClick={() => onClick(row)}
+                                                            onClick={onClick ? () => onClick(row) : undefined}
                                                             className="border-b border-mid-gray hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
 
                                                             {tableHeading.slice(0, columnNumber).map((heading) => (
@@ -241,19 +299,54 @@ export default function ReusableTable({
                                                                                             <span className="text-sm font-light text-gray-600 dark:text-white flex items-center ">{row.createdAt}</span>
                                                                                         )}
                                                                                         {heading.key === "actions" && (
-                                                                                            <div
-                                                                                                onClick={(e) => {
-                                                                                                    e.stopPropagation();
-                                                                                                    if (onActionClick) {
-                                                                                                        onActionClick(row);
-                                                                                                    } else {
-                                                                                                        handleDelete(activityId, row.id);
-                                                                                                    }
-                                                                                                }}
-                                                                                                className="rounded-full w-8 h-8 bg-white flex justify-center items-center cursor-pointer group">
-                                                                                                <svg xmlns="http://www.w3.org/2000/svg" className="fill-gray-600 size-4 group-hover:fill-off-black" viewBox="0 0 448 512"><path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" /></svg>
+                                                                                            <div className="flex gap-2">
+                                                                                                {isOnUsersPage && (
+                                                                                                    <div
+                                                                                                        onClick={(e) => {
+                                                                                                            e.stopPropagation();
+                                                                                                            if (onEditClick) {
+                                                                                                                onEditClick(row);
+                                                                                                            }
+                                                                                                        }}
+                                                                                                        className="rounded-full w-8 h-8 bg-white flex justify-center items-center cursor-pointer group">
+                                                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="fill-gray-600 size-4 group-hover:fill-off-black" viewBox="0 0 640 640"><path d="M416.9 85.2L372 130.1L509.9 268L554.8 223.1C568.4 209.6 576 191.2 576 172C576 152.8 568.4 134.4 554.8 120.9L519.1 85.2C505.6 71.6 487.2 64 468 64C448.8 64 430.4 71.6 416.9 85.2zM338.1 164L122.9 379.1C112.2 389.8 104.4 403.2 100.3 417.8L64.9 545.6C62.6 553.9 64.9 562.9 71.1 569C77.3 575.1 86.2 577.5 94.5 575.2L222.3 539.7C236.9 535.6 250.2 527.9 261 517.1L476 301.9L338.1 164z" /></svg>
+                                                                                                    </div>
+                                                                                                )}
+                                                                                                <div
+                                                                                                    onClick={(e) => {
+                                                                                                        e.stopPropagation();
+                                                                                                        if (onActionClick) {
+                                                                                                            onActionClick(row);
+                                                                                                        }
+                                                                                                    }}
+                                                                                                    className="rounded-full w-8 h-8 bg-white flex justify-center items-center cursor-pointer group">
+                                                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="fill-gray-600 size-4 group-hover:fill-off-black" viewBox="0 0 448 512"><path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" /></svg>
+                                                                                                </div>
+
                                                                                             </div>
                                                                                         )}
+                                                                                        {heading.key === "fullName" && (
+                                                                                            <div className="flex items-center space-x-6">
+                                                                                                <div>{row.index}</div>
+                                                                                                <div className="flex flex-col items-start">
+                                                                                                    <div className="text-sm font-medium text-gray-900">{row.fullName}</div>
+                                                                                                    <div>
+                                                                                                        <div className="text-sm text-gray-600">{row.email}</div>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        )}
+                                                                                        {heading.key === "role" && (
+                                                                                            <div className="flex items-center justify-start">
+                                                                                                <Badge style={handleStyle(row.role)} text={handleRoleName(row.role)} />
+                                                                                            </div>
+                                                                                        )}
+                                                                                        {heading.key === "assignedRSO" && (
+                                                                                            <div className="flex items-center justify-start">
+                                                                                                <Badge style={row.assignedRSO ? "success" : null} text={row.assignedRSO} />
+                                                                                            </div>
+                                                                                        )}
+
                                                                                         {heading.key === "remove" && (
                                                                                             <>
                                                                                                 {row.RSO_isDeleted === true ? (
@@ -264,8 +357,6 @@ export default function ReusableTable({
                                                                                                                 e.stopPropagation();
                                                                                                                 if (onActionClick) {
                                                                                                                     onActionClick(row, { type: "restore" });
-                                                                                                                } else {
-                                                                                                                    handleDelete(activityId, row.id);
                                                                                                                 }
                                                                                                             }}
                                                                                                             className="rounded-full w-8 h-8 bg-white flex justify-center items-center cursor-pointer group">
@@ -291,8 +382,6 @@ export default function ReusableTable({
                                                                                                                 e.stopPropagation();
                                                                                                                 if (onActionClick) {
                                                                                                                     onActionClick(row);
-                                                                                                                } else {
-                                                                                                                    handleDelete(activityId, row.id);
                                                                                                                 }
                                                                                                             }}
                                                                                                             className="rounded-full w-8 h-8 bg-white flex justify-center items-center cursor-pointer group">
@@ -388,7 +477,7 @@ export default function ReusableTable({
                             <button className='page-link' onClick={() => currentPageHandler(currentPage - 1)}>Prev</button>
                         </div>
                         <div className="px-4 py-2 font-semibold">
-                            {pages.length > 0 ? `${currentPage} of ${pages.length}` : "0 of 0"}
+                            {pageNumber ? (`${currentPage} of ${pageNumber}`) : (pages.length > 0 ? `${currentPage} of ${pages.length}` : "0 of 0")}
                         </div>
                         <div className={`page-item mx-1 px-3 py-2 bg-white border border-mid-gray rounded-md font-semibold rounded`}>
                             <button className='page-link' onClick={() => currentPageHandler(currentPage + 1)}>Next</button>

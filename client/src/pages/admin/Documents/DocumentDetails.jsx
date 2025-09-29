@@ -140,14 +140,14 @@ export default function DocumentDetails() {
     }, [isUserAdmin, isUserRSORepresentative, documentIsApproved, doc?.coordinator_approved, activeTab]);
 
     const handleBackClick = () => {
-        navigate("/admin-documents");
+        navigate("/general-documents");
     };
 
     const handleDocumentClick = () => {
         // if (!isCoordinator && !isDirector && !isAVP) {
         //     window.open(url, "_blank");
         // } else {
-        //     navigate(`/admin-documents/${documentId}/watermark`, { state: { documentId, url } });
+        //     navigate(`/general-documents/${documentId}/watermark`, { state: { documentId, url } });
         // }
 
         console.log("Document click with url:", url);
@@ -189,7 +189,7 @@ export default function DocumentDetails() {
     const handleDocumentApprove = (isApproved) => {
         // disregard the mutate for now. navigate to watermark page
         if (isApproved) {
-            navigate(`/admin-documents/${documentId}/watermark`, { state: { documentId, url } });
+            navigate(`/general-documents/${documentId}/watermark`, { state: { documentId, url } });
             return;
         }
 
@@ -698,7 +698,7 @@ export default function DocumentDetails() {
                                 onClick={() => {
                                     setApproveChoiceOpen(false);
                                     // Navigate to the watermark page
-                                    navigate(`/admin-documents/${documentId}/watermark`, { state: { documentId, url } });
+                                    navigate(`/general-documents/${documentId}/watermark`, { state: { documentId, url } });
                                 }}
                             >
                                 <div className="flex items-start gap-2">

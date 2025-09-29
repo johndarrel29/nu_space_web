@@ -1,14 +1,13 @@
-import React from 'react'
-import { useState, useRef, useEffect, useCallback } from 'react';
+import Switch from '@mui/material/Switch';
+import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { tabSelector, Button, TextInput, ReusableDropdown, Backdrop, CloseButton } from '../../../components'
-import TagSelector from '../../../components/TagSelector';
-import { useTagSelector, useRSO, useAcademicYears, useAdminRSO } from '../../../hooks';
-import { motion, AnimatePresence } from "framer-motion";
+import { toast } from 'react-toastify';
 import { DropIn } from "../../../animations/DropIn";
 import DefaultPicture from '../../../assets/images/default-profile.jpg';
-import { toast } from 'react-toastify';
-import Switch from '@mui/material/Switch';
+import { Backdrop, Button, CloseButton, ReusableDropdown, TextInput } from '../../../components';
+import TagSelector from '../../../components/TagSelector';
+import { useAcademicYears, useAdminRSO, useTagSelector } from '../../../hooks';
 
 // make the academicYears an object so that the display is label while when clicked, the selected value is an id
 
@@ -24,8 +23,6 @@ function RSOAction() {
   const location = useLocation();
   const navigate = useNavigate();
   const { mode, data, from, id } = location.state || {};
-  // decommission this after implementing useAdminRSO
-  const { createRSO, updateRSO, deleteRSO, loading, createError, success } = useRSO();
   const {
     rsoDetailData,
     isRSODetailLoading,
@@ -39,14 +36,6 @@ function RSOAction() {
     isCreateSuccess,
     isCreateError,
     resetCreate,
-
-    // hardDeleteRSOMutate,
-    // isHardDeleteRSOLoading,
-    // isHardDeleteRSOSuccess,
-    // isHardDeleteRSOError,
-    // hardDeleteRSOError,
-    // resetHardDeleteRSO,
-
 
     softDeleteRSOMutate,
     isSoftDeleteRSOLoading,
@@ -165,10 +154,10 @@ function RSOAction() {
   }, [isEdit, data]);
 
   useEffect(() => {
-    if (success) {
+    if (isCreateSuccess) {
       navigate('..', { relative: 'path' });
     }
-  }, [success, navigate]);
+  }, [isCreateSuccess, navigate]);
 
 
 
@@ -433,7 +422,7 @@ function RSOAction() {
       setHasSubmitted(true);
 
       // Only navigate on success
-      if (success) {
+      if (isCreateSuccess) {
         console.log("RSO operation successful:", result);
         navigate('..', { relative: 'path' });
 
@@ -522,7 +511,7 @@ function RSOAction() {
   };
 
   useEffect(() => {
-    if (success) {
+    if (isCreateSuccess) {
       toast.success(isEdit ? 'RSO updated successfully!' : 'RSO created successfully!')
     }
   })
@@ -796,17 +785,17 @@ function RSOAction() {
           </Button>
         )}
         <div className='flex gap-2 items-center'>
-          {success ? (
+          {isCreateSuccess ? (
             <div className='text-green-600 text-sm font-semibold'>
               {isEdit ? 'RSO updated successfully!' : isCreate ? 'RSO created successfully!' : 'Action completed successfully!'}
             </div>
           ) :
-            (updateError || createError) ? (
+            (updateError || isCreateError) ? (
               <div className='text-red-600 text-sm font-semibold'>
-                {updateError ? updateError : createError}
+                {updateError ? updateError : isCreateError}
               </div>
             ) :
-              loading && (
+              (isUpdating || isCreating) && (
                 <div className='text-gray-600 text-sm font-semibold'>
                   {isEdit ? 'Updating RSO...' : isCreate ? 'Creating RSO...' : 'Processing...'}
                 </div>

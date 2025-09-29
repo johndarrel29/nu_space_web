@@ -6,13 +6,13 @@ import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
-import { MainLayout } from './components';
+import { GlobalTooltip, MainLayout } from './components';
 import PreLoader from './components/Preloader';
 import { initFCM } from './config/firebase';
 import { AuthProvider } from './context/AuthContext';
 import { SidebarProvider } from './context/SidebarContext';
 import { useOnlineStatus } from './hooks';
-import { AcademicYear, Account, Activities, AdminDocuments, AdminTemplates, AnnouncementsPage, Dashboard, DetailsParent, DocumentAction, DocumentDetails, Documents, Forms, FormsBuilder, FormViewerPage, MainActivities, MainAdmin, MainDocuments, MainRSO, RSOAction, RSODetails, RSOParent, Users, WaterMarkPage } from './pages/admin';
+import { AcademicYear, Account, Activities, AdminDocuments, AdminTemplates, AnnouncementsPage, Dashboard, DetailsParent, DocumentAction, DocumentDetails, Documents, Forms, FormsBuilder, FormViewerPage, MainActivities, MainAdmin, MainDashboard, MainDocuments, MainRSO, NotificationPage, RSOAction, RSODetails, RSOParent, Users, WaterMarkPage } from './pages/admin';
 import EmailAction from './pages/EmailAction';
 import ErrorPage from './pages/ErrorPage';
 import Login from './pages/Login';
@@ -126,6 +126,7 @@ function App() {
               <PreLoader />
             ) : (
               <SkeletonTheme baseColor="#e0e0e0" highlightColor="#f5f5f5">
+                <GlobalTooltip></GlobalTooltip>
                 <Routes>
                   {!isOnline && <Route path="*" element={<ErrorPage />} />}
                   <Route path="/" element={<Login />}>
@@ -166,7 +167,11 @@ function App() {
                           <Dashboard />
                         </MainLayout>
                       }
-                    />
+                    >
+                      <Route index element={<MainDashboard />} />
+                      <Route path="announcements" element={<AnnouncementsPage />} />
+
+                    </Route>
 
                     <Route
                       path="/users"
@@ -212,20 +217,20 @@ function App() {
                       }
                     />
                     <Route
-                      path="/announcements"
+                      path="/notifications"
                       element={
                         <MainLayout
-                          tabName="Announcements"
-                          headingTitle="View and Manage Announcements"
+                          tabName="Notifications"
+                          headingTitle="View and Manage Notifications"
                         >
-                          <AnnouncementsPage />
+                          <NotificationPage />
                         </MainLayout>
                       }
                     />
 
-                    <Route path="/admin-documents" element={
+                    <Route path="/general-documents" element={
                       <MainLayout
-                        tabName="Admin Documents"
+                        tabName="General Documents"
                       >
                         <AdminDocuments />
                       </MainLayout>
@@ -278,6 +283,7 @@ function App() {
                       <Route path="rso-details" element={<RSODetails />} />
                     </Route>
                   </Route>
+
                 </Routes>
               </SkeletonTheme>
             )}

@@ -10,7 +10,7 @@ import defaultPic from '../../../assets/images/default-picture.png';
 import DefaultPicture from "../../../assets/images/default-profile.jpg";
 import { Backdrop, Button, CloseButton, ReusableTable, TabSelector, TextInput, UploadBatchModal } from '../../../components';
 import { useAuth } from "../../../context/AuthContext";
-import { useActivities, useAdminActivity, useAdminDocuments, useModal, useRSOActivities } from "../../../hooks";
+import { useAdminActivity, useAdminDocuments, useModal, useRSOActivities } from "../../../hooks";
 import { useActivityStatusStore, useDocumentStore, useUserStoreWithAuth } from '../../../store';
 
 // TODO: Replace static participants and forms data with live backend data when available.
@@ -29,6 +29,13 @@ export default function Activities() {
     activityDocumentsLoading,
     activityDocumentsError,
     activityDocumentsErrorMessage,
+
+    // activity view
+    activityRSOView,
+    activityRSOViewLoading,
+    activityRSOViewError,
+    activityRSOViewQueryError,
+    refetchActivityRSOView,
   } = useRSOActivities({ activityId });
 
   const {
@@ -43,7 +50,25 @@ export default function Activities() {
     isSettingPostDocumentDeadline,
     isErrorSettingPostDocumentDeadline,
     isPostDocumentDeadlineSet,
-  } = useAdminActivity();
+
+    // approve activity
+    isApprovingActivity,
+    isErrorApprovingActivity,
+    isActivityApproved,
+    approveActivityMutate,
+
+    rejectActivityMutate,
+    isRejectingActivity,
+    isErrorRejectingActivity,
+    isActivityRejected,
+
+    // view admin activity details
+    viewAdminActivityData,
+    viewAdminActivitySuccess,
+    viewAdminActivityLoading,
+    refetchViewAdminActivity,
+    viewAdminActivityError,
+  } = useAdminActivity(activityId);
 
   console.log("Activity documents :", activityDocuments);
   // Modal control
@@ -86,42 +111,30 @@ export default function Activities() {
     activityPostDocumentError,
     activityPostDocumentQueryError,
     refetchActivityPostDocument,
-    isActivityPostDocumentRefetching
+    isActivityPostDocumentRefetching,
+
+
   } = useAdminDocuments({ activityId });
 
 
-
-  // Activity data hooks
-  const {
-    errorQuery,
-    activityDocument,
-    activityDocumentError,
-    isActivityDocumentLoading,
-    isActivityDocumentError,
-
-    createActivityDoc,
-    createError,
-    isCreatingSuccess,
-    loading: isCreatingLoading,
-
-    viewActivityData,
-    refetchViewActivity,
-
-    declineActivityMutation,
-    declinedActivity,
-    declineError,
-    isDeclineSuccess,
-    isDeclining,
-
-    acceptActivityMutation,
-    acceptedActivity,
-    acceptError,
-    isAcceptSuccess,
-    isAccepting,
-  } = useActivities(activityId);
-
-  const activity = viewActivityData || {};
+  const activity = displayActivityOnRole() || {};
   console.log("Activity data:", activity);
+
+  function displayActivityOnRole() {
+    if (!isUserRSORepresentative) {
+      return viewAdminActivityData;
+    } else {
+      return activityRSOView;
+    }
+  }
+
+  function refetchActivityOnRole() {
+    if (!isUserRSORepresentative) {
+      return refetchViewAdminActivity();
+    } else {
+      return refetchActivityRSOView();
+    }
+  }
 
   const handleDateSelected = () => {
 
@@ -134,7 +147,7 @@ export default function Activities() {
           onSuccess: () => {
             console.log('Pre-document deadline updated successfully');
             toast.success('Pre-document deadline updated successfully');
-            refetchViewActivity();
+            refetchActivityOnRole();
             // clear the select state and the date state
             setPreDocDeadline(null);
             setPostDocDeadline(null);
@@ -156,7 +169,7 @@ export default function Activities() {
           onSuccess: () => {
             toast.success('Post-document deadline updated successfully');
             // clear the select state and the date state
-            refetchViewActivity();
+            refetchActivityOnRole();
             setPreDocDeadline(null);
             setPostDocDeadline(null);
             handleCloseModal();
@@ -324,7 +337,7 @@ export default function Activities() {
     try {
       console.log("Accepting activity review with remarks:", remarks);
       console.log("Activity ID:", activityId);
-      acceptActivityMutation({ activityId, remarks },
+      approveActivityMutate({ activityId, remarks },
         {
           onSuccess: () => {
             toast.success("Activity review accepted successfully");
@@ -344,20 +357,20 @@ export default function Activities() {
 
   const handleDecline = async () => {
     try {
-      console.log("Declining activity review with remarks:", remarks);
+      console.log("Rejecting activity review with remarks:", remarks);
       console.log("Activity ID:", activityId);
-      declineActivityMutation({ activityId, remarks },
+      rejectActivityMutate({ activityId, remarks },
         {
           onSuccess: () => {
-            toast.success("Activity review declined successfully");
+            toast.success("Activity review rejected successfully");
           },
           onError: (error) => {
-            toast.error("Error declining activity review:", error);
+            toast.error("Error rejecting activity review:", error);
           }
         }
       );
     } catch (error) {
-      console.error("Error declining activity review:", error);
+      console.error("Error rejecting activity review:", error);
     } finally {
       setReviewModalOpen(false);
       setRemarks("");
@@ -490,7 +503,7 @@ export default function Activities() {
                 {isUserRSORepresentative && (
                   <div
                     className='aspect-square h-8 w-8 bg-white rounded-full flex items-center justify-center text-white font-bold cursor-pointer border border-gray-600 hover:border-gray-300 group'
-                    onClick={handleEditClick} disabled={isActivityDocumentLoading || activityDocumentsLoading}>
+                    onClick={handleEditClick} disabled={activityDocumentsLoading ? true : false}>
                     <div className="flex items-center gap-2 text-sm font-light ">
                       <svg xmlns="http://www.w3.org/2000/svg" className='size-4 fill-off-black group-hover:fill-gray-600' viewBox="0 0 640 640"><path d="M100.4 417.2C104.5 402.6 112.2 389.3 123 378.5L304.2 197.3L338.1 163.4C354.7 180 389.4 214.7 442.1 267.4L476 301.3L442.1 335.2L260.9 516.4C250.2 527.1 236.8 534.9 222.2 539L94.4 574.6C86.1 576.9 77.1 574.6 71 568.4C64.9 562.2 62.6 553.3 64.9 545L100.4 417.2zM156 413.5C151.6 418.2 148.4 423.9 146.7 430.1L122.6 517L209.5 492.9C215.9 491.1 221.7 487.8 226.5 483.2L155.9 413.5zM510 267.4C493.4 250.8 458.7 216.1 406 163.4L372 129.5C398.5 103 413.4 88.1 416.9 84.6C430.4 71 448.8 63.4 468 63.4C487.2 63.4 505.6 71 519.1 84.6L554.8 120.3C568.4 133.9 576 152.3 576 171.4C576 190.5 568.4 209 554.8 222.5C551.3 226 536.4 240.9 509.9 267.4z" /></svg>
                     </div>

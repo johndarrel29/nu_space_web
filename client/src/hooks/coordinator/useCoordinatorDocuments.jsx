@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { useUserStoreWithAuth } from '../../store';
 import { useTokenStore } from "../../store/tokenStore";
-import { useLocation } from "react-router-dom";
 
 const getCoordinatorDocuments = async ({ queryKey }) => {
     try {
@@ -82,7 +82,7 @@ function useCoordinatorDocuments({
     const { isCoordinator } = useUserStoreWithAuth();
     const queryClient = useQueryClient();
     const location = useLocation();
-    const isAdminDocumentsPage = location.pathname === '/admin-documents';
+    const isAdminDocumentsPage = location.pathname === '/general-documents';
 
     const filters = {
         page,

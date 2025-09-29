@@ -174,7 +174,7 @@ const useDashboard = () => {
         refetchOnMount: false,
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
-        enabled: isDashboard && (isUserAdmin || isCoordinator)
+        enabled: isDashboard && (!isUserRSORepresentative)
     });
 
     const {
@@ -190,7 +190,7 @@ const useDashboard = () => {
         refetchOnMount: false,
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
-        enabled: isDashboard && (isUserAdmin || isCoordinator)
+        enabled: isDashboard && isUserRSORepresentative
     });
 
     const {

@@ -1,10 +1,10 @@
+import classNames from 'classnames';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useSidebar } from '../../context/SidebarContext';
 import sidebar from '../../css/Sidebar.module.css';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useUserStoreWithAuth } from '../../store';
 import SidebarButton from './SidebarButton';
 import SidebarLogo from './SidebarLogo';
-import classNames from 'classnames';
-import { useSidebar } from '../../context/SidebarContext';
-import { useUserStoreWithAuth } from '../../store';
 
 function Sidebar() {
   const navigate = useNavigate();
@@ -66,8 +66,8 @@ function Sidebar() {
           isCollapsed={isCollapsed}
           iconPath="M0 64C0 28.7 28.7 0 64 0L224 0l0 128c0 17.7 14.3 32 32 32l128 0 0 288c0 35.3-28.7 64-64 64L64 512c-35.3 0-64-28.7-64-64L0 64zm384 64l-128 0L256 0 384 128z"
           text="Documents"
-          active={location.pathname.startsWith("/admin-documents")}
-          onClick={() => navigate("/admin-documents")}
+          active={location.pathname.startsWith("/general-documents")}
+          onClick={() => navigate("/general-documents")}
         />
 
         <SidebarButton

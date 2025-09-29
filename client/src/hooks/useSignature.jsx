@@ -1,6 +1,7 @@
 
-import { useTokenStore } from "../store";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
+import { useTokenStore, useUserStoreWithAuth } from "../store";
 
 const uploadSignature = async ({ adminId, file }) => {
     try {
@@ -74,6 +75,10 @@ const deleteSignature = async (id) => {
 }
 
 function useSignature({ id } = {}) {
+    const { isCoordinator, isAdmin, isSuperAdmin, isAVP, isDirector } = useUserStoreWithAuth();
+    const location = useLocation();
+    const isOnDashboardPage = location.pathname === '/dashboard';
+    const isOnWatermarkPage = location.pathname === '/watermark';
 
     const {
         mutate: mutateUploadSignature,
@@ -83,6 +88,7 @@ function useSignature({ id } = {}) {
         data: uploadData
     } = useMutation({
         mutationFn: uploadSignature,
+        enabled: (isCoordinator || isDirector || isAVP) && isOnDashboardPage,
         onSuccess: (data) => {
             console.log("[Signature] Upload successful:", data);
         }
@@ -97,6 +103,7 @@ function useSignature({ id } = {}) {
     } = useQuery({
         queryKey: ['signature', id],
         queryFn: () => getSignature(id),
+        enabled: (isCoordinator || isDirector || isAVP) && (isOnDashboardPage || isOnWatermarkPage) && !!id,
         enabled: !!id, // Only fetch if id is available
         onSuccess: (data) => {
             console.log("[Signature] Fetch successful:", data);
@@ -111,6 +118,7 @@ function useSignature({ id } = {}) {
         data: deleteData
     } = useMutation({
         mutationFn: deleteSignature,
+        enabled: (isCoordinator || isDirector || isAVP) && isOnDashboardPage,
         onSuccess: (data) => {
             console.log("[Signature] Delete successful:", data);
         }

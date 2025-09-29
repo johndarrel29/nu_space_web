@@ -1,19 +1,37 @@
 
 import classNames from "classnames";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { useActivities, useAdminDocuments, useRSODocuments } from "../../hooks";
+import { useAdminActivity, useAdminDocuments, useRSOActivities, useRSODocuments } from "../../hooks";
 import { useUserStoreWithAuth } from "../../store";
 
 export default function Breadcrumb({ style, unSelected }) {
     const location = useLocation();
     const paths = location.pathname.split("/").filter(Boolean);
-    const { isUserRSORepresentative, isUserAdmin } = useUserStoreWithAuth();
+    const { isUserRSORepresentative, isUserAdmin, isCoordinator } = useUserStoreWithAuth();
     const { activityId, documentId } = useParams();
     const {
         specificDocument,
         specificDocumentLoading,
         specificDocumentError,
     } = useRSODocuments({ documentId });
+
+    const {
+        // view admin activity details
+        viewAdminActivityData,
+        viewAdminActivitySuccess,
+        viewAdminActivityLoading,
+        refetchViewAdminActivity,
+        viewAdminActivityError,
+    } = useAdminActivity({ activityId });
+
+    const {
+        // activity view
+        activityRSOView,
+        activityRSOViewLoading,
+        activityRSOViewError,
+        activityRSOViewQueryError,
+        refetchActivityRSOView,
+    } = useRSOActivities({ activityId });
     const {
         documentDetail,
         documentDetailLoading,
@@ -23,18 +41,18 @@ export default function Breadcrumb({ style, unSelected }) {
         isDocumentDetailRefetching,
     } = useAdminDocuments({ documentId });
 
+    const renderActivityOnRole = () => {
+        if (!isUserRSORepresentative) {
+            return viewAdminActivityData?.Activity_name || "...loading";
+        } else if (isUserRSORepresentative) {
+            return activityRSOView?.Activity_name || "...loading";
+        }
+    }
 
-    const { viewActivityData } = useActivities(activityId);
 
-
-
-    // if (location.state?.fromRequirements) {
-    //     paths.splice(-1, 0, "requirements");
-    // }
-
-    const capitalize = (str) => {
+    const formatLabel = (str) => {
         if (str === activityId) {
-            return viewActivityData?.Activity_name || "...loading"; // Use the activity name if available
+            return renderActivityOnRole();
         }
         if (str === documentId && isUserRSORepresentative) {
             return specificDocument?.title || "...loading"; // Use the document title if available
@@ -43,11 +61,15 @@ export default function Breadcrumb({ style, unSelected }) {
             return documentDetail?.document?.title || "...loading"; // Use the document title if available
         }
 
+        if (str.toLowerCase() === 'general-documents') {
+            return 'General Documents';
+        }
+
         return str
             .split('-')
             .map(word =>
-                word.toLowerCase() === 'rso'
-                    ? 'RSO' // Special case for "Rso"
+                word.toLowerCase() === 'rso' || word.toLowerCase() === 'rsos'
+                    ? `RSO${word.toLowerCase() === 'rsos' ? 's' : ''}` // Special case for "RSO"
                     : word.charAt(0).toUpperCase() + word.slice(1)
             )
             .join('-');
@@ -61,7 +83,7 @@ export default function Breadcrumb({ style, unSelected }) {
                     const routeTo = `/${paths.slice(0, index + 1).join("/")}`;
                     const isLast = index === paths.length - 1;
                     const isFirst = index === 0;
-                    const label = capitalize(path);
+                    const label = formatLabel(path);
 
                     return (
                         <li key={routeTo} aria-current={isLast ? "page" : undefined}>

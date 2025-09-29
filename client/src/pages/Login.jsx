@@ -9,7 +9,7 @@ export default function Login() {
 
     return (
         // <div className={classNames(style.container, style.clearfix)}>
-        <div className='flex h-screen'>
+        <div className='flex h-screen w-full'>
             <div className={`${style["left-container"]} w-full md:w-1/3 pt-6`}>
                 <div className={style.heading}>
                     <Header theme="dark" />

@@ -1,11 +1,10 @@
 import { motion } from "framer-motion";
-import { Backdrop } from "../ui";
-import { DropIn } from "../../animations/DropIn";
-import { TextInput, TabSelector, DropdownSearch, ReusableDropdown } from "../ui";
 import { useState } from "react";
+import { toast } from "react-toastify";
+import { DropIn } from "../../animations/DropIn";
 import { Button, CloseButton } from "../../components";
 import { useSuperAdminUsers } from "../../hooks";
-import { toast } from "react-toastify";
+import { Backdrop, ReusableDropdown, TextInput } from "../ui";
 
 // debug edit API depending on the role
 
@@ -20,7 +19,7 @@ export default function CreateUserModal({ closeModal }) {
         confirmpassword: "",
         platform: "web"
     });
-    const { createAccount, isCreatingAccount, isCreateError, createErrorMessage } = useSuperAdminUsers();
+    const { createAccount, isCreatingAccount, isCreateError, createErrorMessage, refetchAccounts } = useSuperAdminUsers();
 
     const options = [
         { label: "Admin", value: "admin" },
@@ -39,6 +38,7 @@ export default function CreateUserModal({ closeModal }) {
             {
                 onSuccess: () => {
                     toast.success("User created successfully");
+                    refetchAccounts();
                     closeModal();
                 },
                 onError: (error) => {
