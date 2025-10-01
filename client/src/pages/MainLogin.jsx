@@ -3,8 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Button, TextInput } from "../components";
 import { useAuth } from "../context/AuthContext";
-import { useKeyBinding, useLogin } from '../hooks';
+import { useKeyBinding, useLogin, useOnlineStatus } from '../hooks';
 import { useFCMStore, useTokenStore } from '../store';
+
+// BUG: data not showing loading UI
+
 
 const ROLE_REDIRECTS = {
     admin: "/dashboard",
@@ -17,16 +20,22 @@ const ROLE_REDIRECTS = {
 
 export default function MainLogin() {
     const fcmStore = useFCMStore.getState();
+    const isOnline = useOnlineStatus();
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         email: "",
         password: ""
     });
     const [error, setError] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
 
     const { login, isAuthenticated, user } = useAuth();
     const {
+        checkEmailExistsMutate,
+        isCheckEmailExistsLoading,
+        isCheckEmailExistsError,
+        checkEmailExistsError,
+        checkEmailExistsData,
+
         loginUserMutate,
         isLoginLoading,
         isLoginError,
@@ -39,13 +48,23 @@ export default function MainLogin() {
         if (!isLoginError) return;
 
         if (loginError?.requiresEmailVerification) {
-            console.error("Email verification required:", loginError);
-            toast.error("Please verify your email before logging in.");
-            navigate("/email-action", {
-                state: {
-                    email: formData.email,
-                    password: formData.password,
-                    platform: "web"
+            checkEmailExistsMutate({ email: formData.email }, {
+                onSuccess: (data) => {
+                    if (data.exists) {
+                        toast.warn("Please verify your email before logging in.");
+                        navigate("/email-action", {
+                            state: {
+                                email: formData.email,
+                                password: formData.password,
+                                platform: "web"
+                            }
+                        });
+                    } else {
+                        console.log("Email does not exist in the system.");
+                    }
+                },
+                onError: (error) => {
+                    console.error("Error checking email existence:", error);
                 }
             });
         }
@@ -92,11 +111,10 @@ export default function MainLogin() {
             return;
         }
 
-        setIsLoading(true);
         setError("");
 
         try {
-            await loginUserMutate({
+            loginUserMutate({
                 email: formData.email,
                 password: formData.password,
                 platform: "web",
@@ -130,7 +148,7 @@ export default function MainLogin() {
                 },
                 onError: (error) => {
                     console.error("Login failed:", error);
-                    toast.error("Login failed. Please check your credentials.");
+                    toast.error(error?.message || "Login failed. Please try again.");
                 }
             });
         } catch (err) {
@@ -138,8 +156,6 @@ export default function MainLogin() {
                 message: err.message,
                 stack: err.stack
             });
-        } finally {
-            setIsLoading(false);
         }
     };
 
@@ -147,6 +163,36 @@ export default function MainLogin() {
         key: "Enter",
         callback: handleSubmit,
     });
+
+    const handleForgotPassword = () => {
+        try {
+            toast.info("Verifying email...");
+
+            if (!formData.email) {
+                toast.error("Please enter your email to reset password.");
+                return;
+            }
+            checkEmailExistsMutate(formData.email, {
+                onSuccess: () => {
+                    toast.success("Email verification sent.");
+                    navigate('email-action', {
+                        state: {
+                            fromLogin: true,
+                            email: formData.email || ""
+                        }
+                    });
+                },
+                onError: (error) => {
+                    console.error("Error checking email existence:", error);
+                    toast.error(error.message || "Failed to verify email. Please try again.");
+                }
+            });
+        } catch (error) {
+            throw new Error("Navigation error: " + error.message);
+        }
+    };
+
+
 
     return (
         <div className='w-full'>
@@ -195,15 +241,11 @@ export default function MainLogin() {
                 <div className="w-full flex justify-end mb-4">
                     <button
                         type="button"
-                        onClick={() => navigate('email-action', {
-                            state: {
-                                fromLogin: true,
-                                email: formData.email || ""
-                            }
-                        })}
+                        disabled={isCheckEmailExistsLoading}
+                        onClick={handleForgotPassword}
                         className="text-sm font-medium text-primary hover:underline"
                     >
-                        Forgot password?
+                        {isCheckEmailExistsLoading ? "Checking..." : "Forgot password?"}
                     </button>
                 </div>
 
@@ -214,17 +256,19 @@ export default function MainLogin() {
                     </p>
                 )}
 
+                {isOnline === false && (
+                    <p className="mt-2 text-sm text-red-600">
+                        No internet connection. Please try again later.
+                    </p>
+                )}
+
                 {/* Submit Button */}
                 <Button
                     type="submit"
                     className="w-full mt-6 flex items-center justify-center"
                     disabled={isLoginLoading}
                 >
-                    {isLoginLoading ? (
-                        <LoadingSpinner />
-                    ) : (
-                        "Login"
-                    )}
+                    {isLoginLoading ? <LoadingSpinner /> : "Login"}
                 </Button>
             </form>
         </div>

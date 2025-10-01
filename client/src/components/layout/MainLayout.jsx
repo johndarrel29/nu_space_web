@@ -433,26 +433,32 @@ function MainLayout({ children }) {
             <div className="flex items-center gap-4">
 
               {(isSuperAdmin || isDirector || isAVP) && (
-                <Button
-                  onClick={() => navigate(isOnDashboardPage ? -1 : "/dashboard")}
-                  style={isOnDashboardPage ? "secondary" : "primary"}
-                  className={`${isOnDashboardPage ? "bg-gray-100" : ""}`}
+                <div
+                  data-tooltip-id="global-tooltip"
+                  data-tooltip-content={`${isOnDashboardPage ? "Close Dashboard" : "Dashboard"}`}
                 >
-                  <div className={`flex items-center gap-2 text-sm font-light`}>
-                    {isOnDashboardPage ? (
-                      <div className="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="size-4" fill="currentColor" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
-                        Cancel
-                      </div>
-                    ) : (
+                  <Button
 
-                      <div className="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="size-4" fill="currentColor" viewBox="0 0 640 640"><path d="M128 128C128 110.3 113.7 96 96 96C78.3 96 64 110.3 64 128L64 464C64 508.2 99.8 544 144 544L544 544C561.7 544 576 529.7 576 512C576 494.3 561.7 480 544 480L144 480C135.2 480 128 472.8 128 464L128 128zM534.6 214.6C547.1 202.1 547.1 181.8 534.6 169.3C522.1 156.8 501.8 156.8 489.3 169.3L384 274.7L326.6 217.4C314.1 204.9 293.8 204.9 281.3 217.4L185.3 313.4C172.8 325.9 172.8 346.2 185.3 358.7C197.8 371.2 218.1 371.2 230.6 358.7L304 285.3L361.4 342.7C373.9 355.2 394.2 355.2 406.7 342.7L534.7 214.7z" /></svg>
-                        Dashboard
-                      </div>
-                    )}
-                  </div>
-                </Button>
+                    onClick={() => navigate(isOnDashboardPage ? -1 : "/dashboard")}
+                    style={isOnDashboardPage ? "secondary" : "primary"}
+                    className={`${isOnDashboardPage ? "bg-gray-100" : ""}`}
+                  >
+                    <div className={`flex items-center gap-2 text-sm font-light`}>
+                      {isOnDashboardPage ? (
+                        <div className="flex items-center gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="size-4" fill="currentColor" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
+                          Cancel
+                        </div>
+                      ) : (
+
+                        <div className="flex items-center gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="size-4" fill="currentColor" viewBox="0 0 640 640"><path d="M128 128C128 110.3 113.7 96 96 96C78.3 96 64 110.3 64 128L64 464C64 508.2 99.8 544 144 544L544 544C561.7 544 576 529.7 576 512C576 494.3 561.7 480 544 480L144 480C135.2 480 128 472.8 128 464L128 128zM534.6 214.6C547.1 202.1 547.1 181.8 534.6 169.3C522.1 156.8 501.8 156.8 489.3 169.3L384 274.7L326.6 217.4C314.1 204.9 293.8 204.9 281.3 217.4L185.3 313.4C172.8 325.9 172.8 346.2 185.3 358.7C197.8 371.2 218.1 371.2 230.6 358.7L304 285.3L361.4 342.7C373.9 355.2 394.2 355.2 406.7 342.7L534.7 214.7z" /></svg>
+                          Dashboard
+                        </div>
+                      )}
+                    </div>
+                  </Button>
+                </div>
               )}
 
               <div
@@ -482,7 +488,7 @@ function MainLayout({ children }) {
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="relative"
                   ref={dropdownRef} >
-                  <div className="flex items-center justify-center rounded-full h-8 w-8 cursor-pointer hover:bg-light-gray group">
+                  <div className="flex items-center justify-center rounded-full h-10 w-10 cursor-pointer hover:bg-light-gray group">
                     {isUserRSORepresentative ? (
                       <img
                         src={profileData?.RSO_picture || DefaultPicture}
@@ -513,7 +519,7 @@ function MainLayout({ children }) {
                           {/* profile picture */}
                           {console.log("profileData", profileData)}
                           {isUserRSORepresentative ? (
-                            <div className="rounded-full h-8 w-8 bg-gray-200">
+                            <div className="rounded-full h-10 w-10 bg-gray-200">
                               <img src={profileData?.RSO_picture || DefaultPicture} alt="Profile" className="rounded-full h-full w-full object-cover" />
                             </div>
                           ) :

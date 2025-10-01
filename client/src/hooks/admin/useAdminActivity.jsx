@@ -188,7 +188,7 @@ const rejectActivity = async ({ activityId, remark }) => {
 
 // Pure API: view activity details (role-aware)
 const viewActivityAPI = async ({ queryKey }) => {
-    const [_key, { activityId }] = queryKey;
+    const [_, activityId] = queryKey;
     if (!activityId) throw new Error("activityId is required");
 
     const token = localStorage.getItem("token");
@@ -204,6 +204,7 @@ const viewActivityAPI = async ({ queryKey }) => {
             "Authorization": token ? `Bearer ${formattedToken}` : "",
         },
     });
+
 
     if (!response.ok) {
         const errorText = await response.text();
@@ -223,7 +224,7 @@ function useAdminActivity({
     college = "",
     isGPOA = "All",
     page = 1,
-
+    manualEnable = false,
     activityId
 } = {}) {
     const { user } = useAuth();
@@ -253,7 +254,7 @@ function useAdminActivity({
         isFetchingNextPage,
     } = useInfiniteQuery({
         queryKey: ["adminActivities", filter],
-        enabled: (isUserAdmin || isCoordinator) && isActivities,
+        enabled: manualEnable ? true : (isUserAdmin || isCoordinator) && isActivities,
         queryFn: fetchAdminActivity,
         // enabled: !!debouncedQuery || !!sorted || !!RSO || !!RSOType || !!college,
         getNextPageParam: (lastPage) => lastPage.nextPage,
@@ -319,8 +320,8 @@ function useAdminActivity({
         isError: viewAdminActivityError
     } = useQuery({
         queryKey: ["activity", activityId],
-        queryFn: () => viewActivityAPI({ activityId }),
-        enabled: !!activityId && (isUserAdmin || isCoordinator),
+        queryFn: viewActivityAPI,
+        enabled: activityId && (isUserAdmin || isCoordinator),
         onSuccess: (data) => {
             console.log("Activities fetched successfully:", data);
         },

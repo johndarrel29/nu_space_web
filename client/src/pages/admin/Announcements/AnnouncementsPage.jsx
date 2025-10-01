@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Select from 'react-select';
 import { toast } from "react-toastify";
 import { DropIn } from "../../../animations/DropIn";
@@ -13,9 +13,10 @@ function AnnouncementsPage() {
     const [description, setDescription] = useState("");
     const user = JSON.parse(localStorage.getItem("user")) || {};
     const [searchQuery, setSearchQuery] = useState("");
-    const [activeTab, setActiveTab] = useState(0); // added active tab state
+    const [activeTab, setActiveTab] = useState(0);
     const { isUserRSORepresentative, isUserAdmin, isCoordinator } = useUserStoreWithAuth();
     const [selectedRSOs, setSelectedRSOs] = useState([]);
+    const [filters, setFilters] = useState({ date: "latest" });
 
     const {
         rsoData,
@@ -28,12 +29,6 @@ function AnnouncementsPage() {
     console.log("RSO Data: ", rsoData);
 
     const {
-        // get notifications
-        notificationsData,
-        notificationsLoading,
-        notificationsError,
-        notificationsErrorDetails,
-
         postRSONotification,
         postRSONotificationLoading,
         postRSONotificationError,
@@ -43,8 +38,20 @@ function AnnouncementsPage() {
         rsoCreatedNotificationsLoading,
         rsoCreatedNotificationsError,
         rsoCreatedNotificationsErrorDetails,
-        refetchRSOCreatedNotifications
-    } = useRSONotification({ userId: user?.id });
+        refetchRSOCreatedNotifications,
+
+        // update sent announcement (for RSO representatives)
+        updateSentRSOAnnouncement,
+        updateSentRSOAnnouncementLoading,
+        updateSentRSOAnnouncementError,
+        updateSentRSOAnnouncementErrorDetails,
+    } = useRSONotification({ userId: user?.id, date: filters.date });
+
+    useEffect(() => {
+        if (filters) {
+            console.log("Filter applied. Refetching announcements...", { filters: filters.date });
+        }
+    }, [filters]);
 
     const {
         postNotification,
@@ -65,12 +72,11 @@ function AnnouncementsPage() {
 
     console.log("Notifications for rso Data: ", rsoCreatedNotificationsData);
 
-
     const { isOpen, openModal, closeModal } = useModal();
     const [error, setError] = useState(null);
 
     // Add state for the details modal
-    const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+    const [selectedAnnouncement, setSelectedAnnouncement] = useState({});
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
     // Helper to safely format createdBy which may be an array, object, string, or undefined
@@ -95,19 +101,6 @@ function AnnouncementsPage() {
         if (typeof createdBy === 'string') return createdBy;
         return '—';
     };
-
-    const tableRow = notificationsData?.data?.map((notification) => ({
-        title: notification.title,
-        // Truncate content for table display (show only first 50 chars)
-        message: notification.message?.length > 50
-            ? `${notification.message.substring(0, 50)}...`
-            : notification.message,
-        createdBy: formatCreatedBy(notification.createdBy),
-        createdAt: FormatDate(notification.createdAt),
-        notifType: notification.data?.type,
-        // Store the full data for the modal
-        fullData: notification
-    })) || [];
 
     // Mock sent notifications data (tableRowSent)
     const tableRowSent = sentNotificationsData?.announcements?.map((notification) => ({
@@ -135,7 +128,7 @@ function AnnouncementsPage() {
         : [];
 
     // const rowsToDisplay = activeTab === 0 ? tableRow : isUserRSORepresentative && activeTab === 1 ? tableRowRSO : tableRowSent;
-    const rowsToDisplay = tableRowSent;
+    const rowsToDisplay = !isUserRSORepresentative ? tableRowSent : tableRowRSO;
 
     console.log("selectedRSOs:", selectedRSOs);
 
@@ -160,7 +153,8 @@ function AnnouncementsPage() {
 
     // Handle row click to show details modal
     const handleRowClick = (row) => {
-        setSelectedAnnouncement(row.fullData);
+        console.log("Row clicked:", row);
+        setSelectedAnnouncement({ ...row.fullData });
         setIsDetailsModalOpen(true);
     };
 
@@ -252,6 +246,55 @@ function AnnouncementsPage() {
         setSelectedRSOs(selectedOptions.map(option => option.value));
     }
 
+    const handleUpdateAnnouncement = () => {
+        try {
+            console.log("Update announcement:", selectedAnnouncement);
+            console.log("data to pass: ", { announcementId: selectedAnnouncement._id, title: selectedAnnouncement.title, content: selectedAnnouncement.content });
+
+            if (isUserRSORepresentative) {
+                updateSentRSOAnnouncement({ announcementId: selectedAnnouncement._id, title: selectedAnnouncement.title, content: selectedAnnouncement.content },
+                    {
+                        onSuccess: () => {
+                            toast.success("Announcement updated successfully!");
+                            refetchRSOCreatedNotifications();
+                            closeDetailsModal();
+                            setTitle("");
+                            setDescription("");
+                            closeModal();
+                            console.log("RSO representative notification updated successfully");
+                        },
+                        onError: (err) => {
+                            setError(err.message || "Failed to update announcement.");
+                            toast.error(`Error: ${err.message || "Failed to update announcement."}`);
+                        }
+                    }
+                );
+            }
+        } catch (error) {
+            console.error("Error updating announcement:", error);
+            toast.error("Failed to update announcement.");
+        }
+    }
+
+    const handleFilterSelected = (value) => {
+        console.log("Filter selected:", value);
+
+        if (value === "Latest") {
+            setFilters({ ...filters, date: "latest" });
+        } else if (value === "Oldest") {
+            setFilters({ ...filters, date: "oldest" });
+        } else {
+            setFilters({ ...filters, date: "" });
+        }
+    }
+
+    useEffect(() => {
+        if (filters) {
+            console.log("Filter applied. Refetching announcements...", filters.date);
+        }
+    }, [filters]);
+
+
     return (
         <>
             <div className="flex flex-col md:flex-row justify-between mb-4">
@@ -269,7 +312,9 @@ function AnnouncementsPage() {
                     tableRow={rowsToDisplay}
                     onClick={handleRowClick}
                     isLoading={false}
-                    options={["All", "Latest", "Oldest"]}
+                    options={["Latest", "Oldest"]}
+                    value={filters.date === "latest" ? "Latest" : filters.date === "oldest" ? "Oldest" : ""}
+                    onChange={(e) => handleFilterSelected(e.target.value)}
                     error={null}
                 />
             </div>
@@ -372,18 +417,19 @@ function AnnouncementsPage() {
                             <div className="space-y-5">
                                 <div>
                                     <h3 className="text-sm font-medium text-gray-500">Title</h3>
-                                    <p className="text-base font-medium break-words">
-                                        {selectedAnnouncement.title || "—"}
-                                    </p>
+                                    <TextInput value={selectedAnnouncement.title || ""} onChange={(e) => setSelectedAnnouncement({ ...selectedAnnouncement, title: e.target.value })} />
                                 </div>
 
                                 <div>
                                     <h3 className="text-sm font-medium text-gray-500">Message / Content</h3>
-                                    <p className="text-sm whitespace-pre-wrap break-words">
-                                        {selectedAnnouncement.message ||
-                                            selectedAnnouncement.content ||
-                                            "—"}
-                                    </p>
+                                    <textarea
+                                        rows="4"
+                                        name="announcement_description"
+                                        className="bg-textfield border border-mid-gray text-gray-900 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                        placeholder="Write your announcement here"
+                                        value={selectedAnnouncement.content || ""}
+                                        onChange={(e) => setSelectedAnnouncement({ ...selectedAnnouncement, content: e.target.value })}
+                                    />
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
@@ -405,16 +451,16 @@ function AnnouncementsPage() {
                                             {formatCreatedBy(selectedAnnouncement.createdBy)}
                                         </p>
                                     </div>
-                                    <div>
-                                        <h3 className="text-sm font-medium text-gray-500">ID</h3>
-                                        <p className="text-xs text-gray-600 break-all">
-                                            {selectedAnnouncement._id || "—"}
-                                        </p>
-                                    </div>
                                 </div>
                             </div>
 
-                            <div className="flex justify-end mt-6">
+                            <div className="flex justify-end mt-6 gap-2">
+                                <Button
+                                    style="primary"
+                                    onClick={handleUpdateAnnouncement}
+                                >
+                                    Edit
+                                </Button>
                                 <Button style="secondary" onClick={closeDetailsModal}>
                                     Close
                                 </Button>

@@ -60,11 +60,15 @@ const postRSONotificationRequest = async ({ title, content }) => {
     }
 }
 
-const getRSOCreatedNotificationsRequest = async () => {
+const getRSOCreatedNotificationsRequest = async ({ queryKey }) => {
     try {
         const token = useTokenStore.getState().token;
+        const [_, date] = queryKey;
+        const params = new URLSearchParams({ date }).toString();
 
-        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/rsoRep/announcements/getAnnouncement`, {
+        console.log("RSO created notifications url called:", `${process.env.REACT_APP_BASE_URL}/api/rsoRep/announcements/getAnnouncement?${params}`);
+
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/rsoRep/announcements/getAnnouncement?${params}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -85,11 +89,39 @@ const getRSOCreatedNotificationsRequest = async () => {
     }
 }
 
-function useNotification({ userId, filters } = {}) {
+const updateSentAnnouncementRequest = async ({ announcementId, title, content }) => {
+    try {
+        const token = useTokenStore.getState().token;
+        console.log("received, announcementId, title, content:", announcementId, title, content);
+
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/rsoRep/announcements/updateAnnouncement/${announcementId}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: token,
+            },
+            body: JSON.stringify({ title, content }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `Error: ${response.status} - ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error("Error updating sent announcement:", error);
+        throw error;
+    }
+}
+
+function useNotification({ userId, filters, date } = {}) {
     const queryClient = useQueryClient();
     const { isUserRSORepresentative } = useUserStoreWithAuth();
     const location = useLocation();
     const isNotificationsPage = location.pathname === '/notifications';
+    const isAnnouncementsPage = location.pathname.startsWith('/dashboard/announcements');
 
 
 
@@ -127,10 +159,22 @@ function useNotification({ userId, filters } = {}) {
         error: rsoCreatedNotificationsErrorDetails,
         refetch: refetchRSOCreatedNotifications,
     } = useQuery({
-        queryKey: ['rsoCreatedNotificationsData'],
+        queryKey: ['rsoCreatedNotificationsData', date],
         queryFn: getRSOCreatedNotificationsRequest,
-        enabled: isUserRSORepresentative && isNotificationsPage, // only fetch if user is an RSO representative and on notifications page
+        enabled: isUserRSORepresentative && isAnnouncementsPage, // only fetch if user is an RSO representative and on announcements page
         refetchOnWindowFocus: false,
+    });
+
+    const {
+        mutate: updateSentRSOAnnouncement,
+        isLoading: updateSentRSOAnnouncementLoading,
+        isError: updateSentRSOAnnouncementError,
+        error: updateSentRSOAnnouncementErrorDetails,
+    } = useMutation({
+        mutationFn: updateSentAnnouncementRequest,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['rsoCreatedNotificationsData'] });
+        }
     });
 
     return {
@@ -152,6 +196,12 @@ function useNotification({ userId, filters } = {}) {
         rsoCreatedNotificationsError,
         rsoCreatedNotificationsErrorDetails,
         refetchRSOCreatedNotifications,
+
+        // update sent announcement (for RSO representatives)
+        updateSentRSOAnnouncement,
+        updateSentRSOAnnouncementLoading,
+        updateSentRSOAnnouncementError,
+        updateSentRSOAnnouncementErrorDetails,
     }
 }
 

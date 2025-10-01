@@ -9,6 +9,7 @@ export default function PasswordAction() {
     const location = useLocation();
     const { email, password } = location.state || {};
     const { fromLogin } = location.state || {};
+    const [loading, setLoading] = useState(false);
 
     const [formData, setFormData] = useState({
         email: email || "",
@@ -38,6 +39,12 @@ export default function PasswordAction() {
         isResetPasswordError,
         resetPasswordError,
         resetPasswordData,
+
+        checkEmailExistsMutate,
+        isCheckEmailExistsLoading,
+        isCheckEmailExistsError,
+        checkEmailExistsError,
+        checkEmailExistsData,
     } = useLogin();
 
     const handleChangePassword = async () => {
@@ -84,6 +91,7 @@ export default function PasswordAction() {
         { console.log("fromLogin? ", fromLogin); }
         try {
             if (fromLogin === true) {
+                setLoading(true);
                 console.log("reset password req: ", {
                     email: email || formEmail,
                     newPassword,
@@ -99,11 +107,13 @@ export default function PasswordAction() {
                     onSuccess: () => {
                         console.log("Password reset successfully");
                         toast.success("Password reset successfully");
+                        setLoading(false);
                         navigate("/");
                     },
                     onError: (error) => {
                         console.error("Error resetting password:", error);
                         toast.error(error.message || "Failed to reset password");
+                        setLoading(false);
                     }
                 });
                 console.log("the request sent: ", {
@@ -123,6 +133,7 @@ export default function PasswordAction() {
                 },
                     {
                         onSuccess: () => {
+                            setLoading(false);
                             console.log("Password changed successfully");
                             toast.success("Password changed successfully");
                         },
@@ -134,6 +145,8 @@ export default function PasswordAction() {
             }
         } catch (error) {
             console.error("Error changing password:", error);
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -161,7 +174,7 @@ export default function PasswordAction() {
                     if (role === "admin" || role === "coordinator") {
                         navigate("/dashboard");
                     } else if (role === "rso_representative") {
-                        navigate("/document");
+                        navigate("/dashboard");
                     } else if (role === "super_admin") {
                         navigate("/users");
                     } else if (role === "director" || role === "avp") {
@@ -181,17 +194,28 @@ export default function PasswordAction() {
     // check if the login error requires email verification
     useEffect(() => {
         if (isLoginError) {
+            setLoading(true);
             if (loginError?.requiresEmailVerification === true) {
-                console.error("Login error check email verification:", loginError?.requiresEmailVerification);
-                toast.error("Please verify your email before logging in.");
-
-                navigate("/email-action", {
-                    state: {
-                        email: email,
-                        password: password,
-                        platform: "web"
+                checkEmailExistsMutate(email, {
+                    onSuccess: (data) => {
+                        setLoading(false);
+                        console.log("Email exists check:", data);
+                        toast.warn("Please verify your email before logging in.");
+                        navigate("/email-action", {
+                            state: {
+                                email: email,
+                                password: password,
+                                platform: "web"
+                            }
+                        });
+                    },
+                    onError: (error) => {
+                        setLoading(false);
+                        console.error("Error checking email existence:", error);
+                        toast.error(error.message || "Failed to verify email. Please try again.");
                     }
                 });
+
             }
         }
     }, [isLoginError, loginError]);
@@ -257,7 +281,7 @@ export default function PasswordAction() {
                         id="confirm-password"
                     />
                 </div>
-                <Button className={"mt-4"} onClick={handleChangePassword}>Confirm</Button>
+                <Button className={"mt-4"} onClick={handleChangePassword} disabled={loading}>{loading ? "Making changes..." : "Confirm"}</Button>
             </div>
         </div>
     )

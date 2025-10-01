@@ -171,11 +171,9 @@ function useRSODetails() {
     } = useQuery({
         queryKey: ["rsoDetails"],
         queryFn: fetchRSODetailsRequest,
-        staleTime: Infinity,
-        cacheTime: Infinity,
-        refetchOnMount: false,
-        refetchOnWindowFocus: false,
-        refetchOnReconnect: false,
+        refetchOnMount: true,
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
         enabled: isUserRSORepresentative,
     });
 

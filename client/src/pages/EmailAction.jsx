@@ -1,11 +1,11 @@
-import { useNavigate, useLocation } from "react-router-dom";
-import { TextInput, Button } from "../components";
-import { useState, useEffect, useRef } from "react";
-import { useLogin } from "../hooks";
-import { toast } from "react-toastify";
-import PropTypes from 'prop-types';
 import { Input as BaseInput } from '@mui/base/Input';
 import { Box, styled } from '@mui/system';
+import PropTypes from 'prop-types';
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { Button, TextInput } from "../components";
+import { useLogin } from "../hooks";
 
 import * as React from 'react';
 const blue = {
@@ -229,12 +229,27 @@ OTP.propTypes = {
 export default function EmailAction() {
     const navigate = useNavigate();
     const location = useLocation();
+    const [loading, setLoading] = useState(false);
     const { email = "", fromLogin = false } = location.state || {};
     const [formData, setFormData] = useState({
         email: email || "",
         code: ""
     });
     const [otp, setOtp] = useState("");
+    const [resendTimer, setResendTimer] = useState(116);
+    const timerRef = useRef(null);
+
+    // Countdown timer for resend button
+    useEffect(() => {
+        if (resendTimer > 0) {
+            timerRef.current = setTimeout(() => {
+                setResendTimer(resendTimer - 1);
+            }, 1000);
+        } else {
+            clearTimeout(timerRef.current);
+        }
+        return () => clearTimeout(timerRef.current);
+    }, [resendTimer]);
     const {
         checkEmailExistsMutate,
         isCheckEmailExistsLoading,
@@ -312,33 +327,31 @@ export default function EmailAction() {
             alert("Email is required to send code.");
             return;
         }
-        checkEmailExistsMutate(email,
-            {
-                onSuccess: (data) => {
-                    console.log("Email action successful:", data);
-                    toast.success("Email action successful");
 
-                    sendCodeVerificationMutate(email,
-                        {
-                            onSuccess: (data) => {
-                                console.log("Code sent successfully:", data);
-                                toast.success("Code sent to your email");
-                            },
-                            onError: (error) => {
-                                console.error("Error sending code verification:", error);
-                                toast.error("Failed to send code. Please try again.");
-                            }
-                        }
-                    );
-                },
-                onError: (error) => {
-                    console.error("Error during email action:", error);
-                    alert("An error occurred. Please try again.");
-                    toast.error("Email action failed");
+        setLoading(true);
+
+        try {
+            sendCodeVerificationMutate(email,
+                {
+                    onSuccess: (data) => {
+                        setLoading(false);
+                        setResendTimer(116); // Set timer for 116 seconds
+                        console.log("Code sent successfully:", data);
+                        toast.success("Code sent to your email");
+                    },
+                    onError: (error) => {
+                        setLoading(false);
+                        console.error("Error sending code verification:", error);
+                        toast.error(error.message || "Failed to send code. Please try again.");
+                    }
                 }
-            }
-        );
-
+            );
+        } catch (error) {
+            console.error("Error sending code verification:", error);
+            toast.error(error.message || "Failed to send code. Please try again.");
+        } finally {
+            setLoading(false);
+        }
     }
 
     return (
@@ -360,13 +373,16 @@ export default function EmailAction() {
                     <div className="relative w-full">
                         <TextInput
                             placeholder="Email"
+                            disabled={email ? true : false}
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                             id="email"
                         />
-                        <Button onClick={handleSendCode} style={"secondary"} className={"absolute right-0 top-0 px-2"}>Send Code</Button>
+                        <Button onClick={handleSendCode} style={"secondary"} disabled={loading || resendTimer > 0} className={"absolute right-0 top-0 px-2"}>{`${(loading) ? "Sending..." : "Send Code"}`}</Button>
                     </div>
+                    <p>{`Resend in ${resendTimer} seconds`}</p>
                 </div>
+
                 <div>
                     <label htmlFor="code" className="text-sm text-gray-600">Code</label>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

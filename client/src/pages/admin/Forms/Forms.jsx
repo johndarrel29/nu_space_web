@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Searchbar, Button } from '../../../components';
-import { useAdminCentralizedForms, useRSOForms } from '../../../hooks'
-import { FormatDate } from '../../../utils';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import useTokenStore from "../../../store/tokenStore";
-import { set } from 'react-hook-form';
-import { useUserStoreWithAuth, useSelectedFormStore } from "../../../store";
+import { Button, Searchbar } from '../../../components';
+import { useAdminCentralizedForms, useRSOForms } from '../../../hooks';
+import { useSelectedFormStore, useUserStoreWithAuth } from "../../../store";
+import { FormatDate } from '../../../utils';
 
 // params for rso not tested yet
 
@@ -75,6 +73,7 @@ export default function Forms() {
     } = useRSOForms({
         search: filters.search,
         formType: filters.formType,
+        manualEnabled: true, // always enabled to allow rso to see forms
     });
 
     console.log("RSO Forms Template:", rsoFormsTemplate);

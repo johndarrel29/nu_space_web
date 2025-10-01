@@ -42,6 +42,7 @@ export default function ReusableTable({
     isLoading,
     onDocumentClick,
     showFilters = true,
+    showDropdown = true,
     activityId = null,
     searchQuery,
     setSearchQuery,
@@ -168,15 +169,17 @@ export default function ReusableTable({
                         <div className="w-full lg:w-full md:w-full">
                             <Searchbar placeholder={placeholder || "Search an organization"} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
                         </div>
-                        <div className="w-full mt-4 md:mt-0 lg:w-1/2 md:w-full">
-                            <ReusableDropdown
-                                icon={true}
-                                options={options}
-                                showAllOption={showAllOption}
-                                value={value}
-                                onChange={onChange}
-                            />
-                        </div>
+                        {showDropdown && (
+                            <div className="w-full mt-4 md:mt-0 lg:w-1/2 md:w-full">
+                                <ReusableDropdown
+                                    icon={true}
+                                    options={options}
+                                    showAllOption={showAllOption}
+                                    value={value}
+                                    onChange={onChange}
+                                />
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex justify-between items-center mb-4 w-full">

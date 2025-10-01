@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import DefaultPicture from "../../assets/images/default-picture.png";
-import { CardSkeleton, DropdownSearch, ReusableDropdown, Searchbar } from "../../components";
+import { ActivityDeadlineBanner, CardSkeleton, DropdownSearch, ReusableDropdown, Searchbar } from "../../components";
 import { useAdminAcademicYears, useAdminActivity, useAdminDocuments, useAVPDocuments, useCoordinatorDocuments, useDirectorDocuments } from "../../hooks";
 import { useUserStoreWithAuth } from '../../store';
 import { FormatDate } from "../../utils";
@@ -47,7 +47,8 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
         debouncedQuery: searchQuery,
         page: filters.page,
         limit: filters.limit,
-        RSO: filters.rsoId
+        RSO: filters.rsoId,
+        manualEnable: true
     });
 
 
@@ -533,7 +534,11 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
                     <div className="overflow-x-auto">
 
                         {/* back button + pre/post toggles (responsive) */}
+                        <div>
+                            <ActivityDeadlineBanner activity={activitySelected}></ActivityDeadlineBanner>
+                        </div>
                         <div className="p-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
                             <button
                                 onClick={() => setActivitySelected(null)}
                                 className="text-blue-600"

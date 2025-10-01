@@ -492,7 +492,7 @@ export default function WaterMarkPage() {
                         </svg>
                     </div>
                     <div className='flex gap-2'>
-                        <Button onClick={handleSaveDocument} className='whitespace-nowrap'>Apply Watermark</Button>
+                        <Button onClick={handleSaveDocument} className='whitespace-nowrap'>Apply Signature</Button>
                     </div>
                 </div>
                 <div className='relative inline-block w-full bg-gray-900 rounded-lg shadow-inner flex flex-col md:flex-row gap-4 z-100 md:gap-6 p-2 md:p-4 min-h-[60vh]'>

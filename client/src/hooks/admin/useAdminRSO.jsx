@@ -517,7 +517,7 @@ function useAdminRSO({
         retry: 1,
         staleTime: 0,
         cacheTime: 0,
-        enabled: ((isUserAdmin || isUserCoordinator) && (isRSOsPage || isUsersPage)) || manualEnable,
+        enabled: manualEnable ? true : (isUserAdmin || isUserCoordinator) && isRSOsPage,
     });
 
     const {

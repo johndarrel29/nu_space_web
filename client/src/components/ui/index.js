@@ -1,4 +1,5 @@
 export { default as ActivityCard } from './ActivityCard';
+export { default as ActivityDeadlineBanner } from './ActivityDeadlineBanner';
 export { default as Backdrop } from './Backdrop';
 export { default as Badge } from './Badge';
 export { default as Breadcrumb } from './Breadcrumb';

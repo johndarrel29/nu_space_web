@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import Select from 'react-select';
 import { toast } from "react-toastify";
 import { DropIn } from "../../../animations/DropIn";
-import { Backdrop, Button, CloseButton, CreateUserModal, ReusableDropdown, ReusableTable } from "../../../components";
+import { Backdrop, Button, CloseButton, CreateUserModal, ReusableDropdown, ReusableTable, TabSelector } from "../../../components";
 import { useAdminRSO, useAdminUser, useModal, useRSODetails, useRSOUsers, useSuperAdminUsers } from "../../../hooks";
 import { useUserStoreWithAuth } from "../../../store";
 import { FormatDate } from "../../../utils";
@@ -12,6 +12,9 @@ import { FormatDate } from "../../../utils";
 export default function Users() {
   const [searchQuery, setSearchQuery] = useState('');
   const { isOpen, openModal, closeModal } = useModal();
+  const { isUserRSORepresentative, isUserAdmin, isSuperAdmin, isCoordinator, isDirector, isAVP } = useUserStoreWithAuth();
+  const [activeTab, setActiveTab] = useState(0);
+
   const [filters, setFilters] = useState({
     search: "",
     role: "",
@@ -30,8 +33,7 @@ export default function Users() {
     isRSOError,
     rsoError,
     refetchRSOData,
-  } = useAdminRSO();
-  const { isUserRSORepresentative, isUserAdmin, isSuperAdmin, isCoordinator, isDirector, isAVP } = useUserStoreWithAuth();
+  } = useAdminRSO({ manualEnable: !isUserRSORepresentative ? true : false });
 
   useEffect(() => {
     setFilters((prev) => ({
@@ -112,7 +114,7 @@ export default function Users() {
     updateSDAORoleErrorMessage
   } = useSuperAdminUsers(filters);
 
-
+  console.log("rso members ", rsoMembers);
 
   console.log("searchquery is ", searchQuery, "filters are ", filters);
 
@@ -155,8 +157,22 @@ export default function Users() {
     }
   }) || [];
 
+  const rsoMembersTableRow = rsoMembers?.members?.map((member, index) => {
+    return {
+      index: (filters.page - 1) * filters.limit + index + 1,
+      id: member?._id,
+      email: member?.email || "no email",
+      fullName: `${member?.firstName || 'N/A'} ${member?.lastName || 'N/A'}`,
+    }
+  }) || [];
+
   console.log("adminTableRow is ", adminTableRow, "usersData is ", usersData);
 
+  function membersTableRow() {
+    return [
+      { name: "Name", key: "fullName" },
+    ];
+  }
 
   function tableHeading() {
     return [
@@ -553,9 +569,14 @@ export default function Users() {
     }
   }
 
+  const tabs = [
+    { label: "Applicants" },
+    { label: "Members" }
+  ]
+
   return (
     <>
-      <div className="flex flex-col">
+      <div className="flex flex-col min-h-[400px]">
         {/* --- Header Banner --- */}
         <div className="mb-6">
           <div className="flex justify-end gap-4 w-full">
@@ -657,20 +678,39 @@ export default function Users() {
               </div>
             )}
 
-            {/* table for rso representative */}
-            <ReusableTable
-              options={["All", "Student", "RSO"]}
-              tableRow={tableRowFiltered}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              placeholder={"Search a user"}
-              onClick={handleOpenUserModal}
-              tableHeading={tableHeading()}
-              isLoading={isRefetchingMembers}
-              columnNumber={3}
-            >
+            <TabSelector tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
 
-            </ReusableTable>
+            {/* table for rso representative */}
+            {activeTab === 0 && (
+              <ReusableTable
+                options={["All", "Student", "RSO"]}
+                showDropdown={false}
+                tableRow={tableRowFiltered}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                placeholder={"Search a user"}
+                onClick={handleOpenUserModal}
+                tableHeading={tableHeading()}
+                isLoading={isRefetchingApplicants}
+                columnNumber={3}
+              >
+
+              </ReusableTable>
+            )}
+
+            {activeTab === 1 && (
+              <ReusableTable
+                showDropdown={false}
+                tableRow={rsoMembersTableRow || []}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                placeholder={"Search a user"}
+                isLoading={isRefetchingMembers}
+                // onClick={() => console.log("member clicked")}
+                columnNumber={1}
+                tableHeading={membersTableRow()}
+              ></ReusableTable>
+            )}
           </>
         )}
 

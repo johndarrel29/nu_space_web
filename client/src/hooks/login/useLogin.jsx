@@ -105,6 +105,9 @@ const checkEmailExistsRequest = async (email) => {
 
 const sendCodeVerificationRequest = async (email) => {
     try {
+        // count the verification received
+        console.log("Sending code verification to email:", email);
+
         const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/auth/send-email-code`, {
             method: "POST",
             headers: {
@@ -119,8 +122,9 @@ const sendCodeVerificationRequest = async (email) => {
             throw json;
         }
 
-        if (!json.success) {
-            throw new Error(json || "Code verification failed");
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `Error: ${response.status} - ${response.statusText}`);
         }
 
         return json;

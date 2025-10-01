@@ -8,7 +8,7 @@ import { toast } from 'react-toastify';
 import { DropIn } from "../../../animations/DropIn";
 import defaultPic from '../../../assets/images/default-picture.png';
 import DefaultPicture from "../../../assets/images/default-profile.jpg";
-import { Backdrop, Button, CloseButton, ReusableTable, TabSelector, TextInput, UploadBatchModal } from '../../../components';
+import { ActivityDeadlineBanner, Backdrop, Button, CloseButton, ReusableTable, TabSelector, TextInput, UploadBatchModal } from '../../../components';
 import { useAuth } from "../../../context/AuthContext";
 import { useAdminActivity, useAdminDocuments, useModal, useRSOActivities } from "../../../hooks";
 import { useActivityStatusStore, useDocumentStore, useUserStoreWithAuth } from '../../../store';
@@ -68,7 +68,8 @@ export default function Activities() {
     viewAdminActivityLoading,
     refetchViewAdminActivity,
     viewAdminActivityError,
-  } = useAdminActivity(activityId);
+  } = useAdminActivity({ activityId });
+
 
   console.log("Activity documents :", activityDocuments);
   // Modal control
@@ -127,6 +128,8 @@ export default function Activities() {
       return activityRSOView;
     }
   }
+
+  console.log("activity on role: ", viewAdminActivityData);
 
   function refetchActivityOnRole() {
     if (!isUserRSORepresentative) {
@@ -261,21 +264,6 @@ export default function Activities() {
     { name: "Action", key: "actions" }
   ];
 
-  // Removed legacy file upload helper functions (handleFileUpload, handleFileChange, removeFile, handleSubmit)
-
-  /**
-   * Handles document click to show details
-   * @param {Object} document - Document object to display
-   */
-  const handleDocumentClick = (document) => {
-    console.log("Document clicked:", document);
-
-
-    setSelectedActivity(document);
-    openModal();
-    setModalType("details");
-  };
-
   /**
    * Closes the modal and resets modal type
    */
@@ -290,7 +278,7 @@ export default function Activities() {
   const handleDocumentUpload = () => {
 
     if (!(isPreOngoing || isPostOngoing)) {
-      toast.error("Cannot upload documents if pre or post activity document submission is done or pending.");
+      toast.error("Activity document submission is closed.");
       return;
     }
 
@@ -451,48 +439,8 @@ export default function Activities() {
         {/* Main Content */}
         <div className='w-full px-4 sm:px-8 lg:px-24 mt-6'>
           <div>
-            {/* Banner: Pre and Post Documents Opened */}
-            {(activity?.Activity_pre_document_deadline?.date_status === "ongoing" || activity?.Activity_post_document_deadline?.date_status === "ongoing") && (
-              <div
-                className={`${!isUserRSORepresentative ? "cursor-pointer" : ""} bg-blue-50 border border-blue-200 rounded-lg px-6 py-4 shadow-sm flex items-start gap-3 mb-6 group`}
-                onClick={!isUserRSORepresentative ? (() => { openModal(); setModalType("banner"); }) : null}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
-                </svg>
-                <div className="flex flex-col">
-                  <span className={`text-blue-800 font-semibold text-base ${!isUserRSORepresentative ? "group-hover:underline" : ""}`}>Pre and Post Documents Opened</span>
-                  {/* <span className="text-blue-700 text-sm">You can now upload pre and post documents for this activity.</span> */}
-                  <div className='flex items-center gap-2'>
-                    <span className="text-blue-700 text-xs mt-1"><span className='font-semibold'>Pre Documents</span> from: {activity?.Activity_pre_document_deadline ? formatDate(activity.Activity_pre_document_deadline.start_deadline) : "No deadline set"}</span>
-                    <div className='h-4 w-px bg-blue-200'></div>
-                    <span className="text-blue-700 text-xs mt-1">Until: {activity?.Activity_pre_document_deadline ? formatDate(activity.Activity_pre_document_deadline.end_deadline) : "No deadline set"}</span>
-                  </div>
-                  <div className='flex items-center gap-2 mt-1'>
-                    <span className="text-blue-700 text-xs"><span className='font-semibold'>Post Documents</span> from: {activity?.Activity_post_document_deadline ? formatDate(activity.Activity_post_document_deadline.start_deadline) : "No deadline set"}</span>
-                    <div className='h-4 w-px bg-blue-200'></div>
-                    <span className="text-blue-700 text-xs">Until: {activity?.Activity_post_document_deadline ? formatDate(activity.Activity_post_document_deadline.end_deadline) : "No deadline set"}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-            {(isPreDone || isPostDone) && !(isPreOngoing || isPostOngoing) && (
-              <div className="bg-green-50 border border-green-200 rounded-lg px-6 py-4 shadow-sm flex items-start gap-3 mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-500 flex-shrink-0" viewBox="0 0 512 512"><path fill="currentColor" d="M256 48C141.1 48 48 141.1 48 256s93.1 208 208 208 208-93.1 208-208S370.9 48 256 48zm113 169.1-128 144a16 16 0 0 1-11.4 5.3h-.4a16 16 0 0 1-11.3-4.7l-64-64a16 16 0 1 1 22.6-22.6l52.3 52.3 116.7-131.3a16 16 0 1 1 23.5 21z" /></svg>
-                <div className="flex flex-col">
-                  <span className="text-green-800 font-semibold text-base">Document Submission Closed</span>
-                  <span className="text-green-700 text-sm">The submission period has ended. The admin will now undergo activity approval.</span>
-                  <div className='flex flex-col mt-2 gap-1'>
-                    {isPreDone && (
-                      <span className="text-green-700 text-xs">Pre Documents submission closed: {activity?.Activity_pre_document_deadline?.end_deadline ? formatDate(activity.Activity_pre_document_deadline.end_deadline) : 'N/A'}</span>
-                    )}
-                    {isPostDone && (
-                      <span className="text-green-700 text-xs">Post Documents submission closed: {activity?.Activity_post_document_deadline?.end_deadline ? formatDate(activity.Activity_post_document_deadline.end_deadline) : 'N/A'}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* reusable banner */}
+            <ActivityDeadlineBanner activity={activity} />
           </div>
 
           {/* Details Section */}
@@ -502,6 +450,8 @@ export default function Activities() {
               <div className='flex items-center gap-2'>
                 {isUserRSORepresentative && (
                   <div
+                    data-tooltip-id="global-tooltip"
+                    data-tooltip-content="Edit Activity"
                     className='aspect-square h-8 w-8 bg-white rounded-full flex items-center justify-center text-white font-bold cursor-pointer border border-gray-600 hover:border-gray-300 group'
                     onClick={handleEditClick} disabled={activityDocumentsLoading ? true : false}>
                     <div className="flex items-center gap-2 text-sm font-light ">

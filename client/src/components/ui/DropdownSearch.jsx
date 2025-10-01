@@ -12,7 +12,7 @@ export default function DropdownSearch({ isDisabled, category, setSelectedCatego
     isRSOError,
     rsoError,
     refetchRSOData,
-  } = useAdminRSO();
+  } = useAdminRSO({ manualEnable: true });
 
 
   // Extract only RSO_acronym values

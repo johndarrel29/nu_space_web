@@ -400,51 +400,57 @@ export default function DocumentDetails() {
                 {console.log("Document for details:", doc)}
 
                 {/* Actions: Approve / Decline (placed below the main view document) */}
-                <section className="mt-4">
-                    <div className="w-full flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
-                        <Button
-                            disabled={!documentId || disableBasedOnRole()}
-                            onClick={() => {
-                                const ext = (doc?.file_path?.split('.').pop() || '').toLowerCase();
-                                if (ext === 'pdf') {
-                                    setApproveChoiceOpen(true);
-                                } else {
-                                    setNonPdfModalOpen(true);
-                                }
-                            }}
-                            className="w-full sm:w-auto"
-                        >
-                            <div className="flex gap-2 items-center justify-center">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="size-4 fill-white"
-                                    viewBox="0 0 640 640"
-                                >
-                                    <path d="M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z" />
-                                </svg>
-                                Approve Submission
-                            </div>
-                        </Button>
-                        <Button
-                            style="secondary"
-                            disabled={!documentId || disableBasedOnRole()}
-                            onClick={() => setDeclineModalOpen(true)}
-                            className="w-full sm:w-auto"
-                        >
-                            <div className="flex gap-2 items-center justify-center">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="size-4"
-                                    fill="current"
-                                    viewBox="0 0 640 640"
-                                >
-                                    <path d="M183.1 137.4C170.6 124.9 150.3 124.9 137.8 137.4C125.3 149.9 125.3 170.2 137.8 182.7L275.2 320L137.9 457.4C125.4 469.9 125.4 490.2 137.9 502.7C150.4 515.2 170.7 515.2 183.2 502.7L320.5 365.3L457.9 502.6C470.4 515.1 490.7 515.1 503.2 502.6C515.7 490.1 515.7 469.8 503.2 457.3L365.8 320L503.1 182.6C515.6 170.1 515.6 149.8 503.1 137.3C490.6 124.8 470.3 124.8 457.8 137.3L320.5 274.7L183.1 137.4z" />
-                                </svg>
-                                Decline Submission
-                            </div>
-                        </Button>
-                    </div>
-                </section>
+                {(!isUserAdmin && !isUserRSORepresentative) && (
+                    <section className="mt-4">
+                        <div className="w-full flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
+                            <Button
+                                disabled={!documentId || disableBasedOnRole()}
+                                onClick={() => {
+                                    const ext = (doc?.file_path?.split('.').pop() || '').toLowerCase();
+                                    if (ext === 'pdf') {
+                                        if (isCoordinator) {
+                                            setApproveChoiceOpen(true);
+                                        } else {
+                                            navigate(`/general-documents/${documentId}/watermark`, { state: { documentId, url } }); // direct to watermark page
+                                        }
+                                    } else {
+                                        setNonPdfModalOpen(true);
+                                    }
+                                }}
+                                className="w-full sm:w-auto"
+                            >
+                                <div className="flex gap-2 items-center justify-center">
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="size-4 fill-white"
+                                        viewBox="0 0 640 640"
+                                    >
+                                        <path d="M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z" />
+                                    </svg>
+                                    Approve Submission
+                                </div>
+                            </Button>
+                            <Button
+                                style="secondary"
+                                disabled={!documentId || disableBasedOnRole()}
+                                onClick={() => setDeclineModalOpen(true)}
+                                className="w-full sm:w-auto"
+                            >
+                                <div className="flex gap-2 items-center justify-center">
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="size-4"
+                                        fill="current"
+                                        viewBox="0 0 640 640"
+                                    >
+                                        <path d="M183.1 137.4C170.6 124.9 150.3 124.9 137.8 137.4C125.3 149.9 125.3 170.2 137.8 182.7L275.2 320L137.9 457.4C125.4 469.9 125.4 490.2 137.9 502.7C150.4 515.2 170.7 515.2 183.2 502.7L320.5 365.3L457.9 502.6C470.4 515.1 490.7 515.1 503.2 502.6C515.7 490.1 515.7 469.8 503.2 457.3L365.8 320L503.1 182.6C515.6 170.1 515.6 149.8 503.1 137.3C490.6 124.8 470.3 124.8 457.8 137.3L320.5 274.7L183.1 137.4z" />
+                                    </svg>
+                                    Decline Submission
+                                </div>
+                            </Button>
+                        </div>
+                    </section>
+                )}
                 {/* Status & Routing */}
                 <div className=' mt-4 '>
                     <h3 className="text-sm font-semibold text-gray-700 mb-3">
@@ -687,7 +693,7 @@ export default function DocumentDetails() {
                                 <div className="flex items-start gap-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" className="h-5 w-5 mt-0.5 fill-gray-600"><path d="M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z" /></svg>
                                     <div>
-                                        <div className="font-medium text-sm text-gray-900">Approve without signing</div>
+                                        <div className="font-medium text-sm text-gray-900">Approve without signature</div>
                                         <div className="text-xs text-gray-600">Record approval but skip watermarking/signature.</div>
                                     </div>
                                 </div>
@@ -704,8 +710,8 @@ export default function DocumentDetails() {
                                 <div className="flex items-start gap-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" className="h-5 w-5 mt-0.5 fill-indigo-600"><path d="M352 64L288 64 288 288 64 288 64 352 288 352 288 576 352 576 352 352 576 352 576 288 352 288 352 64z" /></svg>
                                     <div>
-                                        <div className="font-medium text-sm">Approve with signing</div>
-                                        <div className="text-xs text-gray-600">Open the signing/watermark workflow to attach your signature.</div>
+                                        <div className="font-medium text-sm">Approve with signature</div>
+                                        <div className="text-xs text-gray-600">Open the signature workflow to attach your signature.</div>
                                     </div>
                                 </div>
                             </button>

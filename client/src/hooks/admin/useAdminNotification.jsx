@@ -86,11 +86,39 @@ const postSpecificRSONotificationRequest = async ({ rsoIds, title, content }) =>
     }
 }
 
+const updateSentAnnouncementRequest = async ({ announcementId, title, content, targetedRSOs }) => {
+    try {
+        const token = useTokenStore.getState().token;
+
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/admin/rsoSpace/updateAnnouncement/${announcementId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: token,
+            },
+            body: JSON.stringify({ title, content, targetedRSOs }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `Error: ${response.status} - ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+
+    }
+}
+
+// for announcementsPage
+
 function useAdminNotification({ userId } = {}) {
     const queryClient = useQueryClient();
     const { isUserRSORepresentative } = useUserStoreWithAuth();
     const location = useLocation();
     const isNotificationsPage = location.pathname === '/notifications';
+    const isAnnouncementsPage = location.pathname.startsWith('/dashboard/announcements');
 
     const {
         mutate: postNotification,
@@ -112,6 +140,10 @@ function useAdminNotification({ userId } = {}) {
     } = useQuery({
         queryKey: ['sentNotificationsData'],
         queryFn: getSentNotificationsRequest,
+        enabled: !isUserRSORepresentative && isAnnouncementsPage, // only fetch if not RSO rep and on announcements page
+        refetchOnMount: true,
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
     });
 
     const {
@@ -121,6 +153,18 @@ function useAdminNotification({ userId } = {}) {
         error: postSpecificRSONotificationErrorDetails,
     } = useMutation({
         mutationFn: postSpecificRSONotificationRequest,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['sentNotificationsData'] });
+        },
+    });
+
+    const {
+        mutate: updateSentAdminAnnouncement,
+        isLoading: updateSentAdminAnnouncementLoading,
+        isError: updateSentAdminAnnouncementError,
+        error: updateSentAdminAnnouncementErrorDetails,
+    } = useMutation({
+        mutationFn: updateSentAnnouncementRequest,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['sentNotificationsData'] });
         },
@@ -141,6 +185,12 @@ function useAdminNotification({ userId } = {}) {
         postSpecificRSONotificationLoading,
         postSpecificRSONotificationError,
         postSpecificRSONotificationErrorDetails,
+
+        // for updating sent announcement
+        updateSentAdminAnnouncement,
+        updateSentAdminAnnouncementLoading,
+        updateSentAdminAnnouncementError,
+        updateSentAdminAnnouncementErrorDetails,
     }
 }
 

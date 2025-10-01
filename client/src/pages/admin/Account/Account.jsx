@@ -417,7 +417,7 @@ export default function Account() {
               )}
 
               {activeTab === 1 && (
-                <div>
+                <div className="mt-4">
                   <ReusableRSODescription rsoDetailData={rsoDetailData} />
                 </div>
               )}

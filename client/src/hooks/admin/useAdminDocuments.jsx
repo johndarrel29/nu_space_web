@@ -447,7 +447,7 @@ function useAdminDocuments({
     const { isUserAdmin, isCoordinator } = useUserStoreWithAuth();
     const queryClient = useQueryClient();
     const location = useLocation();
-    const isAdminDocuments = location.pathname === '/general-documents';
+    const isAdminDocuments = location.pathname.startsWith('/general-documents');
 
     console.log("received documentid ", documentId)
 

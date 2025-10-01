@@ -11,7 +11,7 @@ import { FormatDate } from '../../../utils';
 // make the date input also accept time
 
 export default function AcademicYear() {
-    const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+    const [isHistoryOpen, setIsHistoryOpen] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [activeYear, setActiveYear] = useState(null);
@@ -306,17 +306,22 @@ export default function AcademicYear() {
                                 <tr>
                                     <td className="py-3 pr-6 text-gray-500 text-sm text-left md:text-end">Status</td>
                                     <td className="py-3 flex items-center gap-2">
-                                        <div className={`w-3 h-3 rounded-full ${activeYear && activeYear.isActive ? 'bg-success' : 'bg-error'}`}></div>
-                                        <span className="font-medium">{activeYear ? (activeYear.isActive ? "Active" : "Inactive") : "No data"}</span>
+                                        <div className={`w-3 h-3 rounded-full ${activeYear && activeYear?.isActive ? 'bg-success' : activeYear?.isUpcoming ? 'bg-warning' : 'bg-error'}`}></div>
+                                        {activeYear?.isActive && (
+                                            <span className="font-medium">{activeYear ? (activeYear?.isActive ? "Active" : "Inactive") : "No data"}</span>
+                                        )}
+                                        {activeYear?.isUpcoming && (
+                                            <span className="font-medium">{activeYear ? (activeYear?.isUpcoming ? "Upcoming" : "No Upcoming") : "No data"}</span>
+                                        )}
                                     </td>
                                 </tr>
-                                <tr>
+                                {/* <tr>
                                     <td className="py-3 pr-6 text-gray-500 text-sm text-left md:text-end">Upcoming</td>
                                     <td className="py-3 flex items-center gap-2">
                                         <div className={`w-3 h-3 rounded-full ${activeYear && activeYear.isUpcoming ? 'bg-success' : 'bg-error'}`}></div>
                                         <span className="font-medium">{activeYear ? (activeYear.isUpcoming ? "Upcoming" : "No Upcoming") : "No data"}</span>
                                     </td>
-                                </tr>
+                                </tr> */}
                             </tbody>
                         </table>
 
