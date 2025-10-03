@@ -4,7 +4,6 @@ import { useAuth } from '../../context/AuthContext';
 import { useTokenStore, useUserStoreWithAuth } from "../../store";
 
 // for rso representative
-// looks like this url is no longer available in backend
 const fetchDocuments = async () => {
     try {
         const token = useTokenStore.getState().getToken();
@@ -23,7 +22,8 @@ const fetchDocuments = async () => {
 
 
         if (!response.ok) {
-            throw new Error(`Fetch failed: ${response.status} - ${response.statusText}`);
+            const errorData = await response.json();
+            throw new Error(errorData.message || `Error: ${response.status} - ${response.statusText}`);
         }
 
         const json = await response.json();

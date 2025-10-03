@@ -34,12 +34,14 @@ const postNotificationsRequest = async ({ title, content }) => {
     }
 }
 
-const getSentNotificationsRequest = async () => {
+const getSentNotificationsRequest = async ({ queryKey }) => {
     try {
         // token from Zustand store (was localStorage)
         const token = useTokenStore.getState().token;
+        const [_, date] = queryKey;
+        const params = new URLSearchParams({ date }).toString();
 
-        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/admin/rsoSpace/getAllAnnouncements`, {
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/admin/rsoSpace/getAllAnnouncements?${params}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -107,13 +109,14 @@ const updateSentAnnouncementRequest = async ({ announcementId, title, content, t
         const data = await response.json();
         return data;
     } catch (error) {
-
+        console.error("Error updating announcement:", error);
+        throw error;
     }
 }
 
 // for announcementsPage
 
-function useAdminNotification({ userId } = {}) {
+function useAdminNotification({ userId, date } = {}) {
     const queryClient = useQueryClient();
     const { isUserRSORepresentative } = useUserStoreWithAuth();
     const location = useLocation();
@@ -138,7 +141,7 @@ function useAdminNotification({ userId } = {}) {
         isError: sentNotificationsError,
         error: sentNotificationsErrorDetails,
     } = useQuery({
-        queryKey: ['sentNotificationsData'],
+        queryKey: ['sentNotificationsData', date],
         queryFn: getSentNotificationsRequest,
         enabled: !isUserRSORepresentative && isAnnouncementsPage, // only fetch if not RSO rep and on announcements page
         refetchOnMount: true,

@@ -128,6 +128,7 @@ function useNotification({ userId, filters, date } = {}) {
     const {
         data: notificationsData,
         isLoading: notificationsLoading,
+        isFetching: notificationsFetching,
         isError: notificationsError,
         error: notificationsErrorDetails
     } = useQuery({

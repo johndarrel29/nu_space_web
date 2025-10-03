@@ -10,7 +10,7 @@ import defaultPic from '../../../assets/images/default-picture.png';
 import DefaultPicture from "../../../assets/images/default-profile.jpg";
 import { ActivityDeadlineBanner, Backdrop, Button, CloseButton, ReusableTable, TabSelector, TextInput, UploadBatchModal } from '../../../components';
 import { useAuth } from "../../../context/AuthContext";
-import { useAdminActivity, useAdminDocuments, useModal, useRSOActivities } from "../../../hooks";
+import { useAdminActivity, useAdminDocuments, useModal, useRSOActivities, useRSOForms } from "../../../hooks";
 import { useActivityStatusStore, useDocumentStore, useUserStoreWithAuth } from '../../../store';
 
 // TODO: Replace static participants and forms data with live backend data when available.
@@ -37,6 +37,13 @@ export default function Activities() {
     activityRSOViewQueryError,
     refetchActivityRSOView,
   } = useRSOActivities({ activityId });
+
+  const {
+    specificActivityFormsResponse,
+    isLoadingSpecificActivityFormsResponse,
+    isErrorSpecificActivityFormsResponse,
+    errorSpecificActivityFormsResponse,
+  } = useRSOForms({ activityId });
 
   const {
     // set pre-document deadline
@@ -72,6 +79,8 @@ export default function Activities() {
 
 
   console.log("Activity documents :", activityDocuments);
+  console.log("Activity forms :", specificActivityFormsResponse);
+
   // Modal control
   const { isOpen, openModal, closeModal } = useModal();
   const setActivityStatus = useActivityStatusStore((state) => state.setActivityStatus);
@@ -94,6 +103,8 @@ export default function Activities() {
   const [preDocDeadline, setPreDocDeadline] = useState(null);
   const [postDocDeadline, setPostDocDeadline] = useState(null);
   const { isUserRSORepresentative, isUserAdmin, isCoordinator } = useUserStoreWithAuth();
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [profileToView, setProfileToView] = useState(null);
   const {
     refetchSetAccreditationDeadline,
     setAccreditationDeadline,
@@ -400,6 +411,15 @@ export default function Activities() {
   const isPreDone = activity?.Activity_pre_document_deadline?.date_status === 'done';
   const isPostDone = activity?.Activity_post_document_deadline?.date_status === 'done';
 
+  const openProfileModal = (participant) => {
+    if (!participant) return;
+
+    setProfileToView(participant);
+    setIsProfileModalOpen(true);
+
+    // add forms and replace the participant source of truth when backend is ready
+  }
+
   return (
     <>
       <div className="flex flex-col items-start min-h-[150vh]">
@@ -640,7 +660,11 @@ export default function Activities() {
                     <h3 className="text-sm font-semibold text-gray-700 mb-4">Participants</h3>
                     <ul className="space-y-2">
                       {(activity?.Activity_registration_participants || []).map(p => (
-                        <li key={p._id} className="text-sm text-gray-800 border border-gray-200 rounded-md px-4 py-2 bg-gray-50">
+                        <li
+                          data-tooltip-id="global-tooltip"
+                          data-tooltip-content={`${p.firstName} ${p.lastName}`}
+                          onClick={() => openProfileModal(p)}
+                          key={p._id} className="cursor-pointer text-sm text-gray-800 border border-gray-200 rounded-md px-4 py-2 bg-gray-50">
                           {p.firstName} {p.lastName}
                         </li>
                       ))}
@@ -850,6 +874,55 @@ export default function Activities() {
           </Backdrop>
         )}
 
+        {/* Profile Modal */}
+        {isProfileModalOpen && (
+          <Backdrop className="fixed inset-0 z-50 flex items-start justify-center bg-black bg-opacity-50 pt-8">
+            <motion.div
+              className="bg-white rounded-lg shadow-lg w-[80vh] h-[90vh] border border-[#312895]/20 flex flex-col p-6"
+              variants={DropIn}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              <div className='flex flex-col gap-4'>
+                <div className='flex justify-between items-center mb-4'>
+                  <h1>Participant Profile</h1>
+                  <CloseButton
+                    onClick={() => setIsProfileModalOpen(false)}></CloseButton>
+                </div>
+                {profileToView ? (
+                  <div className='space-y-4'>
+                    <div className='flex items-center gap-4'>
+                      <div className='h-20 w-20 bg-gray-200 rounded-full flex items-center justify-center text-3xl text-gray-500 font-bold'>
+                        {`${profileToView.firstName.charAt(0)}${profileToView.lastName.charAt(0)}`}
+                      </div>
+                      <div className='flex flex-col'>
+                        <h2 className='text-xl font-semibold text-gray-800'>{`${profileToView.firstName} ${profileToView.lastName}`}</h2>
+                        <p className='text-gray-600 text-sm'>{profileToView.email || 'No email provided'}</p>
+                      </div>
+                    </div>
+                    <div className='space-y-2'>
+                      <div>
+                        <h3 className='text-sm font-medium text-gray-700'>First Name</h3>
+                        <p className='text-gray-800'>{profileToView.firstName}</p>
+                      </div>
+                      <div>
+                        <h3 className='text-sm font-medium text-gray-700'>Last Name</h3>
+                        <p className='text-gray-800'>{profileToView.lastName}</p>
+                      </div>
+                      <div>
+                        <h3 className='text-sm font-medium text-gray-700'>Email</h3>
+                        <p className='text-gray-800'>{profileToView.email || 'No email provided'}</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (<p>No participant selected.</p>
+                )}
+
+              </div>
+            </motion.div>
+          </Backdrop>
+        )}
       </AnimatePresence>
     </>
   );

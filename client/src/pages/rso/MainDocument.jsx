@@ -18,7 +18,8 @@ function MainDocument() {
     const Navigate = useNavigate();
 
     const {
-        error,
+        generalDocumentsError,
+        generalDocumentsQueryError,
         generalDocuments,
         generalDocumentsLoading,
         refetchGeneralDocuments,
@@ -34,6 +35,8 @@ function MainDocument() {
     const [documentToDelete, setDocumentToDelete] = useState(null);
     const user = JSON.parse(localStorage.getItem("user"));
     const userID = user?.id || "";
+
+    console.log("error query generalDocumentsQueryError", generalDocumentsQueryError);
 
 
     /**
@@ -52,7 +55,7 @@ function MainDocument() {
     // Prepare table data from documents
     const tableRow = Array.isArray(generalDocuments)
         ? generalDocuments
-            .filter(doc => doc.purpose !== "activities")
+            // .filter(doc => doc.purpose !== "activities")
             .map((doc) => {
 
 
@@ -149,6 +152,11 @@ function MainDocument() {
                 <TabSelector tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
             </div>
 
+            {generalDocumentsQueryError && (
+                <div className="text-red-600 bg-red-50 border border-red-200 rounded p-3 mb-4">
+                    {generalDocumentsQueryError.message || String(generalDocumentsQueryError)}
+                </div>
+            )}
             <ReusableTable
                 options={["All", "A-Z", "Most Popular"]}
                 onClick={(row) => Navigate(`/documents/${row.id}`, { state: { fromRequirements: true, documentId: row.id } })}
@@ -157,7 +165,7 @@ function MainDocument() {
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 tableRow={filteredDocuments()}
-                error={error}
+                error={generalDocumentsError}
                 isLoading={generalDocumentsLoading}
                 tableHeading={[
                     { name: "Title", key: "title" },

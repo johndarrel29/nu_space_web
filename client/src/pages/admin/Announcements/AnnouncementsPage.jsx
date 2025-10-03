@@ -17,6 +17,7 @@ function AnnouncementsPage() {
     const { isUserRSORepresentative, isUserAdmin, isCoordinator } = useUserStoreWithAuth();
     const [selectedRSOs, setSelectedRSOs] = useState([]);
     const [filters, setFilters] = useState({ date: "latest" });
+    const [selectedRSOsForEdit, setSelectedRSOsForEdit] = useState([]);
 
     const {
         rsoData,
@@ -68,7 +69,13 @@ function AnnouncementsPage() {
         postSpecificRSONotificationLoading,
         postSpecificRSONotificationError,
         postSpecificRSONotificationErrorDetails,
-    } = useAdminNotification({ userId: user?.id });
+
+        // for updating sent announcement
+        updateSentAdminAnnouncement,
+        updateSentAdminAnnouncementLoading,
+        updateSentAdminAnnouncementError,
+        updateSentAdminAnnouncementErrorDetails,
+    } = useAdminNotification({ userId: user?.id, date: filters.date });
 
     console.log("Notifications for rso Data: ", rsoCreatedNotificationsData);
 
@@ -155,7 +162,19 @@ function AnnouncementsPage() {
     const handleRowClick = (row) => {
         console.log("Row clicked:", row);
         setSelectedAnnouncement({ ...row.fullData });
+        setSelectedRSOsForEdit(
+            row.fullData?.targetedRSOs
+                ? row.fullData.targetedRSOs.map(rso => ({
+                    value: rso._id,
+                    label: rso.RSO_name || rso.RSO_acronym || 'Unnamed RSO'
+                }))
+                : []
+        )
         setIsDetailsModalOpen(true);
+    };
+
+    const handleEditSelectedRSOs = (selectedOptions) => {
+        setSelectedRSOsForEdit(selectedOptions);
     };
 
     // Close details modal
@@ -270,6 +289,31 @@ function AnnouncementsPage() {
                     }
                 );
             }
+
+            if (!isUserRSORepresentative) {
+                try {
+                    updateSentAdminAnnouncement({ announcementId: selectedAnnouncement._id, title: selectedAnnouncement.title, content: selectedAnnouncement.content, targetedRSOs: selectedRSOsForEdit.map(rso => rso.value) || [] },
+                        {
+                            onSuccess: () => {
+                                toast.success("Announcement updated successfully!");
+                                refetchRSOCreatedNotifications();
+                                closeDetailsModal();
+                                setTitle("");
+                                setDescription("");
+                                closeModal();
+                                console.log("Admin notification updated successfully");
+                            },
+                            onError: (err) => {
+                                setError(err.message || "Failed to update announcement.");
+                                toast.error(`Error: ${err.message || "Failed to update announcement."}`);
+                            }
+                        }
+                    );
+                } catch (error) {
+                    console.error("Error updating announcement:", error);
+                    toast.error("Failed to update announcement.");
+                }
+            }
         } catch (error) {
             console.error("Error updating announcement:", error);
             toast.error("Failed to update announcement.");
@@ -311,7 +355,7 @@ function AnnouncementsPage() {
                     tableHeading={announcementHeading}
                     tableRow={rowsToDisplay}
                     onClick={handleRowClick}
-                    isLoading={false}
+                    isLoading={sentNotificationsLoading || rsoCreatedNotificationsLoading}
                     options={["Latest", "Oldest"]}
                     value={filters.date === "latest" ? "Latest" : filters.date === "oldest" ? "Oldest" : ""}
                     onChange={(e) => handleFilterSelected(e.target.value)}
@@ -385,6 +429,7 @@ function AnnouncementsPage() {
                                     Cancel
                                 </Button>
                                 <Button
+                                    disabled={postNotificationLoading || postRSONotificationLoading || postSpecificRSONotificationLoading}
                                     onClick={handleNotification}
                                 >
                                     Create Announcement
@@ -415,6 +460,16 @@ function AnnouncementsPage() {
                             </div>
 
                             <div className="space-y-5">
+                                <div>
+                                    <h3 className="text-sm font-medium text-gray-500">Targeted RSOs</h3>
+                                    <Select
+                                        isMulti
+                                        className="basic-multi-select"
+                                        onChange={handleEditSelectedRSOs}
+                                        options={rsos}
+                                        value={selectedRSOsForEdit} />
+                                </div>
+
                                 <div>
                                     <h3 className="text-sm font-medium text-gray-500">Title</h3>
                                     <TextInput value={selectedAnnouncement.title || ""} onChange={(e) => setSelectedAnnouncement({ ...selectedAnnouncement, title: e.target.value })} />
@@ -457,6 +512,7 @@ function AnnouncementsPage() {
                             <div className="flex justify-end mt-6 gap-2">
                                 <Button
                                     style="primary"
+                                    disabled={updateSentAdminAnnouncementLoading || updateSentRSOAnnouncementLoading}
                                     onClick={handleUpdateAnnouncement}
                                 >
                                     Edit

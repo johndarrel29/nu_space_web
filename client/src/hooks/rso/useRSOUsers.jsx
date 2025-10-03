@@ -1,6 +1,6 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { useTokenStore, useUserStoreWithAuth } from '../../store';
+import { QueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
+import { useTokenStore, useUserStoreWithAuth } from '../../store';
 
 const fetchMembers = async () => {
     try {
@@ -89,24 +89,36 @@ function useRSOUsers() {
         data: rsoMembers,
         isError: isErrorFetchingMembers,
         error: errorFetchingMembers,
+        isLoading: isLoadingMembers,
         isRefetching: isRefetchingMembers,
         refetch: refetchMembers,
     } = useQuery({
         enabled: isUserRSORepresentative && isUsersPage,
         queryKey: ["rsoMembers"],
-        queryFn: fetchMembers
+        queryFn: fetchMembers,
+        onSuccess: () => {
+            QueryClient.invalidateQueries(['rsoApplicants']);
+            // Invalidate and refetch
+            console.log("Members fetched successfully");
+        }
     });
 
     const {
         data: rsoApplicants,
         isError: isErrorFetchingApplicants,
+        isLoading: isLoadingApplicants,
         error: errorFetchingApplicants,
         isRefetching: isRefetchingApplicants,
         refetch: refetchApplicants,
     } = useQuery({
         enabled: isUserRSORepresentative && isUsersPage,
         queryKey: ["rsoApplicants"],
-        queryFn: fetchApplicants
+        queryFn: fetchApplicants,
+        onSuccess: () => {
+            QueryClient.invalidateQueries(['rsoMembers']);
+            // Invalidate and refetch
+            console.log("Applicants fetched successfully");
+        }
     });
 
     const {
@@ -129,11 +141,13 @@ function useRSOUsers() {
         rsoMembers,
         isErrorFetchingMembers,
         errorFetchingMembers,
+        isLoadingMembers,
         isRefetchingMembers,
         refetchMembers,
 
         rsoApplicants,
         isErrorFetchingApplicants,
+        isLoadingApplicants,
         errorFetchingApplicants,
         isRefetchingApplicants,
         refetchApplicants,

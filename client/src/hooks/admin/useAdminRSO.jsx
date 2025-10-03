@@ -513,7 +513,7 @@ function useAdminRSO({
     } = useQuery({
         queryKey: ["rsoData", filters],
         queryFn: fetchWebRSO,
-        refetchOnWindowFocus: false,
+        refetchOnWindowFocus: true,
         retry: 1,
         staleTime: 0,
         cacheTime: 0,

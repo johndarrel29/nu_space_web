@@ -1,6 +1,8 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
 import { DropIn } from '../../../animations/DropIn';
 import { Backdrop, Badge, Button, CloseButton, Searchbar } from '../../../components';
 import { useRSONotification } from '../../../hooks';
@@ -61,21 +63,41 @@ export default function NotificationPage() {
             </div>
             <h1 className='text-lg font-semibold text-gray-800 mb-4'>{`${notificationsData?.pagination?.totalNotifications || 0} Notification${notificationsData?.pagination?.totalNotifications === 1 ? '' : 's'}`}</h1>
             <div className="bg-white rounded-lg shadow divide-y divide-gray-200">
-                {filteredNotifications?.length === 0 ? (
-                    <div className="p-6 text-center text-gray-500">No notifications found.</div>
-                ) : (
-                    filteredNotifications?.map(notif => (
-                        <div
-                            key={notif.id}
-                            className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer"
-                            onClick={() => handleOpenModal(notif)}
-                        >
-                            <div>
-                                <div className="font-medium text-0ff-black">{notif.title}</div>
-                                <div className="text-sm text-gray-600 line-clamp-1 max-w-md">{notif.message}</div>
+                {notificationsLoading ? (
+                    <>
+                        {[...Array(5)].map((_, i) => (
+                            <div key={i} className="flex items-center justify-between p-4 border-b last:border-b-0">
+                                <div className="flex-1 min-w-0">
+                                    <div className="font-medium mb-1">
+                                        <Skeleton width={120} height={18} />
+                                    </div>
+                                    <div className="text-sm">
+                                        <Skeleton width={220} height={14} />
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-end min-w-[80px]">
+                                    <Skeleton width={60} height={20} style={{ marginBottom: 8 }} />
+                                    <Skeleton width={70} height={12} />
+                                </div>
                             </div>
-                            <div className="flex flex-col items-end">
-                                {/* <span className={
+                        ))}
+                    </>
+                ) : (
+                    filteredNotifications?.length === 0 ? (
+                        <div className="p-6 text-center text-gray-500">No notifications found.</div>
+                    ) : (
+                        filteredNotifications?.map(notif => (
+                            <div
+                                key={notif.id}
+                                className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer"
+                                onClick={() => handleOpenModal(notif)}
+                            >
+                                <div>
+                                    <div className="font-medium text-0ff-black">{notif.title}</div>
+                                    <div className="text-sm text-gray-600 line-clamp-1 max-w-md">{notif.message}</div>
+                                </div>
+                                <div className="flex flex-col items-end">
+                                    {/* <span className={
                                     notif.type === 'info' ? 'text-blue-500' :
                                         notif.type === 'success' ? 'text-green-600' :
                                             notif.type === 'warning' ? 'text-yellow-600' :
@@ -83,12 +105,13 @@ export default function NotificationPage() {
                                 }>
                                     {notif.type.charAt(0).toUpperCase() + notif.type.slice(1)}
                                 </span> */}
-                                <Badge style={"secondary"} text={notif.type} />
-                                <span className="text-xs text-gray-400 mt-1">{notif.createdAt}</span>
+                                    <Badge style={"secondary"} text={notif.type} />
+                                    <span className="text-xs text-gray-400 mt-1">{notif.createdAt}</span>
+                                </div>
                             </div>
-                        </div>
+                        ))
                     ))
-                )}
+                }
             </div>
 
             {/* Modal for notification details */}

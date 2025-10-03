@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from 'react';
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
 import { useNavigate } from 'react-router-dom';
 import { useReactToPrint } from "react-to-print";
 import { toast } from 'react-toastify';
@@ -311,9 +313,14 @@ export default function MainDashboard() {
         <div className="w-full p-4 bg-white min-h-screen">
             {/* Page title */}
             <div className="mb-6 flex justify-between items-center">
-                <h1 className='text-xl'>
-                    Hello, <span className='font-bold text-primary'>{username || "User"}</span>
-                </h1>
+                {(isRSODetailsLoading || isAdminProfileLoading
+                ) ? (<Skeleton width={200} height={24} />)
+                    : (
+                        <h1 className='text-xl'>
+                            Hello, <span className='font-bold text-primary'>{username || "User"}</span>
+                        </h1>
+                    )
+                }
 
                 {/* Input Create announcement here */}
                 {/* Create another page. Navigate it there. */}
@@ -327,155 +334,192 @@ export default function MainDashboard() {
             {/* Top stats row - 3 equal columns */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                 {/* Total Documents */}
-                <div className="bg-white border border-blue-100 shadow-sm rounded-lg p-5 hover:shadow-md transition-shadow">
-                    <div className="flex flex-col">
-                        <span className="text-gray-500 text-sm">
-                            {isUserRSORepresentative ? "Total Accreditation Documents" : "Total Documents"}
-                        </span>
-                        <span className="text-3xl font-bold mt-2">
-                            {isUserRSORepresentative
-                                ? accreditation?.documents?.totalDocuments ?? "0"
-                                : dashboardStats?.totalDocuments ?? "0"}
-                        </span>
+                {isLoadingAdminDocs ? (
+                    <Skeleton height={100} borderRadius={12} className="w-full" />
+                ) : (
+                    <div className="bg-white border border-blue-100 shadow-sm rounded-lg p-5 hover:shadow-md transition-shadow">
+                        <div className="flex flex-col">
+                            <span className="text-gray-500 text-sm">
+                                {isUserRSORepresentative ? "Total Accreditation Documents" : "Total Documents"}
+                            </span>
+                            <span className="text-3xl font-bold mt-2">
+                                {isUserRSORepresentative
+                                    ? accreditation?.documents?.totalDocuments ?? "0"
+                                    : dashboardStats?.totalDocuments ?? "0"}
+                            </span>
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* Pending Approval */}
-                <div className="bg-white border border-blue-100 shadow-sm rounded-lg p-5 hover:shadow-md transition-shadow">
-                    <div className="flex flex-col">
-                        <span className="text-gray-500 text-sm">
-                            {isUserRSORepresentative ? "Pending Accreditation Documents" : "Pending Approval"}
-                        </span>
-                        <span className="text-3xl font-bold mt-2">
-                            {isUserRSORepresentative
-                                ? accreditation?.documents?.pendingDocuments ?? "0"
-                                : dashboardStats?.totalPendingDocuments ?? "0"}
-                        </span>
+                {isLoadingAdminDocs ? (
+                    <Skeleton height={100} borderRadius={12} className="w-full" />
+                ) : (
+                    <div className="bg-white border border-blue-100 shadow-sm rounded-lg p-5 hover:shadow-md transition-shadow">
+                        <div className="flex flex-col">
+                            <span className="text-gray-500 text-sm">
+                                {isUserRSORepresentative ? "Pending Accreditation Documents" : "Pending Approval"}
+                            </span>
+                            <span className="text-3xl font-bold mt-2">
+                                {isUserRSORepresentative
+                                    ? accreditation?.documents?.pendingDocuments ?? "0"
+                                    : dashboardStats?.totalPendingDocuments ?? "0"}
+                            </span>
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* Recently Approved */}
-                <div className="bg-white border border-blue-100 shadow-sm rounded-lg p-5 hover:shadow-md transition-shadow">
-                    <div className="flex flex-col">
-                        <span className="text-gray-500 text-sm">
-                            {isUserRSORepresentative ? "Rejected Accreditation Documents" : "Recently Approved"}
-                        </span>
-                        <span className="text-3xl font-bold mt-2 text-green-600">
-                            {isUserRSORepresentative
-                                ? accreditation?.documents?.rejectedDocuments ?? "0"
-                                : dashboardStats?.recentlyApprovedDocuments ?? "0"}
-                        </span>
+                {isLoadingAdminDocs ? (
+                    <Skeleton height={100} borderRadius={12} className="w-full" />
+                ) : (
+                    <div className="bg-white border border-blue-100 shadow-sm rounded-lg p-5 hover:shadow-md transition-shadow">
+                        <div className="flex flex-col">
+                            <span className="text-gray-500 text-sm">
+                                {isUserRSORepresentative ? "Rejected Accreditation Documents" : "Recently Approved"}
+                            </span>
+                            <span className="text-3xl font-bold mt-2 text-green-600">
+                                {isUserRSORepresentative
+                                    ? accreditation?.documents?.rejectedDocuments ?? "0"
+                                    : dashboardStats?.recentlyApprovedDocuments ?? "0"}
+                            </span>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
 
             {/* Main bento grid layout */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Documents by Type - Spans 2 columns */}
-                <div className="bg-white border border-blue-100 shadow rounded-lg p-5 md:col-span-2">
-                    <h2 className="text-lg font-semibold mb-4">{isUserRSORepresentative ? "RSO Membership Data" : "Documents by Type"}</h2>
-                    <div className='flex items-center gap-4'>
-                        {/* Activities */}
-                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 flex-1">
-                            <div className="text-xs capitalize">
-                                {isUserRSORepresentative ?
-                                    activity ? "Applicants" : "loading"
-                                    : dashboardStats?.documentsByType?.activities ? "Activities" : "loading"}
-                            </div>
-                            <div className="text-xl font-bold">
-                                {
-                                    isUserRSORepresentative ?
+                {(isUserRSORepresentative ? (isLoadingRSOApplicants || isLoadingRSOMembers) : isLoadingAdminDocs) ? (
+                    <Skeleton height={120} borderRadius={12} className="w-full md:col-span-2" />
+                ) : (
+                    <div className="bg-white border border-blue-100 shadow rounded-lg p-5 md:col-span-2">
+                        <h2 className="text-lg font-semibold mb-4">{isUserRSORepresentative ? "RSO Membership Data" : "Documents by Type"}</h2>
+                        <div className='flex items-center gap-4'>
+                            {/* Activities */}
+                            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 flex-1">
+                                <div className="text-xs capitalize">
+                                    {isUserRSORepresentative ?
+                                        activity ? "Applicants" : "loading"
+                                        : dashboardStats?.documentsByType?.activities ? "Activities" : "loading"}
+                                </div>
+                                <div className="text-xl font-bold">
+                                    {isUserRSORepresentative ?
                                         RSOApplicants?.totalApplicants ?? "0"
                                         : dashboardStats?.documentsByType?.activities ?? "0"}
+                                </div>
                             </div>
-                        </div>
-                        {/* Recognition/ Members */}
-                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 flex-1">
-                            <div className="text-xs capitalize">
-                                {isUserRSORepresentative ?
-                                    activity ? "Members" : "loading"
-                                    : dashboardStats?.documentsByType?.recognition ? "Recognition" : "loading"}
-                            </div>
-                            <div className="text-xl font-bold">
-                                {isUserRSORepresentative ?
-                                    RSOMembers?.totalRSOMembers ?? "0"
-                                    : dashboardStats?.documentsByType?.recognition ?? "0"}
+                            {/* Recognition/ Members */}
+                            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 flex-1">
+                                <div className="text-xs capitalize">
+                                    {isUserRSORepresentative ?
+                                        activity ? "Members" : "loading"
+                                        : dashboardStats?.documentsByType?.recognition ? "Recognition" : "loading"}
+                                </div>
+                                <div className="text-xl font-bold">
+                                    {isUserRSORepresentative ?
+                                        RSOMembers?.totalRSOMembers ?? "0"
+                                        : dashboardStats?.documentsByType?.recognition ?? "0"}
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                )}
                 {/* Documents by Status - Vertical stacked */}
-                <div className="bg-white border border-blue-100 shadow rounded-lg p-5">
-                    <h2 className="text-lg font-semibold mb-4">{isUserRSORepresentative ? "Activities" : "Documents by Status"}</h2>
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                            <span className="capitalize text-gray-600">approved</span>
-                            <span className="font-semibold text-green-700">
-                                {
-                                    isUserRSORepresentative ? createdActivities?.metadata?.totalApprovedActivities ?? "0" :
+                {(isUserRSORepresentative ? isLoadingCreatedActivities : isLoadingAdminDocs) ? (
+                    <Skeleton height={140} borderRadius={12} className="w-full" />
+                ) : (
+                    <div className="bg-white border border-blue-100 shadow rounded-lg p-5">
+                        <h2 className="text-lg font-semibold mb-4">{isUserRSORepresentative ? "Activities" : "Documents by Status"}</h2>
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                                <span className="capitalize text-gray-600">approved</span>
+                                <span className="font-semibold text-green-700">
+                                    {isUserRSORepresentative ? createdActivities?.metadata?.totalApprovedActivities ?? "0" :
                                         dashboardStats?.approvedDocuments ?? "0"}
-                            </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="capitalize text-gray-600">pending</span>
-                            <span className="font-semibold">
-                                {isUserRSORepresentative ? createdActivities?.metadata?.totalPendingActivities ?? "0" : dashboardStats?.pendingDocuments ?? "0"}
-                            </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="capitalize text-gray-600">rejected</span>
-                            <span className="font-semibold text-red-700">
-                                {isUserRSORepresentative ? createdActivities?.metadata?.totalRejectedActivities ?? "0" : dashboardStats?.rejectedDocuments ?? "0"}
-                            </span>
+                                </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="capitalize text-gray-600">pending</span>
+                                <span className="font-semibold">
+                                    {isUserRSORepresentative ? createdActivities?.metadata?.totalPendingActivities ?? "0" : dashboardStats?.pendingDocuments ?? "0"}
+                                </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="capitalize text-gray-600">rejected</span>
+                                <span className="font-semibold text-red-700">
+                                    {isUserRSORepresentative ? createdActivities?.metadata?.totalRejectedActivities ?? "0" : dashboardStats?.rejectedDocuments ?? "0"}
+                                </span>
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
 
                 {/* Recent Activity - Spans full width on smaller screens, 2 columns on larger */}
                 <div className="bg-white border border-blue-100 shadow rounded-lg p-5 md:col-span-2">
                     <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
-                    <div className="space-y-3">
-                        {console.log("dashboard stats recent activity", dashboardStats?.documentList, "created activities", createdActivities)}
-                        {!isUserRSORepresentative && (
-                            dashboardStats?.documentList?.length > 0 ? (
-                                dashboardStats.documentList.map((activity) => (
-                                    <div key={activity._id} className="flex justify-between items-center border-b border-gray-100 pb-2">
-                                        <div className="flex flex-col">
-                                            <span className="font-medium">{activity.title}</span>
-                                            <span className="text-xs text-gray-500">{formatRelativeTime(activity.updatedAt)}</span>
-                                        </div>
-                                        <h1>
-                                            {getStatusBadge(activity.document_status || "Unknown")}
-                                        </h1>
+                    <div className=" overflow-y-auto">
+                        {/* Skeleton for recent activity */}
+                        {(!isUserRSORepresentative && isLoadingAdminDocs) || (isUserRSORepresentative && isLoadingCreatedActivities) ? (
+                            Array.from({ length: 3 }).map((_, idx) => (
+                                <div key={idx} className="w-full flex justify-between items-center border-b border-gray-100 pb-2">
+                                    <div className="flex flex-col">
+                                        <Skeleton width={120} height={18} style={{ marginBottom: 4 }} />
+                                        <Skeleton width={80} height={12} />
                                     </div>
-                                ))
-                            ) : (
-                                <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-                                    <span className="text-gray-400 text-sm">No recent activity.</span>
+                                    <Skeleton width={60} height={24} />
                                 </div>
-                            )
-                        )}
+                            ))
+                        ) : (
+                            <>
+                                {!isUserRSORepresentative && (
+                                    dashboardStats?.documentList?.length > 0 ? (
+                                        dashboardStats.documentList.map((activity) => (
+                                            <div
+                                                key={activity._id}
+                                                className="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-100 pb-2 gap-2"
+                                            >
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium">{activity.title}</span>
+                                                    <span className="text-xs text-gray-500">{formatRelativeTime(activity.updatedAt)}</span>
+                                                </div>
+                                                <div>
+                                                    <h1>
+                                                        {getStatusBadge(activity.document_status || "Unknown")}
+                                                    </h1>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                                            <span className="text-gray-400 text-sm">No recent activity.</span>
+                                        </div>
+                                    )
+                                )}
 
-                        {isUserRSORepresentative && (
-                            createdActivities?.activities?.length > 0 ? (
-                                createdActivities.activities.map((activity) => (
-                                    <div key={activity._id} className="flex justify-start items-center border-b border-gray-100 pb-2 px-4 gap-4 hover:bg-blue-50 rounded transition-colors">
-                                        <img
-                                            src={activity.imageUrl || defaultImage}
-                                            alt={activity.Activity_name}
-                                            className="w-12 h-12 object-cover rounded-md border border-blue-100 bg-gray-100"
-                                        />
-                                        <div className="flex flex-col">
-                                            <span className="font-medium">{activity.Activity_name}</span>
-                                            <span className="text-xs text-gray-500">{formatRelativeTime(activity.updatedAt)}</span>
+                                {isUserRSORepresentative && (
+                                    createdActivities?.activities?.length > 0 ? (
+                                        createdActivities.activities.map((activity) => (
+                                            <div key={activity._id} className="flex justify-start items-center border-b border-gray-100 pb-2 px-4 gap-4 hover:bg-blue-50 rounded transition-colors">
+                                                <img
+                                                    src={activity.imageUrl || defaultImage}
+                                                    alt={activity.Activity_name}
+                                                    className="w-12 h-12 object-cover rounded-md border border-blue-100 bg-gray-100"
+                                                />
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium">{activity.Activity_name}</span>
+                                                    <span className="text-xs text-gray-500">{formatRelativeTime(activity.updatedAt)}</span>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                                            <span className="text-gray-400 text-sm">No created activities.</span>
                                         </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-                                    <span className="text-gray-400 text-sm">No created activities.</span>
-                                </div>
-                            )
+                                    )
+                                )}
+                            </>
                         )}
                     </div>
                 </div>
@@ -540,19 +584,21 @@ export default function MainDashboard() {
                                 <CloseButton onClick={() => setIsReportModalOpen(false)} />
                             </div>
                             {/* Scrollable Content */}
-                            <div className="flex-1 overflow-y-auto px-5 sm:px-8 py-6">
+                            <div className="flex-1 overflow-y-auto px-5 sm:px-8 py-6 bg-gray-600">
                                 <div
                                     className="mx-auto w-full"
                                     style={{
                                         maxWidth: '794px', // Exact A4 width at 96dpi; container widened outside to remove side scroll
                                     }}
                                 >
-                                    <ReportPage
-                                        reference={contentRef}
-                                        reportTitle={isUserRSORepresentative ? rsoDetails?.rso?.RSO_name : 'SDAO'}
-                                        dashboardData={stats}
-                                        statsTitle={statsTitle}
-                                    />
+                                    <div className="transform scale-50 origin-top-left md:scale-100 shadow-lg">
+                                        <ReportPage
+                                            reference={contentRef}
+                                            reportTitle={isUserRSORepresentative ? rsoDetails?.rso?.RSO_name : 'SDAO'}
+                                            dashboardData={stats}
+                                            statsTitle={statsTitle}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                             {/* Sticky Footer */}
@@ -565,6 +611,7 @@ export default function MainDashboard() {
                                     Close
                                 </Button>
                                 <Button
+                                    disabled={reactToPrintFn ? false : true}
                                     onClick={reactToPrintFn}
                                     className="w-full sm:w-auto px-6 bg-[#312895] hover:bg-[#312895]/90 text-white"
                                 >

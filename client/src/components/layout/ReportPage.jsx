@@ -3,7 +3,7 @@ import { FormatDate } from '../../utils';
 
 const a4Style = {
     width: "210mm",
-    padding: "20mm",
+    padding: "10mm",
     margin: "auto",
     background: "white",
     fontFamily: "Arial, sans-serif",

@@ -115,7 +115,7 @@ const deleteOfficer = async (officerId) => {
     }
 }
 
-function useRSODetails() {
+function useRSODetails({ manualEnable = false } = {}) {
     const { isUserRSORepresentative } = useUserStoreWithAuth();
     const queryClient = useQueryClient();
     const location = useLocation();
@@ -171,10 +171,13 @@ function useRSODetails() {
     } = useQuery({
         queryKey: ["rsoDetails"],
         queryFn: fetchRSODetailsRequest,
-        refetchOnMount: true,
-        refetchOnWindowFocus: true,
-        refetchOnReconnect: true,
-        enabled: isUserRSORepresentative,
+        // staleTime: Infinity,
+        // cacheTime: Infinity,
+        // refetchOnMount: false,
+        // refetchOnWindowFocus: false,
+        // refetchOnReconnect: false,
+        staleTime: 5 * 60 * 1000,
+        enabled: true,
     });
 
     const {

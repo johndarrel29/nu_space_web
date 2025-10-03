@@ -56,11 +56,42 @@ const getSpecificFormRequest = async ({ queryKey }) => {
     }
 }
 
+const getSpecificActivityFormsResponse = async ({ queryKey }) => {
+    try {
+        const token = useTokenStore.getState().token;
+        const [_, activityId] = queryKey;
+
+        console.log("Fetching specific activity forms for activity ID:", activityId);
+
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/rsoRep/forms/fetch-activity-responses/${activityId}`, {
+            method: "GET",
+            headers: {
+                Authorization: token,
+                "Content-Type": "application/json",
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json(); // try to read the server's message
+            throw new Error(errorData.message || `Error: ${response.status} - ${response.statusText}`);
+        }
+
+        if (response.ok) {
+            const data = await response.json();
+            return data;
+        }
+    } catch (error) {
+        console.error("Error fetching specific activity forms:", error);
+        throw error;
+    }
+}
+
 function useRSOForms({
     search = "",
     formType = "All",
     formId = null,
     manualEnabled = false,
+    activityId = null,
 } = {}) {
 
     const { isUserRSORepresentative } = useUserStoreWithAuth();
@@ -68,6 +99,8 @@ function useRSOForms({
     const isFormsPage = location.pathname.startsWith('/forms') || location.pathname.startsWith('/form');
 
     console.log("calling useRSOForms with:", { search, formType, isUserRSORepresentative });
+
+    console.log("activity id from params:", activityId);
 
     const filter = {
         search,
@@ -98,6 +131,18 @@ function useRSOForms({
         enabled: !!formId && !!isUserRSORepresentative && isFormsPage, // Only run if formId is provided, user is an RSO representative, and on forms page
     });
 
+    const {
+        data: specificActivityFormsResponse,
+        isLoading: isLoadingSpecificActivityFormsResponse,
+        isError: isErrorSpecificActivityFormsResponse,
+        error: errorSpecificActivityFormsResponse,
+    } = useQuery({
+        queryKey: ["specificActivityForms", activityId],
+        queryFn: getSpecificActivityFormsResponse,
+        refetchOnWindowFocus: false,
+        enabled: !!isUserRSORepresentative && !!activityId, // Only run if user is an RSO representative and activityId is provided
+    });
+
     return {
         rsoFormsTemplate,
         isLoadingRSOFormsTemplate,
@@ -108,6 +153,11 @@ function useRSOForms({
         isLoadingSpecificRSOForm,
         isErrorSpecificRSOForm,
         errorSpecificRSOForm,
+
+        specificActivityFormsResponse,
+        isLoadingSpecificActivityFormsResponse,
+        isErrorSpecificActivityFormsResponse,
+        errorSpecificActivityFormsResponse,
     };
 }
 

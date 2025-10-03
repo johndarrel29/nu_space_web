@@ -69,7 +69,7 @@ function MainLayout({ children }) {
     isRSODetailsLoading,
     isRSODetailsError,
     isRSODetailsSuccess,
-  } = useRSODetails();
+  } = useRSODetails({ manualEnable: isUserRSORepresentative ? true : false });
   const {
     // fetching admin profile
     adminProfile,
@@ -438,7 +438,6 @@ function MainLayout({ children }) {
                   data-tooltip-content={`${isOnDashboardPage ? "Close Dashboard" : "Dashboard"}`}
                 >
                   <Button
-
                     onClick={() => navigate(isOnDashboardPage ? -1 : "/dashboard")}
                     style={isOnDashboardPage ? "secondary" : "primary"}
                     className={`${isOnDashboardPage ? "bg-gray-100" : ""}`}
@@ -475,7 +474,6 @@ function MainLayout({ children }) {
                   ) : (
                     <div className="flex items-center gap-2">
                       <svg xmlns="http://www.w3.org/2000/svg" className="size-4" fill="currentColor" viewBox="0 0 448 512"><path d="M224 0c-17.7 0-32 14.3-32 32l0 19.2C119 66 64 130.6 64 208l0 18.8c0 47-17.3 92.4-48.5 127.6l-7.4 8.3c-8.4 9.4-10.4 22.9-5.3 34.4S19.4 416 32 416l384 0c12.6 0 24-7.4 29.2-18.9s3.1-25-5.3-34.4l-7.4-8.3C401.3 319.2 384 273.9 384 226.8l0-18.8c0-77.4-55-142-128-156.8L256 32c0-17.7-14.3-32-32-32zm45.3 493.3c12-12 18.7-28.3 18.7-45.3l-64 0-64 0c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7z" /></svg>
-
                     </div>
                   )}
                 </div>
@@ -490,11 +488,16 @@ function MainLayout({ children }) {
                   ref={dropdownRef} >
                   <div className="flex items-center justify-center rounded-full h-10 w-10 cursor-pointer hover:bg-light-gray group">
                     {isUserRSORepresentative ? (
-                      <img
-                        src={profileData?.RSO_picture || DefaultPicture}
-                        alt="Profile"
-                        className="rounded-full h-full w-full object-cover"
-                      />
+                      isRSODetailsLoading ?
+                        (
+                          <Skeleton circle width={40} height={40} />
+                        ) : (
+                          <img
+                            src={profileData?.RSO_picture || DefaultPicture}
+                            alt="Profile"
+                            className="rounded-full h-full w-full object-cover"
+                          />
+                        )
                     ) :
                       (!isUserRSORepresentative) ? (
                         <ProfileInitials firstName={profileData?.firstName} lastName={profileData?.lastName} />
@@ -515,13 +518,16 @@ function MainLayout({ children }) {
                       <div
                         className="w-full flex items-start gap-2  py-2 text-sm rounded mb-2 "
                       >
-                        <div className="flex items-center gap-2 justify-center">
+                        <div className="flex items-start gap-2 justify-center">
                           {/* profile picture */}
                           {console.log("profileData", profileData)}
                           {isUserRSORepresentative ? (
-                            <div className="rounded-full h-10 w-10 bg-gray-200">
-                              <img src={profileData?.RSO_picture || DefaultPicture} alt="Profile" className="rounded-full h-full w-full object-cover" />
-                            </div>
+                            isRSODetailsLoading ? (
+                              <Skeleton circle width={40} height={40} />
+                            ) : (
+                              <div className="rounded-full h-10 w-10">
+                                <img src={profileData?.RSO_picture || DefaultPicture} alt="Profile" className="rounded-full h-full w-full object-cover" />
+                              </div>)
                           ) :
                             (isUserAdmin || isSuperAdmin || isCoordinator || isDirector || isAVP) ? (
                               <ProfileInitials firstName={profileData?.firstName} lastName={profileData?.lastName} />
@@ -544,9 +550,9 @@ function MainLayout({ children }) {
                                 :
                                 //replace user with API call user
                                 isUserRSORepresentative ? (
-                                  <div className="flex flex-col justify-center items-start w-[200px]">
+                                  <div className="flex flex-col justify-center items-start w-[150px]">
                                     <h1 className='text-sm font-bold'>{profileData?.RSO_acronym || 'N/A'}</h1>
-                                    <h2 className='text-xs w-full truncate text-gray-500 text-start'>{profileData?.RSO_name || 'Not Assigned'}</h2>
+                                    <h2 className='text-xs w-full break-words text-gray-500 text-start'>{profileData?.RSO_name || 'Not Assigned'}</h2>
                                   </div>
                                 )
                                   :
@@ -556,7 +562,7 @@ function MainLayout({ children }) {
                                         <div>
                                           <h1 className='text-sm font-bold text-start'>{profileData?.firstName} {profileData?.lastName}</h1>
                                         </div>
-                                        <h1 className='text-xs truncate text-gray-500'>{isUserAdmin ? "Admin" : isCoordinator ? "Coordinator" : isSuperAdmin ? "Super Admin" : isDirector ? "Director" : isAVP ? "AVP" : ""}</h1>
+                                        <h1 className='text-xs break-words text-gray-500'>{isUserAdmin ? "Admin" : isCoordinator ? "Coordinator" : isSuperAdmin ? "Super Admin" : isDirector ? "Director" : isAVP ? "AVP" : ""}</h1>
                                       </div>
 
                                     </>
