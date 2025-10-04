@@ -44,6 +44,8 @@ function App() {
   const isOnline = useOnlineStatus();
   const hasMTInitedRef = useRef(false);
 
+  console.log("Environment:", process.env.NODE_ENV);
+
   useEffect(() => {
     if (!isOnline || hasMTInitedRef.current) return;
     (async () => {
@@ -101,8 +103,8 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  if (process.env.NODE_ENV === "production")
-    console.log = function no_console() { };
+  // if (process.env.NODE_ENV === "production")
+  //   console.log = function no_console() { };
 
   return (
     <AuthProvider>

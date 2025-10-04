@@ -70,7 +70,7 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
         isAcademicYearsFetched,
 
 
-    } = useAdminAcademicYears();
+    } = useAdminAcademicYears({ manualEnabled: true });
 
     // Documents data
     const {

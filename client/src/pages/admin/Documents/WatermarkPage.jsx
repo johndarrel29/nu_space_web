@@ -3,7 +3,7 @@ import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button, CloseButton, DraggableSandbox, PDFViewer } from '../../../components';
-import { useAVPDocuments, useCoordinatorDocuments, useDirectorDocuments } from '../../../hooks';
+import { useAVPDocuments, useCoordinatorDocuments, useDirectorDocuments, useLogin } from '../../../hooks';
 import { useUserStoreWithAuth } from '../../../store';
 // import watermarkImage from '../../../assets/images/NUSpace_blue.png';
 import { useAdminUser, useModal, useSignature } from '../../../hooks';
@@ -43,12 +43,39 @@ export default function WaterMarkPage() {
         isAVPApproveDocumentError,
         isAVPApproveDocumentSuccess,
     } = useAVPDocuments();
+
+    const {
+        // check email exists mutation
+        checkEmailExistsMutate,
+        isCheckEmailExistsLoading,
+        isCheckEmailExistsError,
+        checkEmailExistsError,
+        checkEmailExistsData,
+
+        // send code verification mutation
+        sendCodeVerificationMutate,
+        isSendCodeVerificationLoading,
+        isSendCodeVerificationError,
+        sendCodeVerificationError,
+        sendCodeVerificationData,
+
+        // verify email code mutation
+        verifyEmailCodeMutate,
+        isVerifyEmailCodeLoading,
+        isVerifyEmailCodeError,
+        verifyEmailCodeError,
+        verifyEmailCodeData,
+    } = useLogin();
+
     const [targetPage, setTargetPage] = useState(1);
     const [applyToAllPages, setApplyToAllPages] = useState(false);
     const navigate = useNavigate();
     const { state } = useLocation();
+    const [loading, setLoading] = useState(false);
     const { documentId, url } = state || {};
     const [count, setCount] = useState(0)
+    const [otpModalOpen, setOTPModalOpen] = useState(false);
+    const [otpValue, setOtpValue] = useState(0);
     const [coords, setCoords] = useState(null);
     const [generatedPdfUrl, setGeneratedPdfUrl] = useState(null);
     // Modal preview controls
@@ -436,7 +463,7 @@ export default function WaterMarkPage() {
                 toast.error(`Error approving document: ${error.message || 'Unknown error'}`);
             }
         });
-        toast.success('Approving without sending to director...');
+        toast.success('Approving document...');
         setConfirmChecked(false);
         setDirectorModalOpen(false);
         closeModal();
@@ -473,6 +500,97 @@ export default function WaterMarkPage() {
         const sizeMB = (generatedPdfUrl.size / (1024 * 1024)).toFixed(2);
         return `${generatedPdfUrl.name} • ${sizeMB} MB`;
     };
+
+    const handleOTPConfirmation = () => {
+        try {
+            setLoading(true);
+
+            if (!adminProfile?.user?.email) {
+                toast.error("No email associated with your profile.");
+                setLoading(false);
+                return;
+            }
+
+            checkEmailExistsMutate(adminProfile?.user?.email, {
+                onSuccess: (data) => {
+                    setLoading(false);
+                    setOTPModalOpen(true);
+                    toast.success("OTP sent to your email.");
+                },
+                onError: (error) => {
+                    toast.error(`Error: ${error.message || 'Could not verify email.'}`);
+                }
+            });
+
+        } catch (error) {
+            console.error("Error during OTP confirmation:", error);
+            toast.error("An error occurred during OTP confirmation. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResendOTP = () => {
+        try {
+            if (!adminProfile?.user?.email) {
+                toast.error("No email associated with your profile.");
+                return;
+            }
+            sendCodeVerificationMutate(adminProfile?.user?.email, {
+                onSuccess: (data) => {
+                    toast.success("OTP resent to your email.");
+                    setLoading(false);
+                },
+                onError: (error) => {
+                    toast.error(`Error resending OTP: ${error.message || 'Unknown error'}`);
+                    setLoading(false);
+                }
+            });
+
+        } catch (error) {
+            console.error("Error during OTP resend:", error);
+            toast.error("An error occurred during OTP resend. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Handler for OTP verification button
+    function handleOTPVerify() {
+        try {
+            if (isNaN(otpValue) || /[a-zA-Z]/.test(String(otpValue))) {
+                toast.error("OTP code must be a number.");
+                return;
+            }
+
+            if (!otpValue || otpValue.toString().length < 6) {
+                toast.error("Please enter a valid 6-digit OTP code.");
+                return;
+            }
+
+            verifyEmailCodeMutate({ email: adminProfile?.user?.email, code: otpValue }, {
+                onSuccess: (data) => {
+                    toast.success("OTP verified successfully.");
+                    setLoading(false);
+                    handleConfirm();
+                    setOTPModalOpen(false);
+                },
+                onError: (error) => {
+                    toast.error(`OTP verification failed: ${error.message || 'Unknown error'}`);
+                    setLoading(false);
+                }
+            });
+
+            console.log('Email:', adminProfile?.user?.email || 'user@email.com');
+            console.log('OTP Code:', otpValue);
+
+        } catch (error) {
+            console.error("Error during OTP verification:", error);
+            toast.error("An error occurred during OTP verification. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    }
 
     return (
         <>
@@ -512,6 +630,8 @@ export default function WaterMarkPage() {
                 </div>
             </div>
 
+
+            {/* Preview & Confirm Modal */}
             {isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
                     <div className="bg-white rounded-lg shadow-2xl w-full max-w-[900px] mx-4 overflow-hidden">
@@ -560,7 +680,62 @@ export default function WaterMarkPage() {
                             </label>
                             <div className="flex justify-end gap-2">
                                 <Button onClick={closeModal} style={"secondary"}>Cancel</Button>
-                                <Button onClick={handleConfirm} disabled={!confirmChecked || !generatedPdfUrl} >Confirm Changes</Button>
+                                <Button
+                                    onClick={() => { handleOTPConfirmation(); setLoading(true); }}
+                                    disabled={(!confirmChecked || !generatedPdfUrl) || (loading && confirmChecked)}
+                                // onClick={handleConfirm}
+                                >
+                                    {loading ? 'Loading...' : 'Confirm Changes'}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* OTP Modal */}
+            {otpModalOpen && (
+                <div>
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+                        <div className="bg-white rounded-lg shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+                            {/* Modal Header */}
+                            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                                <div>
+                                    <h2 className="text-base md:text-lg font-semibold text-gray-900">OTP Confirmation</h2>
+                                </div>
+                            </div>
+                            <h1 className="text-center text-gray-600 text-sm">A verification code was sent to your email address. Please check your inbox.</h1>
+
+                            {/* Modal Body */}
+                            <div className="px-6 py-6 flex flex-col gap-4">
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-sm text-gray-700 font-medium">Email</label>
+                                    <div className="px-3 py-2 bg-gray-100 rounded text-gray-800 text-sm select-text">
+                                        {adminProfile?.user?.email || 'user@email.com'}
+                                    </div>
+                                </div>
+                                <p className='text-sm text-gray-600'>OTP not received? <a onClick={() => { handleResendOTP(); setLoading(true); }} disabled={loading} className="text-indigo-600 hover:underline cursor-pointer">{loading ? 'Resending...' : 'Resend OTP'}</a></p>
+                                <div className="flex flex-col gap-1">
+                                    <label htmlFor="otp-input" className="text-sm text-gray-700 font-medium">Verification Code</label>
+                                    <input
+                                        id="otp-input"
+                                        type="text"
+                                        className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-400 text-gray-900 text-base"
+                                        value={otpValue}
+                                        onChange={e => setOtpValue(e.target.value)}
+                                        placeholder="Enter OTP code"
+                                    />
+                                </div>
+                            </div>
+                            {/* Modal Footer */}
+                            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-2 bg-white">
+                                <Button style={"secondary"} onClick={() => setOTPModalOpen(false)}>Cancel</Button>
+                                <Button
+                                    disabled={loading}
+                                    onClick={() => { handleOTPVerify(); setLoading(true); }}
+                                >
+                                    Verify
+                                </Button>
                             </div>
                         </div>
                     </div>

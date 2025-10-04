@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
 import { useUserStoreWithAuth } from '../../store';
 import { useTokenStore } from "../../store/tokenStore";
-import { useLocation } from "react-router-dom";
 
 // API call function
 const getAcademicYears = async () => {
@@ -117,7 +117,7 @@ const deleteAcademicYearRequest = async ({ yearId }) => {
     }
 }
 
-function useAdminAcademicYears() {
+function useAdminAcademicYears({ manualEnabled = false } = {}) {
     const { isUserAdmin, isCoordinator } = useUserStoreWithAuth();
     const location = useLocation();
     const isAcademicYear = location.pathname.includes("academic-year");
@@ -135,7 +135,7 @@ function useAdminAcademicYears() {
     } = useQuery({
         queryKey: ["academicYears"],
         queryFn: getAcademicYears,
-        enabled: (isUserAdmin || isCoordinator) && isAcademicYear, // only run if user is admin or coordinator and on academic-year route
+        enabled: manualEnabled ? manualEnabled : ((isUserAdmin || isCoordinator) && isAcademicYear), // only run if user is admin or coordinator and on academic-year route
     })
 
     const {

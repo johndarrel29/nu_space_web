@@ -27,6 +27,8 @@ export default function MainLogin() {
         password: ""
     });
     const [error, setError] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
 
     const { login, isAuthenticated, user } = useAuth();
     const {
@@ -104,10 +106,13 @@ export default function MainLogin() {
     };
 
     const handleSubmit = async (e) => {
+
         e?.preventDefault();
+        setIsLoading(true);
 
         if (!formData.email || !formData.password) {
             setError("Email and Password are required.");
+            setIsLoading(false);
             return;
         }
 
@@ -123,6 +128,7 @@ export default function MainLogin() {
                 onSuccess: (data) => {
                     if (!data?.token) {
                         throw new Error("No token received");
+                        setIsLoading(false);
                     }
 
                     const token = data?.token || data?.data?.token;
@@ -156,6 +162,9 @@ export default function MainLogin() {
                 message: err.message,
                 stack: err.stack
             });
+            setIsLoading(false);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -166,15 +175,18 @@ export default function MainLogin() {
 
     const handleForgotPassword = () => {
         try {
+            setForgotPasswordLoading(true);
             toast.info("Verifying email...");
 
             if (!formData.email) {
                 toast.error("Please enter your email to reset password.");
+                setForgotPasswordLoading(false);
                 return;
             }
             checkEmailExistsMutate(formData.email, {
                 onSuccess: () => {
                     toast.success("Email verification sent.");
+                    setForgotPasswordLoading(false);
                     navigate('email-action', {
                         state: {
                             fromLogin: true,
@@ -185,10 +197,13 @@ export default function MainLogin() {
                 onError: (error) => {
                     console.error("Error checking email existence:", error);
                     toast.error(error.message || "Failed to verify email. Please try again.");
+                    setForgotPasswordLoading(false);
                 }
             });
         } catch (error) {
             throw new Error("Navigation error: " + error.message);
+        } finally {
+            setForgotPasswordLoading(false);
         }
     };
 
@@ -241,11 +256,11 @@ export default function MainLogin() {
                 <div className="w-full flex justify-end mb-4">
                     <button
                         type="button"
-                        disabled={isCheckEmailExistsLoading}
-                        onClick={handleForgotPassword}
+                        disabled={forgotPasswordLoading}
+                        onClick={() => { handleForgotPassword(); setForgotPasswordLoading(true); }}
                         className="text-sm font-medium text-primary hover:underline"
                     >
-                        {isCheckEmailExistsLoading ? "Checking..." : "Forgot password?"}
+                        {forgotPasswordLoading ? "Checking..." : "Forgot password?"}
                     </button>
                 </div>
 
@@ -264,11 +279,11 @@ export default function MainLogin() {
 
                 {/* Submit Button */}
                 <Button
-                    type="submit"
+                    onClick={() => { handleSubmit(); setIsLoading(true); }}
                     className="w-full mt-6 flex items-center justify-center"
-                    disabled={isLoginLoading}
+                    disabled={isLoading}
                 >
-                    {isLoginLoading ? <LoadingSpinner /> : "Login"}
+                    {isLoading ? <LoadingSpinner /> : "Login"}
                 </Button>
             </form>
         </div>

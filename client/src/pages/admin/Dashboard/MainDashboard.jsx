@@ -669,7 +669,9 @@ export default function MainDashboard() {
                                                     )}
                                                 </div>
                                                 <div className="mt-4 flex flex-col sm:flex-row gap-2 w-full">
-                                                    <label className="cursor-pointer flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded shadow text-center">
+                                                    <label
+                                                        disabled={isUploading}
+                                                        className={`flex-1 bg-[#312895] text-white font-bold py-2 px-4 rounded-md text-center transition duration-200 ease-in-out cursor-pointer ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                                         <input
                                                             type="file"
                                                             accept="image/png,image/jpeg"

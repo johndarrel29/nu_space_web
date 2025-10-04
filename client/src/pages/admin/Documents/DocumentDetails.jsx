@@ -43,7 +43,7 @@ export default function DocumentDetails() {
         documentDetailQueryError,
         refetchDocumentDetail,
         isDocumentDetailRefetching
-    } = useAdminDocuments({ documentId });
+    } = useAdminDocuments({ documentId, manualEnabled: !isUserRSORepresentative ? true : false });
 
     const {
         specificDocument,
@@ -127,9 +127,12 @@ export default function DocumentDetails() {
     // Tabs: remove Action tab and keep only Remarks, per request
     const tabs = [{ label: "Remarks" }];
 
+    const statusTabs = [{ label: "Who Has Approved" }, { label: "Current Approver" }];
+
     console.log("file type: ", doc?.file_path?.split('.').pop());
 
     const [activeTab, setActiveTab] = useState(0);
+    const [activeStatusTab, setActiveStatusTab] = useState(0);
 
     // If user is admin, ensure activeTab is adjusted
     useEffect(() => {
@@ -308,6 +311,7 @@ export default function DocumentDetails() {
                     onSuccess: () => {
                         toast.success('Document declined successfully');
                         setDeclineModalOpen(false);
+                        refetchDocumentDetail();
                     },
                     onError: (error) => {
                         console.error('Error declining document:', error);
@@ -451,79 +455,117 @@ export default function DocumentDetails() {
                         </div>
                     </section>
                 )}
-                {/* Status & Routing */}
-                <div className=' mt-4 '>
+
+                <div className=' mt-4'>
                     <h3 className="text-sm font-semibold text-gray-700 mb-3">
 
                         Status
                     </h3>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    {/* Document Status */}
-                    <div className={`flex items-center gap-1 py-1 px-3 rounded-full font-semibold text-xs shadow-sm
+                    <div className='flex flex-wrap gap-2'>
+                        {/* Document Status */}
+                        <div className={`flex items-center gap-1 py-1 px-3 rounded-full font-semibold text-xs shadow-sm
                         ${statusDisplay.label === 'Approved' ? 'bg-green-100 text-green-800 border border-green-300'
-                            : statusDisplay.label === 'Rejected' ? 'bg-red-100 text-red-800 border border-red-300'
-                                : 'bg-yellow-100 text-yellow-800 border border-yellow-300'}`}>
-                        {statusDisplay.icon}
-                        <span>{statusDisplay.label}</span>
+                                : statusDisplay.label === 'Rejected' ? 'bg-red-100 text-red-800 border border-red-300'
+                                    : 'bg-yellow-100 text-yellow-800 border border-yellow-300'}`}>
+                            {statusDisplay.icon}
+                            <span>{statusDisplay.label}</span>
+                        </div>
                     </div>
 
-                    {/* Approvals */}
-                    <div className={`flex items-center gap-1 py-1 px-3 rounded-full font-semibold text-xs shadow-sm border
-                        ${doc?.coordinator_approved ? 'bg-green-100 text-green-800 border-green-300'
-                            : 'bg-gray-100 text-gray-700 border-gray-300'}`}>
-                        {doc?.coordinator_approved ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="size-4 fill-green-800" viewBox="0 0 640 640"><path d="M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z" /></svg>
-                        ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="size-4 fill-gray-400" viewBox="http://www.w3.org/2000/svg"><path d="M320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320C64 178.6 178.6 64 320 64zM296 184L296 320C296 328 300 335.5 306.7 340L402.7 404C413.7 411.4 428.6 408.4 436 397.3C443.4 386.2 440.4 371.4 429.3 364L344 307.2L344 184C344 170.7 333.3 160 320 160C306.7 160 296 170.7 296 184z" /></svg>
-                        )}
-                        Coordinator
-                    </div>
-                    <div className={`flex items-center gap-1 py-1 px-3 rounded-full font-semibold text-xs shadow-sm border
-                        ${doc?.director_approved ? 'bg-green-100 text-green-800 border-green-300'
-                            : 'bg-gray-100 text-gray-700 border-gray-300'}`}>
-                        {doc?.director_approved ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="size-4 fill-green-800" viewBox="0 0 640 640"><path d="M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z" /></svg>
-                        ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="size-4 fill-gray-400" viewBox="http://www.w3.org/2000/svg"><path d="M320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320C64 178.6 178.6 64 320 64zM296 184L296 320C296 328 300 335.5 306.7 340L402.7 404C413.7 411.4 428.6 408.4 436 397.3C443.4 386.2 440.4 371.4 429.3 364L344 307.2L344 184C344 170.7 333.3 160 320 160C306.7 160 296 170.7 296 184z" /></svg>
-                        )}
-                        Director
-                    </div>
-                    <div className={`flex items-center gap-1 py-1 px-3 rounded-full font-semibold text-xs shadow-sm border
-                        ${doc?.avp_approved ? 'bg-green-100 text-green-800 border-green-300'
-                            : 'bg-gray-100 text-gray-700 border-gray-300'}`}>
-                        {doc?.avp_approved ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="size-4 fill-green-800" viewBox="0 0 640 640"><path d="M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z" /></svg>
-
-                        ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="size-4 fill-gray-400" viewBox="http://www.w3.org/2000/svg"><path d="M320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320C64 178.6 178.6 64 320 64zM296 184L296 320C296 328 300 335.5 306.7 340L402.7 404C413.7 411.4 428.6 408.4 436 397.3C443.4 386.2 440.4 371.4 429.3 364L344 307.2L344 184C344 170.7 333.3 160 320 160C306.7 160 296 170.7 296 184z" /></svg>
-
-                        )}
-                        AVP
-                    </div>
-
-                    {/* Routing */}
-                    <div className={`flex items-center gap-1 py-1 px-3 rounded-full font-semibold text-xs shadow-sm border
-                        ${doc?.to_director ? 'bg-blue-100 text-blue-800 border-blue-300'
-                            : 'bg-gray-100 text-gray-700 border-gray-300'}`}>
-                        {doc?.to_director ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5 fill-blue-800" viewBox="http://www.w3.org/2000/svg"><circle cx="320" cy="320" r="256" /></svg>
-                        ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5 fill-gray-400" viewBox="http://www.w3.org/2000/svg"><circle cx="320" cy="320" r="256" /></svg>
-                        )}
-                        To Director
-                    </div>
-                    <div className={`flex items-center gap-1 py-1 px-3 rounded-full font-semibold text-xs shadow-sm border
-                        ${doc?.to_avp ? 'bg-blue-100 text-blue-800 border-blue-300'
-                            : 'bg-gray-100 text-gray-700 border-gray-300'}`}>
-                        {doc?.to_avp ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5 fill-blue-800" viewBox="http://www.w3.org/2000/svg"><circle cx="320" cy="320" r="256" /></svg>
-                        ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5 fill-gray-400" viewBox="http://www.w3.org/2000/svg"><circle cx="320" cy="320" r="256" /></svg>
-                        )}
-                        To AVP
-                    </div>
                 </div>
+
+
+                {/* Status & Routing */}
+                <TabSelector tabs={statusTabs} activeTab={activeStatusTab} onTabChange={setActiveStatusTab}></TabSelector>
+
+                {activeStatusTab === 0 && (
+                    <>
+                        <div className='flex flex-wrap gap-2 mt-2'>
+                            {/* Approvals */}
+                            <div className={`flex items-center gap-1 py-1 px-3 rounded-full font-semibold text-xs shadow-sm border
+                        ${doc?.coordinator_approved ? 'bg-green-100 text-green-800 border-green-300'
+                                    : 'bg-gray-100 text-gray-700 border-gray-300'}`}>
+                                {doc?.coordinator_approved ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="size-4 fill-green-800" viewBox="0 0 640 640"><path d="M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z" /></svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="size-4 fill-gray-400" viewBox="http://www.w3.org/2000/svg"><path d="M320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320C64 178.6 178.6 64 320 64zM296 184L296 320C296 328 300 335.5 306.7 340L402.7 404C413.7 411.4 428.6 408.4 436 397.3C443.4 386.2 440.4 371.4 429.3 364L344 307.2L344 184C344 170.7 333.3 160 320 160C306.7 160 296 170.7 296 184z" /></svg>
+                                )}
+                                Coordinator
+                            </div>
+                            <div className={`flex items-center gap-1 py-1 px-3 rounded-full font-semibold text-xs shadow-sm border
+                        ${doc?.director_approved ? 'bg-green-100 text-green-800 border-green-300'
+                                    : 'bg-gray-100 text-gray-700 border-gray-300'}`}>
+                                {doc?.director_approved ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="size-4 fill-green-800" viewBox="0 0 640 640"><path d="M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z" /></svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="size-4 fill-gray-400" viewBox="http://www.w3.org/2000/svg"><path d="M320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320C64 178.6 178.6 64 320 64zM296 184L296 320C296 328 300 335.5 306.7 340L402.7 404C413.7 411.4 428.6 408.4 436 397.3C443.4 386.2 440.4 371.4 429.3 364L344 307.2L344 184C344 170.7 333.3 160 320 160C306.7 160 296 170.7 296 184z" /></svg>
+                                )}
+                                Director
+                            </div>
+                            <div className={`flex items-center gap-1 py-1 px-3 rounded-full font-semibold text-xs shadow-sm border
+                        ${doc?.avp_approved ? 'bg-green-100 text-green-800 border-green-300'
+                                    : 'bg-gray-100 text-gray-700 border-gray-300'}`}>
+                                {doc?.avp_approved ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="size-4 fill-green-800" viewBox="0 0 640 640"><path d="M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z" /></svg>
+
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="size-4 fill-gray-400" viewBox="http://www.w3.org/2000/svg"><path d="M320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320C64 178.6 178.6 64 320 64zM296 184L296 320C296 328 300 335.5 306.7 340L402.7 404C413.7 411.4 428.6 408.4 436 397.3C443.4 386.2 440.4 371.4 429.3 364L344 307.2L344 184C344 170.7 333.3 160 320 160C306.7 160 296 170.7 296 184z" /></svg>
+
+                                )}
+                                AVP
+                            </div>
+                        </div>
+                    </>
+                )}
+
+                {activeStatusTab === 1 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+
+                        {/* Routing */}
+                        {doc?.coordinator_approved === false && doc?.to_director === false && doc?.to_avp === false && (
+                            <div className={`flex items-center gap-1 py-1 px-3 rounded-full font-semibold text-xs shadow-sm border
+                        ${doc?.coordinator_approved === false ? 'bg-blue-100 text-blue-800 border-blue-300'
+                                    : 'bg-gray-100 text-gray-700 border-gray-300'}`}>
+                                {doc?.coordinator_approved === false ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5 fill-blue-800" viewBox="http://www.w3.org/2000/svg"><circle cx="320" cy="320" r="256" /></svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5 fill-gray-400" viewBox="http://www.w3.org/2000/svg"><circle cx="320" cy="320" r="256" /></svg>
+                                )}
+                                To Coordinator
+                            </div>
+                        )}
+
+                        {doc?.coordinator_approved && doc?.to_director && doc?.to_avp === false && (
+                            <div className={`flex items-center gap-1 py-1 px-3 rounded-full font-semibold text-xs shadow-sm border
+                        ${doc?.to_director ? 'bg-blue-100 text-blue-800 border-blue-300'
+                                    : 'bg-gray-100 text-gray-700 border-gray-300'}`}>
+                                {doc?.to_director ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5 fill-blue-800" viewBox="http://www.w3.org/2000/svg"><circle cx="320" cy="320" r="256" /></svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5 fill-gray-400" viewBox="http://www.w3.org/2000/svg"><circle cx="320" cy="320" r="256" /></svg>
+                                )}
+                                To Director
+                            </div>
+                        )}
+
+                        {doc?.coordinator_approved && doc?.to_director && doc?.to_avp && (statusDisplay.label === 'Pending') && (
+                            <div className={`flex items-center gap-1 py-1 px-3 rounded-full font-semibold text-xs shadow-sm border
+                        ${doc?.to_avp ? 'bg-blue-100 text-blue-800 border-blue-300'
+                                    : 'bg-gray-100 text-gray-700 border-gray-300'}`}>
+                                {doc?.to_avp ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5 fill-blue-800" viewBox="http://www.w3.org/2000/svg"><circle cx="320" cy="320" r="256" /></svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5 fill-gray-400" viewBox="http://www.w3.org/2000/svg"><circle cx="320" cy="320" r="256" /></svg>
+                                )}
+                                To AVP
+                            </div>
+                        )}
+
+                        {doc?.coordinator_approved && doc?.to_director && doc?.to_avp && (statusDisplay.label === 'Approved' || statusDisplay.label === 'Rejected') && (
+                            <h1 className='text-gray-600 text-sm'>No further approvals required</h1>
+                        )}
+                    </div>
+                )}
 
                 {/* Key Approvals (most important) */}
                 <section className="mt-8">

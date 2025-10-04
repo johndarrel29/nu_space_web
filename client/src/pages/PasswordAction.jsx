@@ -136,10 +136,12 @@ export default function PasswordAction() {
                             setLoading(false);
                             console.log("Password changed successfully");
                             toast.success("Password changed successfully");
+                            setLoading(false);
                         },
                         onError: (error) => {
                             console.error("Error changing password:", error);
                             toast.error(error.details.error || "Failed to change password");
+                            setLoading(false);
                         }
                     });
             }
@@ -281,7 +283,7 @@ export default function PasswordAction() {
                         id="confirm-password"
                     />
                 </div>
-                <Button className={"mt-4"} onClick={handleChangePassword} disabled={loading}>{loading ? "Making changes..." : "Confirm"}</Button>
+                <Button className={"mt-4"} onClick={() => { handleChangePassword(); setLoading(true); }} disabled={loading}>{loading ? "Making changes..." : "Confirm"}</Button>
             </div>
         </div>
     )

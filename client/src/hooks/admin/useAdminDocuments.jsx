@@ -440,7 +440,8 @@ function useAdminDocuments({
     templatePage = 1,
     templateLimit = 10,
     documentType = "",
-    templateSearch = ""
+    templateSearch = "",
+    manualEnabled = false,
 } = {}) {
 
     const { user } = useAuth();
@@ -535,7 +536,7 @@ function useAdminDocuments({
     } = useQuery({
         queryKey: ["documentDetail", documentId],
         queryFn: fetchDocumentDetail,
-        enabled: !!documentId,
+        enabled: manualEnabled,
     });
 
     const {
