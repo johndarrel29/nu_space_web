@@ -8,7 +8,7 @@ import { toast } from 'react-toastify';
 import { DropIn } from "../../../animations/DropIn";
 import defaultPic from '../../../assets/images/default-picture.png';
 import DefaultPicture from "../../../assets/images/default-profile.jpg";
-import { ActivityDeadlineBanner, Backdrop, Button, CloseButton, ReusableTable, TabSelector, TextInput, UploadBatchModal } from '../../../components';
+import { ActivityDeadlineBanner, Backdrop, Button, CloseButton, FormReviewModal, ReusableTable, TabSelector, TextInput, UploadBatchModal } from '../../../components';
 import { useAuth } from "../../../context/AuthContext";
 import { useAdminActivity, useAdminDocuments, useModal, useRSOActivities, useRSOForms } from "../../../hooks";
 import { useActivityStatusStore, useDocumentStore, useUserStoreWithAuth } from '../../../store';
@@ -105,6 +105,14 @@ export default function Activities() {
   const { isUserRSORepresentative, isUserAdmin, isCoordinator } = useUserStoreWithAuth();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [profileToView, setProfileToView] = useState(null);
+  const [userModalData, setUserModalData] = useState({
+    email: "",
+    fullName: "",
+    applicationId: undefined,
+    id: undefined,
+    index: 0,
+    pages: [] // added
+  });
   const {
     refetchSetAccreditationDeadline,
     setAccreditationDeadline,
@@ -376,7 +384,6 @@ export default function Activities() {
     }
   };
 
-  const navigateTo = isUserRSORepresentative ? "/forms-builder" : "/form-viewer";
 
   function getFormTypeBadgeClass(formType) {
     switch ((formType || '').toLowerCase()) {
@@ -391,20 +398,6 @@ export default function Activities() {
     }
   }
 
-  const staticFormsUsed = [
-    { _id: 'static-pre', title: 'Pre-Activity Evaluation', formType: 'pre-activity', createdAt: new Date().toISOString() },
-    { _id: 'static-post', title: 'Feedback Survey', formType: 'post-activity', createdAt: new Date().toISOString() }
-  ];
-
-  const staticParticipants = [
-    { id: 'p1', name: 'Alice Johnson' },
-    { id: 'p2', name: 'Brian Lee' },
-    { id: 'p3', name: 'Carla Mendes' },
-    { id: 'p4', name: 'David Chen' },
-    { id: 'p5', name: 'Elena Rodriguez' },
-    { id: 'p6', name: 'Frank Patel' }
-  ];
-
   // Helper booleans for document deadlines
   const isPreOngoing = activity?.Activity_pre_document_deadline?.date_status === 'ongoing';
   const isPostOngoing = activity?.Activity_post_document_deadline?.date_status === 'ongoing';
@@ -414,8 +407,18 @@ export default function Activities() {
   const openProfileModal = (participant) => {
     if (!participant) return;
 
+    console.log("Opening profile modal for participant:", participant);
+
     setProfileToView(participant);
     setIsProfileModalOpen(true);
+    setUserModalData({
+      email: participant?.studentId?.email || "",
+      fullName: participant?.studentId?.firstName + " " + participant?.studentId?.lastName || "",
+      applicationId: participant?._id || undefined,
+      id: participant?.studentId?._id || undefined,
+      index: participant?.index + 1 || 0,
+      pages: participant?.answers?.pages || []
+    });
 
     // add forms and replace the participant source of truth when backend is ready
   }
@@ -655,17 +658,17 @@ export default function Activities() {
 
             {activeTab === 2 && (
               <div className="w-full mt-4">
-                {(activity?.Activity_registration_participants || []).length > 0 ? (
+                {(specificActivityFormsResponse?.data || []).length > 0 ? (
                   <div className="bg-white border border-gray-300 rounded-lg p-6">
                     <h3 className="text-sm font-semibold text-gray-700 mb-4">Participants</h3>
                     <ul className="space-y-2">
-                      {(activity?.Activity_registration_participants || []).map(p => (
+                      {(specificActivityFormsResponse?.data || []).map((p, index) => (
                         <li
                           data-tooltip-id="global-tooltip"
-                          data-tooltip-content={`${p.firstName} ${p.lastName}`}
-                          onClick={() => openProfileModal(p)}
+                          data-tooltip-content={`${p.studentId.firstName} ${p.studentId.lastName}`}
+                          onClick={() => openProfileModal({ ...p, index })}
                           key={p._id} className="cursor-pointer text-sm text-gray-800 border border-gray-200 rounded-md px-4 py-2 bg-gray-50">
-                          {p.firstName} {p.lastName}
+                          {p.studentId.firstName} {p.studentId.lastName}
                         </li>
                       ))}
                     </ul>
@@ -874,55 +877,9 @@ export default function Activities() {
           </Backdrop>
         )}
 
-        {/* Profile Modal */}
-        {isProfileModalOpen && (
-          <Backdrop className="fixed inset-0 z-50 flex items-start justify-center bg-black bg-opacity-50 pt-8">
-            <motion.div
-              className="bg-white rounded-lg shadow-lg w-[80vh] h-[90vh] border border-[#312895]/20 flex flex-col p-6"
-              variants={DropIn}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-            >
-              <div className='flex flex-col gap-4'>
-                <div className='flex justify-between items-center mb-4'>
-                  <h1>Participant Profile</h1>
-                  <CloseButton
-                    onClick={() => setIsProfileModalOpen(false)}></CloseButton>
-                </div>
-                {profileToView ? (
-                  <div className='space-y-4'>
-                    <div className='flex items-center gap-4'>
-                      <div className='h-20 w-20 bg-gray-200 rounded-full flex items-center justify-center text-3xl text-gray-500 font-bold'>
-                        {`${profileToView.firstName.charAt(0)}${profileToView.lastName.charAt(0)}`}
-                      </div>
-                      <div className='flex flex-col'>
-                        <h2 className='text-xl font-semibold text-gray-800'>{`${profileToView.firstName} ${profileToView.lastName}`}</h2>
-                        <p className='text-gray-600 text-sm'>{profileToView.email || 'No email provided'}</p>
-                      </div>
-                    </div>
-                    <div className='space-y-2'>
-                      <div>
-                        <h3 className='text-sm font-medium text-gray-700'>First Name</h3>
-                        <p className='text-gray-800'>{profileToView.firstName}</p>
-                      </div>
-                      <div>
-                        <h3 className='text-sm font-medium text-gray-700'>Last Name</h3>
-                        <p className='text-gray-800'>{profileToView.lastName}</p>
-                      </div>
-                      <div>
-                        <h3 className='text-sm font-medium text-gray-700'>Email</h3>
-                        <p className='text-gray-800'>{profileToView.email || 'No email provided'}</p>
-                      </div>
-                    </div>
-                  </div>
-                ) : (<p>No participant selected.</p>
-                )}
+        {/* View Forms from users Modal */}
+        <FormReviewModal userModalData={userModalData} isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
 
-              </div>
-            </motion.div>
-          </Backdrop>
-        )}
       </AnimatePresence>
     </>
   );

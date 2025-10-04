@@ -3,7 +3,7 @@ import { FormatDate } from '../../utils';
 
 const a4Style = {
     width: "210mm",
-    padding: "10mm",
+    padding: "20mm",
     margin: "auto",
     background: "white",
     fontFamily: "Arial, sans-serif",
@@ -35,9 +35,14 @@ const ReportPage = ({ reference, reportTitle, dashboardData, statsTitle = {} }) 
 
     return (
         <div style={a4Style} ref={reference}>
-            <div style={headerStyle}>
-                <h1 style={{ margin: 0, fontSize: "2em" }}>{reportTitle} Report</h1>
-                <p style={{ margin: 0, fontSize: "1em", color: "#666" }}>Date: {today}</p>
+            <div className='flex justify-center mb-4'>
+                <img
+                    className='h-24'
+                    src={"https://www.fastonlinemasters.com/wp-content/uploads/2021/05/national-u.jpg"} alt="National University Logo" />
+            </div>
+            <div className='text-center   mb-6'>
+                <h1 className='text-md font-semibold'>{reportTitle} Report</h1>
+                <p className='text-sm'>Date: {today}</p>
             </div>
             {/* Summary Section */}
             <div style={sectionStyle}>

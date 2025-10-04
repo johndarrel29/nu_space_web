@@ -8,6 +8,7 @@ export { default as CloseButton } from './CloseButton';
 export { default as Dropdown } from './Dropdown';
 export { default as DropdownSearch } from './DropdownSearch';
 export { default as FormCard } from './FormCard';
+export { default as FormReviewModal } from './FormReviewModal';
 export { default as GlobalTooltip } from './GlobalTooltip';
 export { default as Notification } from './Notification';
 export { default as NumberPane } from './NumberPane';
