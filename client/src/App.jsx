@@ -103,8 +103,8 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  // if (process.env.NODE_ENV === "production")
-  //   console.log = function no_console() { };
+  if (process.env.NODE_ENV === "production")
+    console.log = function no_console() { };
 
   return (
     <AuthProvider>
