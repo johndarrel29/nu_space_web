@@ -24,6 +24,8 @@ export default function MainRSO() {
   const navigate = useNavigate();
   const { searchQuery, setSearchQuery } = useSearchQuery();
   const [loading, setLoading] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState(false);
+  const [actionClick, setActionClick] = useState(null);
   const [filters, setFilters] = useState({
     isDeleted: false,
     recognitionStatus: "",
@@ -256,42 +258,71 @@ export default function MainRSO() {
     dependencies: [handleCreate]
   });
 
-  const handleActionClick = (user, action) => {
-    if (action?.type === "restore" && user?.RSO_isDeleted === true) {
-      restoreRSOMutate({ id: user.id }, {
-        onSuccess: (data) => {
-          console.log("RSO restored successfully:", data);
-          toast.success("RSO restored successfully!");
-        },
-        onError: (error) => {
-          console.error("Error restoring RSO:", error);
-          toast.error("Failed to restore RSO. Please try again.");
-        }
-      });
-    }
+  const handleActionClick = ({ user, action } = {}) => {
+    try {
+      if (action?.type === "restore" && user?.RSO_isDeleted === true) {
+        restoreRSOMutate({ id: user.id }, {
+          onSuccess: (data) => {
+            setActionClick(null);
+            console.log("RSO restored successfully:", data);
+            toast.success("RSO restored successfully!");
+          },
+          onError: (error) => {
+            setActionClick(null);
+            console.error("Error restoring RSO:", error);
+            toast.error("Failed to restore RSO. Please try again.");
+          }
+        });
+      }
 
-    if (user?.RSO_isDeleted === false) {
-      softDeleteRSOMutate({ id: user.id }, {
-        onSuccess: (data) => {
-          console.log("RSO soft deleted successfully:", data);
-          toast.success("RSO soft deleted successfully!");
-        },
-        onError: (error) => {
-          console.error("Error soft deleting RSO:", error);
-          toast.error("Failed to soft delete RSO. Please try again.");
-        }
-      });
-    } else if (user?.RSO_isDeleted === true && action?.type !== "restore") {
-      hardDeleteRSOMutate({ id: user.id }, {
-        onSuccess: (data) => {
-          console.log("RSO hard deleted successfully:", data);
-          toast.success("RSO hard deleted successfully!");
-        },
-        onError: (error) => {
-          console.error("Error hard deleting RSO:", error);
-          toast.error("Failed to hard delete RSO. Please try again.");
-        }
-      });
+      if (actionClick?.user?.RSO_isDeleted === false) {
+        softDeleteRSOMutate({ id: actionClick.user.id }, {
+          onSuccess: (data) => {
+            setActionClick(null);
+            console.log("RSO soft deleted successfully:", data);
+            toast.success("RSO soft deleted successfully!. You can restore it from the Deleted RSOs filter.");
+          },
+          onError: (error) => {
+            setActionClick(null);
+            console.error("Error soft deleting RSO:", error);
+            toast.error("Failed to soft delete RSO. Please try again.");
+          }
+        });
+      } else if (actionClick?.user?.RSO_isDeleted === true && actionClick?.action?.type !== "restore") {
+        hardDeleteRSOMutate({ id: actionClick.user.id }, {
+          onSuccess: (data) => {
+            setActionClick(null);
+            console.log("RSO hard deleted successfully:", data);
+            toast.success("RSO hard deleted successfully!");
+          },
+          onError: (error) => {
+            setActionClick(null);
+            console.error("Error hard deleting RSO:", error);
+            toast.error("Failed to hard delete RSO. Please try again.");
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Error handling action click:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setDeleteConfirmation(false);
+    }
+  };
+
+  useEffect(() => {
+    console.log("action click changed", actionClick);
+  }, [actionClick]);
+
+  const handleRSOAction = (user, action) => {
+    console.log("User to be deleted:", user, "Action:", action);
+    setActionClick({ user, action });
+
+    // detect if the action is restore and the user is deleted, directly restore without confirmation
+    if (action?.type === "restore" && user?.RSO_isDeleted === true) {
+      handleActionClick({ user, action });
+    } else {
+      setDeleteConfirmation(true);
     }
 
   };
@@ -415,7 +446,7 @@ export default function MainRSO() {
           ]}
           tableRow={tableRow}
           onClick={handleSelectedUser}
-          onActionClick={handleActionClick}
+          onActionClick={handleRSOAction}
           error={isRSOError}
           isLoading={isRSOLoading}
 
@@ -505,6 +536,43 @@ export default function MainRSO() {
                 </div>
               </motion.div>
             </div>
+          </motion.div>
+        )}
+
+        {deleteConfirmation && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center"
+          >
+            <motion.div
+              variants={DropIn}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="bg-white rounded-lg shadow-2xl w-full max-w-md mx-4 overflow-hidden border border-gray-200"
+            >
+              <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                <div>
+                  <h2 className="text-base md:text-lg font-semibold text-gray-900">
+                    {actionClick?.user?.RSO_isDeleted === false ? 'Confirm Soft Deletion' : 'Confirm Hard Deletion'}
+                  </h2>
+                </div>
+                <CloseButton onClick={() => setDeleteConfirmation(false)} />
+              </div>
+              <div className="px-6 py-6 flex flex-col gap-4">
+                <p className="text-gray-700 text-sm">
+                  {actionClick?.user?.RSO_isDeleted === false
+                    ? 'Are you sure you want to soft delete this RSO?'
+                    : 'Are you sure you want to hard delete this RSO? You cannot recover it after deletion.'}
+                </p>
+              </div>
+              <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-2 bg-white">
+                <Button style={"secondary"} onClick={() => setDeleteConfirmation(false)}>Cancel</Button>
+                <Button onClick={() => handleActionClick()} className="bg-red-600 hover:bg-red-700 text-white">Delete</Button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

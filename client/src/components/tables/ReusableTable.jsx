@@ -303,28 +303,65 @@ export default function ReusableTable({
                                                                                         )}
                                                                                         {heading.key === "actions" && (
                                                                                             <div className="flex gap-2">
-                                                                                                {isOnUsersPage && (
-                                                                                                    <div
-                                                                                                        onClick={(e) => {
-                                                                                                            e.stopPropagation();
-                                                                                                            if (onEditClick) {
-                                                                                                                onEditClick(row);
-                                                                                                            }
-                                                                                                        }}
-                                                                                                        className="rounded-full w-8 h-8 bg-white flex justify-center items-center cursor-pointer group">
-                                                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="fill-gray-600 size-4 group-hover:fill-off-black" viewBox="0 0 640 640"><path d="M416.9 85.2L372 130.1L509.9 268L554.8 223.1C568.4 209.6 576 191.2 576 172C576 152.8 568.4 134.4 554.8 120.9L519.1 85.2C505.6 71.6 487.2 64 468 64C448.8 64 430.4 71.6 416.9 85.2zM338.1 164L122.9 379.1C112.2 389.8 104.4 403.2 100.3 417.8L64.9 545.6C62.6 553.9 64.9 562.9 71.1 569C77.3 575.1 86.2 577.5 94.5 575.2L222.3 539.7C236.9 535.6 250.2 527.9 261 517.1L476 301.9L338.1 164z" /></svg>
-                                                                                                    </div>
+                                                                                                {isOnUsersPage && row.isDeleted === false && (
+                                                                                                    <>
+                                                                                                        <div
+                                                                                                            onClick={(e) => {
+                                                                                                                e.stopPropagation();
+                                                                                                                if (onEditClick) {
+                                                                                                                    onEditClick(row, { type: 'edit' });
+                                                                                                                }
+                                                                                                            }}
+                                                                                                            data-tooltip-id="global-tooltip"
+                                                                                                            data-tooltip-content='Edit'
+                                                                                                            className={`rounded-full w-8 h-8 bg-white flex justify-center items-center cursor-pointer group ${!row.isDeleted !== 'undefined' ? '' : 'cursor-not-allowed opacity-50'}`}>
+                                                                                                            <svg xmlns="http://www.w3.org/2000/svg" className="fill-gray-600 size-4 group-hover:fill-off-black" viewBox="0 0 640 640"><path d="M416.9 85.2L372 130.1L509.9 268L554.8 223.1C568.4 209.6 576 191.2 576 172C576 152.8 568.4 134.4 554.8 120.9L519.1 85.2C505.6 71.6 487.2 64 468 64C448.8 64 430.4 71.6 416.9 85.2zM338.1 164L122.9 379.1C112.2 389.8 104.4 403.2 100.3 417.8L64.9 545.6C62.6 553.9 64.9 562.9 71.1 569C77.3 575.1 86.2 577.5 94.5 575.2L222.3 539.7C236.9 535.6 250.2 527.9 261 517.1L476 301.9L338.1 164z" /></svg>
+                                                                                                        </div>
+
+                                                                                                        <div
+                                                                                                            onClick={(e) => {
+                                                                                                                e.stopPropagation();
+                                                                                                                if (onActionClick) {
+                                                                                                                    onActionClick(row, { type: 'soft-delete' });
+                                                                                                                }
+                                                                                                            }}
+                                                                                                            data-tooltip-id="global-tooltip"
+                                                                                                            data-tooltip-content='Soft Delete'
+                                                                                                            className={`rounded-full w-8 h-8 bg-white flex justify-center items-center cursor-pointer group ${row.isDeleted !== 'undefined' ? '' : 'cursor-not-allowed opacity-50'}`}>
+                                                                                                            <svg xmlns="http://www.w3.org/2000/svg" className="fill-gray-600 size-4 group-hover:fill-off-black" viewBox="0 0 640 640"><path d="M183.1 137.4C170.6 124.9 150.3 124.9 137.8 137.4C125.3 149.9 125.3 170.2 137.8 182.7L275.2 320L137.9 457.4C125.4 469.9 125.4 490.2 137.9 502.7C150.4 515.2 170.7 515.2 183.2 502.7L320.5 365.3L457.9 502.6C470.4 515.1 490.7 515.1 503.2 502.6C515.7 490.1 515.7 469.8 503.2 457.3L365.8 320L503.1 182.6C515.6 170.1 515.6 149.8 503.1 137.3C490.6 124.8 470.3 124.8 457.8 137.3L320.5 274.7L183.1 137.4z" /></svg>
+                                                                                                        </div>
+                                                                                                    </>
+
                                                                                                 )}
-                                                                                                <div
-                                                                                                    onClick={(e) => {
-                                                                                                        e.stopPropagation();
-                                                                                                        if (onActionClick) {
-                                                                                                            onActionClick(row);
-                                                                                                        }
-                                                                                                    }}
-                                                                                                    className="rounded-full w-8 h-8 bg-white flex justify-center items-center cursor-pointer group">
-                                                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="fill-gray-600 size-4 group-hover:fill-off-black" viewBox="0 0 448 512"><path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" /></svg>
-                                                                                                </div>
+                                                                                                {row.isDeleted === true && (
+                                                                                                    <div className="flex gap-2">
+                                                                                                        <div
+                                                                                                            onClick={(e) => {
+                                                                                                                e.stopPropagation();
+                                                                                                                if (onActionClick) {
+                                                                                                                    onActionClick(row, { type: 'restore' });
+                                                                                                                }
+                                                                                                            }}
+                                                                                                            data-tooltip-id="global-tooltip"
+                                                                                                            data-tooltip-content='Restore'
+                                                                                                            className={`rounded-full w-8 h-8 bg-white flex justify-center items-center cursor-pointer group ${row.isDeleted !== 'undefined' ? '' : 'cursor-not-allowed opacity-50'}`}>
+                                                                                                            <svg xmlns="http://www.w3.org/2000/svg" className="fill-gray-600 size-4 group-hover:fill-off-black" viewBox="0 0 640 640"><path d="M534.6 182.6C547.1 170.1 547.1 149.8 534.6 137.3L470.6 73.3C461.4 64.1 447.7 61.4 435.7 66.4C423.7 71.4 416 83.1 416 96L416 128L256 128C150 128 64 214 64 320C64 337.7 78.3 352 96 352C113.7 352 128 337.7 128 320C128 249.3 185.3 192 256 192L416 192L416 224C416 236.9 423.8 248.6 435.8 253.6C447.8 258.6 461.5 255.8 470.7 246.7L534.7 182.7zM105.4 457.4C92.9 469.9 92.9 490.2 105.4 502.7L169.4 566.7C178.6 575.9 192.3 578.6 204.3 573.6C216.3 568.6 224 556.9 224 544L224 512L384 512C490 512 576 426 576 320C576 302.3 561.7 288 544 288C526.3 288 512 302.3 512 320C512 390.7 454.7 448 384 448L224 448L224 416C224 403.1 216.2 391.4 204.2 386.4C192.2 381.4 178.5 384.2 169.3 393.3L105.3 457.3z" /></svg>
+                                                                                                        </div>
+                                                                                                        <div
+                                                                                                            onClick={(e) => {
+                                                                                                                e.stopPropagation();
+                                                                                                                if (onActionClick) {
+                                                                                                                    onActionClick(row, { type: 'hard-delete' });
+                                                                                                                }
+                                                                                                            }}
+                                                                                                            data-tooltip-id="global-tooltip"
+                                                                                                            data-tooltip-content='Hard Delete'
+                                                                                                            className={`rounded-full w-8 h-8 bg-white flex justify-center items-center cursor-pointer group ${row.isDeleted !== 'undefined' ? '' : 'cursor-not-allowed opacity-50'}`}>
+                                                                                                            <svg xmlns="http://www.w3.org/2000/svg" className="fill-gray-600 size-4 group-hover:fill-off-black" viewBox="0 0 448 512"><path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" /></svg>
+                                                                                                        </div>
+                                                                                                    </div>
+
+                                                                                                )}
 
                                                                                             </div>
                                                                                         )}
@@ -362,6 +399,8 @@ export default function ReusableTable({
                                                                                                                     onActionClick(row, { type: "restore" });
                                                                                                                 }
                                                                                                             }}
+                                                                                                            data-tooltip-id="global-tooltip"
+                                                                                                            data-tooltip-content='Restore'
                                                                                                             className="rounded-full w-8 h-8 bg-white flex justify-center items-center cursor-pointer group">
                                                                                                             <svg xmlns="http://www.w3.org/2000/svg" className="fill-gray-600 size-4 group-hover:fill-off-black" viewBox="0 0 640 640"><path d="M534.6 182.6C547.1 170.1 547.1 149.8 534.6 137.3L470.6 73.3C461.4 64.1 447.7 61.4 435.7 66.4C423.7 71.4 416 83.1 416 96L416 128L256 128C150 128 64 214 64 320C64 337.7 78.3 352 96 352C113.7 352 128 337.7 128 320C128 249.3 185.3 192 256 192L416 192L416 224C416 236.9 423.8 248.6 435.8 253.6C447.8 258.6 461.5 255.8 470.7 246.7L534.7 182.7zM105.4 457.4C92.9 469.9 92.9 490.2 105.4 502.7L169.4 566.7C178.6 575.9 192.3 578.6 204.3 573.6C216.3 568.6 224 556.9 224 544L224 512L384 512C490 512 576 426 576 320C576 302.3 561.7 288 544 288C526.3 288 512 302.3 512 320C512 390.7 454.7 448 384 448L224 448L224 416C224 403.1 216.2 391.4 204.2 386.4C192.2 381.4 178.5 384.2 169.3 393.3L105.3 457.3z" /></svg>
                                                                                                         </div>
@@ -373,6 +412,8 @@ export default function ReusableTable({
                                                                                                                     onActionClick(row);
                                                                                                                 }
                                                                                                             }}
+                                                                                                            data-tooltip-id="global-tooltip"
+                                                                                                            data-tooltip-content='Permanent Delete'
                                                                                                             className="rounded-full w-8 h-8 bg-white flex justify-center items-center cursor-pointer group">
                                                                                                             <svg xmlns="http://www.w3.org/2000/svg" className="fill-gray-600 size-4 group-hover:fill-off-black" viewBox="0 0 640 640"><path d="M232.7 69.9L224 96L128 96C110.3 96 96 110.3 96 128C96 145.7 110.3 160 128 160L512 160C529.7 160 544 145.7 544 128C544 110.3 529.7 96 512 96L416 96L407.3 69.9C402.9 56.8 390.7 48 376.9 48L263.1 48C249.3 48 237.1 56.8 232.7 69.9zM512 208L128 208L149.1 531.1C150.7 556.4 171.7 576 197 576L443 576C468.3 576 489.3 556.4 490.9 531.1L512 208z" /></svg>
                                                                                                         </div>
@@ -387,6 +428,8 @@ export default function ReusableTable({
                                                                                                                     onActionClick(row);
                                                                                                                 }
                                                                                                             }}
+                                                                                                            data-tooltip-id="global-tooltip"
+                                                                                                            data-tooltip-content='Soft Delete'
                                                                                                             className="rounded-full w-8 h-8 bg-white flex justify-center items-center cursor-pointer group">
                                                                                                             <svg xmlns="http://www.w3.org/2000/svg" className="fill-gray-600 size-4 group-hover:fill-off-black" viewBox="0 0 640 640"><path d="M183.1 137.4C170.6 124.9 150.3 124.9 137.8 137.4C125.3 149.9 125.3 170.2 137.8 182.7L275.2 320L137.9 457.4C125.4 469.9 125.4 490.2 137.9 502.7C150.4 515.2 170.7 515.2 183.2 502.7L320.5 365.3L457.9 502.6C470.4 515.1 490.7 515.1 503.2 502.6C515.7 490.1 515.7 469.8 503.2 457.3L365.8 320L503.1 182.6C515.6 170.1 515.6 149.8 503.1 137.3C490.6 124.8 470.3 124.8 457.8 137.3L320.5 274.7L183.1 137.4z" /></svg>
                                                                                                         </div></>

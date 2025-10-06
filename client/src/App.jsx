@@ -142,10 +142,10 @@ function App() {
                   <Route element={<ProtectedRoutes />}>
                     {/* RSO routes */}
                     <Route
-                      path="/documents"
+                      path="/accreditation"
                       element={
                         <MainLayout
-                          tabName="Documents"
+                          tabName="RSO Accreditation"
                           headingTitle="View and Upload Documents"
                         >
                           <Document />

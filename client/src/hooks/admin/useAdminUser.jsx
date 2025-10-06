@@ -14,6 +14,8 @@ const fetchUsersRequest = async ({ queryKey }) => {
         const [_key, filters] = queryKey;
         const params = new URLSearchParams(filters).toString();
 
+        console.log("Fetching users with params:", params);
+
         const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/admin/user/fetchUsers?${params}`, {
             method: "GET",
             headers: {
@@ -77,12 +79,12 @@ const updateUserRequest = async ({ userId, userData }) => {
 };
 
 // for admin deleting user
-const deleteUserRequest = async (userId) => {
+const hardDeleteUserRequest = async (userId) => {
     const token = localStorage.getItem("token");
 
     const formattedToken = token?.startsWith("Bearer ") ? token.slice(7) : "";
 
-    const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/admin/user/deleteStudentAccount/${userId}`, {
+    const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/admin/user/hardDeleteStudentAccount/${userId}`, {
         method: "DELETE",
         headers: {
             "Content-Type": "application/json",
@@ -97,6 +99,49 @@ const deleteUserRequest = async (userId) => {
     return response.json();
 
 }
+
+const softDeleteUserRequest = async (userId) => {
+    const token = localStorage.getItem("token");
+
+    const formattedToken = token?.startsWith("Bearer ") ? token.slice(7) : "";
+
+    const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/admin/user/softDeleteStudentAccount/${userId}`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${formattedToken}`,
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    }
+
+    return response.json();
+
+}
+
+const restoreUserRequest = async (userId) => {
+    const token = localStorage.getItem("token");
+
+    const formattedToken = token?.startsWith("Bearer ") ? token.slice(7) : "";
+
+    const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/admin/user/restoreStudentAccount/${userId}`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${formattedToken}`,
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    }
+
+    return response.json();
+
+}
+
 
 const fetchAdminProfile = async () => {
     try {
@@ -129,6 +174,7 @@ function useAdminUser({
     role = "",
     limit = 10,
     page = 1,
+    isDeleted = false,
 } = {}) {
     const { isUserAdmin, isCoordinator, isSuperAdmin, isDirector, isAVP, isUserRSORepresentative } = useUserStoreWithAuth();
     const queryClient = useQueryClient();
@@ -148,6 +194,7 @@ function useAdminUser({
         role,
         limit,
         page,
+        isDeleted,
     }
 
 
@@ -175,8 +222,8 @@ function useAdminUser({
         error: updateError,
     } = useMutation({
         mutationFn: updateUserRequest,
-        onSuccess: () => {
-            console.log("User updated successfully");
+        onSuccess: (data) => {
+            console.log("User updated successfully", data);
             refetchUsersData();
             // refetch();
         },
@@ -187,13 +234,13 @@ function useAdminUser({
     });
 
     const {
-        mutate: deleteStudentAccount,
-        isError: isDeleteError,
-        isLoading: isDeleteLoading,
-        isSuccess: isDeleteSuccess,
-        error: deleteError,
+        mutate: hardDeleteStudentAccount,
+        isError: isHardDeleteError,
+        isLoading: isHardDeleteLoading,
+        isSuccess: isHardDeleteSuccess,
+        error: hardDeleteError,
     } = useMutation({
-        mutationFn: deleteUserRequest,
+        mutationFn: hardDeleteUserRequest,
         onSuccess: () => {
             console.log("User deleted successfully");
             refetchUsersData();
@@ -219,6 +266,30 @@ function useAdminUser({
         enabled: !isUserRSORepresentative,
     });
 
+    const {
+        mutate: softDeleteStudentAccount,
+        isError: isSoftDeleteStudentError,
+        isLoading: isSoftDeleteStudentLoading,
+        error: softDeleteStudentErrorMessage,
+    } = useMutation({
+        mutationFn: softDeleteUserRequest,
+        onSuccess: () => {
+            console.log("User soft deleted successfully");
+        },
+    });
+
+    const {
+        mutate: restoreStudentAccount,
+        isError: isRestoreStudentError,
+        isLoading: isRestoringStudent,
+        error: restoreStudentErrorMessage,
+    } = useMutation({
+        mutationFn: restoreUserRequest,
+        onSuccess: () => {
+            console.log("User restored successfully");
+        },
+    });
+
     return {
         // fetching users admin
         usersData,
@@ -235,11 +306,23 @@ function useAdminUser({
         isUpdateSuccess,
 
         // deleting users
-        deleteStudentAccount,
-        isDeleteError,
-        isDeleteLoading,
-        isDeleteSuccess,
-        deleteError,
+        hardDeleteStudentAccount,
+        isHardDeleteError,
+        isHardDeleteLoading,
+        isHardDeleteSuccess,
+        hardDeleteError,
+
+        // soft deleting users
+        softDeleteStudentAccount,
+        isSoftDeleteStudentError,
+        isSoftDeleteStudentLoading,
+        softDeleteStudentErrorMessage,
+
+        // restoring users
+        restoreStudentAccount,
+        isRestoreStudentError,
+        isRestoringStudent,
+        restoreStudentErrorMessage,
 
         // fetching admin profile
         adminProfile,

@@ -218,7 +218,7 @@ function useRSODocuments({ documentFor = "", documentId = "", manualEnabled = fa
     const { isUserRSORepresentative } = useUserStoreWithAuth();
     const token = useTokenStore.getState().getToken();
     const location = useLocation();
-    const isDocumentsPage = location.pathname.startsWith('/document') || location.pathname.startsWith('/activities');
+    const isDocumentsPage = location.pathname.startsWith('/accreditation') || location.pathname.startsWith('/activities');
     console.log("received documedId:", documentId);
 
     console.log("useRSODOCS is being called.")

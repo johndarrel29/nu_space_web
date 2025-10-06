@@ -10,13 +10,14 @@ import defaultPic from '../../../assets/images/default-picture.png';
 import DefaultPicture from "../../../assets/images/default-profile.jpg";
 import { ActivityDeadlineBanner, Backdrop, Button, CloseButton, FormReviewModal, ReusableTable, TabSelector, TextInput, UploadBatchModal } from '../../../components';
 import { useAuth } from "../../../context/AuthContext";
-import { useAdminActivity, useAdminDocuments, useModal, useRSOActivities, useRSOForms } from "../../../hooks";
+import { useAdminActivity, useAdminCentralizedForms, useAdminDocuments, useModal, useRSOActivities, useRSOForms } from "../../../hooks";
 import { useActivityStatusStore, useDocumentStore, useUserStoreWithAuth } from '../../../store';
 
 // TODO: Replace static participants and forms data with live backend data when available.
 
 export default function Activities() {
   const { user } = useAuth();
+  const [activityFormsResponses, setActivityFormsResponses] = useState(null);
 
   // Router hooks
   const { activityId } = useParams();
@@ -77,9 +78,25 @@ export default function Activities() {
     viewAdminActivityError,
   } = useAdminActivity({ activityId });
 
+  const {
+    specificAdminActivityFormsResponses,
+    isLoadingAdminSpecificActivityFormsResponses,
+    isErrorAdminSpecificActivityFormsResponses,
+    specificAdminActivityFormsResponsesError,
+  } = useAdminCentralizedForms({ activityId, manualEnabled: true });
+
+  const { isUserRSORepresentative, isUserAdmin, isCoordinator } = useUserStoreWithAuth();
 
   console.log("Activity documents :", activityDocuments);
-  console.log("Activity forms :", specificActivityFormsResponse);
+  console.log("Activity forms :", specificAdminActivityFormsResponses);
+
+  useEffect(() => {
+    if (!isUserRSORepresentative) {
+      setActivityFormsResponses(specificAdminActivityFormsResponses);
+    } else {
+      setActivityFormsResponses(specificActivityFormsResponse);
+    }
+  }, [isUserRSORepresentative, specificAdminActivityFormsResponses]);
 
   // Modal control
   const { isOpen, openModal, closeModal } = useModal();
@@ -102,7 +119,7 @@ export default function Activities() {
   const [remarks, setRemarks] = useState("");
   const [preDocDeadline, setPreDocDeadline] = useState(null);
   const [postDocDeadline, setPostDocDeadline] = useState(null);
-  const { isUserRSORepresentative, isUserAdmin, isCoordinator } = useUserStoreWithAuth();
+
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [profileToView, setProfileToView] = useState(null);
   const [userModalData, setUserModalData] = useState({
@@ -663,11 +680,11 @@ export default function Activities() {
 
             {activeTab === 2 && (
               <div className="w-full mt-4">
-                {(specificActivityFormsResponse?.data || []).length > 0 ? (
+                {(activityFormsResponses?.data || []).length > 0 ? (
                   <div className="bg-white border border-gray-300 rounded-lg p-6">
                     <h3 className="text-sm font-semibold text-gray-700 mb-4">Participants</h3>
                     <ul className="space-y-2">
-                      {(specificActivityFormsResponse?.data || []).map((p, index) => (
+                      {(activityFormsResponses?.data || []).map((p, index) => (
                         <li
                           data-tooltip-id="global-tooltip"
                           data-tooltip-content={`${p.studentId.firstName} ${p.studentId.lastName}`}

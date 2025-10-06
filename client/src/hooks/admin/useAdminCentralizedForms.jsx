@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
 import { useUserStoreWithAuth } from '../../store';
 import { useTokenStore } from "../../store/tokenStore";
-import { useLocation } from "react-router-dom";
 
 const fetchAllForms = async ({ queryKey }) => {
     try {
@@ -134,10 +134,43 @@ const deleteCentralizedForm = async (formId) => {
     }
 }
 
+const getSpecificActivityFormsResponse = async ({ queryKey }) => {
+    try {
+        const token = useTokenStore.getState().token;
+        const [_, activityId] = queryKey;
+
+        console.log("Fetching specific activity forms for activity ID:", activityId);
+
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/admin/forms/fetch-activity-admin-responses/${activityId}`, {
+            method: "GET",
+            headers: {
+                Authorization: token,
+                "Content-Type": "application/json",
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json(); // try to read the server's message
+            throw new Error(errorData.message || `Error: ${response.status} - ${response.statusText}`);
+        }
+
+        if (response.ok) {
+            const data = await response.json();
+            return data;
+        }
+    } catch (error) {
+        console.error("Error fetching specific activity forms:", error);
+        throw error;
+    }
+}
+
+
 function useAdminCentralizedForms({
     formId = "",
     search = "",
     formType = "All",
+    activityId = "",
+    manualEnabled = false
 } = {}) {
     const token = useTokenStore.getState().getToken();
     const { isUserAdmin, isCoordinator, isUserRSORepresentative } = useUserStoreWithAuth();
@@ -213,6 +246,17 @@ function useAdminCentralizedForms({
         enabled: (isUserAdmin || isCoordinator) && isForms,
     });
 
+    const {
+        data: specificAdminActivityFormsResponses,
+        isLoading: isLoadingAdminSpecificActivityFormsResponses,
+        isError: isErrorAdminSpecificActivityFormsResponses,
+        error: specificAdminActivityFormsResponsesError,
+    } = useQuery({
+        queryKey: ["specific-activity-forms-responses", activityId],
+        queryFn: getSpecificActivityFormsResponse,
+        enabled: manualEnabled ? (isUserAdmin || isCoordinator || isUserRSORepresentative) : false, // only run if formId is provided, user is admin/coordinator/RSO rep, and on forms route
+    });
+
     return {
         allForms,
         isLoadingAllForms,
@@ -242,7 +286,13 @@ function useAdminCentralizedForms({
         deleteFormMutate,
         isDeletingForm,
         isDeletingFormError,
-        deleteFormError
+        deleteFormError,
+
+        // specific activity forms responses
+        specificAdminActivityFormsResponses,
+        isLoadingAdminSpecificActivityFormsResponses,
+        isErrorAdminSpecificActivityFormsResponses,
+        specificAdminActivityFormsResponsesError,
     };
 }
 

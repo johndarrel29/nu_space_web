@@ -159,7 +159,7 @@ function MainDocument() {
             )}
             <ReusableTable
                 options={["All", "A-Z", "Most Popular"]}
-                onClick={(row) => Navigate(`/documents/${row.id}`, { state: { fromRequirements: true, documentId: row.id } })}
+                onClick={(row) => Navigate(`/accreditation/${row.id}`, { state: { fromRequirements: true, documentId: row.id } })}
                 value={""}
                 showAllOption={false}
                 searchQuery={searchQuery}

@@ -20,6 +20,7 @@ export default function Users() {
     role: "",
     limit: 10,
     page: 1,
+    isDeleted: false,
   });
   const {
     rsoDetails,
@@ -36,12 +37,14 @@ export default function Users() {
   } = useAdminRSO({ manualEnable: !isUserRSORepresentative ? true : false });
 
   useEffect(() => {
+    console.log("searchQuery changed to:", searchQuery);
     setFilters((prev) => ({
       ...prev,
       search: searchQuery,
       page: 1, // Optionally reset page on new search
     }));
-  }, [searchQuery]);
+  }, [searchQuery, filters.role, filters.isDeleted]);
+
   const {
     rsoMembers,
     isLoadingMembers,
@@ -80,11 +83,24 @@ export default function Users() {
     isUpdateSuccess,
 
     // deleting users
-    deleteStudentAccount,
-    isDeleteError,
-    isDeleteLoading,
-    isDeleteSuccess,
-    deleteError,
+    hardDeleteStudentAccount,
+    isHardDeleteError,
+    isHardDeleteLoading,
+    isHardDeleteSuccess,
+    hardDeleteError,
+
+    // soft deleting users
+    softDeleteStudentAccount,
+    isSoftDeleteStudentError,
+    isSoftDeleteStudentLoading,
+    softDeleteStudentErrorMessage,
+
+    // restoring users
+    restoreStudentAccount,
+    isRestoreStudentError,
+    isRestoringStudent,
+    restoreStudentErrorMessage,
+
   } = useAdminUser(filters);
 
   const {
@@ -103,11 +119,23 @@ export default function Users() {
     isCreateError,
     createErrorMessage,
 
-    // SDAO delete
-    deleteAdminAccount,
-    isDeletingAccount,
-    isDeleteAccountError,
-    deleteErrorMessage,
+    // SDAO hard delete
+    hardDeleteAdminAccount,
+    isHardDeletingAccount,
+    isHardDeleteAccountError,
+    hardDeleteErrorMessage,
+
+    // SDAO soft delete
+    softDeleteAdminAccount,
+    isSoftDeletingAccount,
+    isSoftDeleteAccountError,
+    softDeleteErrorMessage,
+
+    // SDAO restore
+    restoreAdminAccount,
+    isRestoringAccount,
+    isRestoreAccountError,
+    restoreErrorMessage,
 
     // SDAO update role
     updateAdminRole,
@@ -144,6 +172,7 @@ export default function Users() {
       assignedRSO: user?.assigned_rso?.RSO_acronym || "",
       createdAt: FormatDate(user?.createdAt) || "N/A",
       fullName: `${user?.firstName || 'N/A'} ${user?.lastName || 'N/A'}`,
+      isDeleted: user?.isDeleted || false,
     }
   }) || [];
 
@@ -156,6 +185,7 @@ export default function Users() {
       assignedRSO: user?.assigned_rso?.RSO_acronym || "",
       createdAt: FormatDate(user?.createdAt) || "N/A",
       fullName: `${user?.firstName || 'N/A'} ${user?.lastName || 'N/A'}`,
+      isDeleted: user?.isDeleted || false,
     }
   }) || [];
 
@@ -252,6 +282,8 @@ export default function Users() {
 
   // Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [actionModalClicked, setActionModalClicked] = useState(false);
+  const [storeRowData, setStoreRowData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [deleteModalData, setDeleteModalData] = useState({
     id: '',
@@ -337,6 +369,7 @@ export default function Users() {
       setFilters((prev) => ({
         ...prev,
         role: 'student',
+        isDeleted: false,
         page: 1,
       }));
     }
@@ -344,15 +377,26 @@ export default function Users() {
       setFilters((prev) => ({
         ...prev,
         role: 'rso_representative',
+        isDeleted: false,
+        page: 1, // Reset to first page on filter change
+      }));
+    }
+
+    if (value == "Deleted Accounts") {
+      setFilters((prev) => ({
+        ...prev,
+        role: "",
+        isDeleted: true,
         page: 1, // Reset to first page on filter change
       }));
     }
 
     if (value == "All") {
       setFilters((prev) => ({
-        ...prev,
         role: "",
-        page: 1, // Reset to first page on filter change
+        limit: 10,
+        page: 1,
+        isDeleted: false,
       }));
     }
   }
@@ -365,12 +409,14 @@ export default function Users() {
         ...prev,
         role: 'admin',
         page: 1,
+        isDeleted: false,
       }));
     }
     if (value == "Coordinator") {
       setFilters((prev) => ({
         ...prev,
         role: 'coordinator',
+        isDeleted: false,
         page: 1,
       }));
     }
@@ -378,13 +424,33 @@ export default function Users() {
       setFilters((prev) => ({
         ...prev,
         role: 'director',
+        isDeleted: false,
         page: 1,
       }));
     }
+
+    if (value == "Super Admin") {
+      setFilters((prev) => ({
+        ...prev,
+        role: 'super_admin',
+        isDeleted: false,
+        page: 1,
+      }));
+    }
+
     if (value == "AVP") {
       setFilters((prev) => ({
         ...prev,
         role: 'avp',
+        isDeleted: false,
+        page: 1,
+      }));
+    }
+
+    if (value == "Deleted Accounts") {
+      setFilters((prev) => ({
+        ...prev,
+        isDeleted: true,
         page: 1,
       }));
     }
@@ -393,6 +459,7 @@ export default function Users() {
       setFilters((prev) => ({
         ...prev,
         role: "",
+        isDeleted: false,
         page: 1,
       }));
     }
@@ -436,15 +503,108 @@ export default function Users() {
     setIsEditModalOpen(true);
   };
 
-  const handleDeleteClick = (row) => {
-    setDeleteModalData({
-      id: row.id,
-      fullName: row.fullName,
-    });
-    setIsDeleteModalOpen(true);
+  const handleActionClick = (row, { type } = {}) => {
+    console.log("Action clicked:", type, "for row:", row);
+
+    if (type === 'restore' && !row || type === 'restore' && !row.id) {
+      toast.error("User data is missing or incomplete.");
+      setLoading(false);
+      return;
+    }
+
+    if (!storeRowData && type !== 'restore') {
+      setLoading(false);
+      toast.error("No action data stored. Please try again.");
+      return;
+    }
+
+    const softDeleteOnRole = !isSuperAdmin ? softDeleteStudentAccount : softDeleteAdminAccount;
+    const restoreOnRole = !isSuperAdmin ? restoreStudentAccount : restoreAdminAccount;
+    const hardDeleteOnRole = !isSuperAdmin ? hardDeleteStudentAccount : hardDeleteAdminAccount;
+
+    if (type === 'restore' || storeRowData?.type === 'restore') {
+      toast.success("Restore action clicked");
+      restoreOnRole(row.id, {
+        onSuccess: () => {
+          toast.success("User restored successfully.");
+          setStoreRowData(null);
+          setLoading(false);
+          if (isSuperAdmin) {
+            refetchAccounts();
+          } else {
+            refetchUsersData();
+          }
+        },
+        onError: (error) => {
+          setLoading(false);
+          toast.error("Failed to restore user.");
+        }
+      });
+
+    } else if (storeRowData.type === 'soft-delete') {
+      toast.success("Soft delete action clicked");
+      softDeleteOnRole(storeRowData.row.id, {
+        onSuccess: () => {
+          toast.success("User soft deleted successfully.");
+          setStoreRowData(null);
+          setLoading(false);
+          setActionModalClicked(false);
+          if (isSuperAdmin) {
+            refetchAccounts();
+          } else {
+            refetchUsersData();
+          }
+        },
+        onError: (error) => {
+          setLoading(false);
+          toast.error("Failed to soft delete user.");
+        }
+      });
+    } else if (storeRowData.type === 'hard-delete') {
+      toast.success("Hard delete action clicked");
+      hardDeleteOnRole(storeRowData.row.id, {
+        onSuccess: () => {
+          toast.success("User hard deleted successfully.");
+          setStoreRowData(null);
+          setActionModalClicked(false);
+          setLoading(false);
+          if (isSuperAdmin) {
+            refetchAccounts();
+          } else {
+            refetchUsersData();
+          }
+        },
+        onError: (error) => {
+          setLoading(false);
+          toast.error("Failed to hard delete user.");
+        }
+      });
+    }
+
+    // setDeleteModalData({
+    //   id: row.id,
+    //   fullName: row.fullName,
+    // });
+    // setIsDeleteModalOpen(true);
   };
 
-  const closeEditModal = () => setIsEditModalOpen(false);
+  const handleModalOpen = (row, { type } = {}) => {
+    setStoreRowData({ row, type });
+    console.log("handleModalOpen called with row:", row, "and type:", type);
+
+    if (type === 'restore') {
+      handleActionClick(row, { type: 'restore' });
+    } else {
+      setActionModalClicked(true);
+    }
+
+  }
+
+  useEffect(() => {
+    console.log("storeRowData changed to:", storeRowData?.row?.id);
+  }, [storeRowData]);
+
+  const closeEditModal = () => { setIsEditModalOpen(false) };
   const closeDeleteModal = () => setIsDeleteModalOpen(false);
 
   const rsoOptions = rsoData?.rsos?.map(r => ({
@@ -488,12 +648,9 @@ export default function Users() {
       }
 
       // don't continue if no changes were made
-      if (
-        checkerData.role === editModalData.role &&
-        checkerData.assignedRSO === editModalData.assignedRSO
-      ) {
-        toast.info("No changes were made.");
+      if (checkerData.role === editModalData.role && checkerData.assignedRSO === editModalData.assignedRSO) {
         setLoading(false);
+        toast.info("No changes were made.");
         setIsEditModalOpen(false);
         return;
       }
@@ -553,7 +710,7 @@ export default function Users() {
   const handleDeleteUser = () => {
     try {
       if (isSuperAdmin) {
-        deleteAdminAccount(deleteModalData.id, {
+        hardDeleteAdminAccount(deleteModalData.id, {
           onSuccess: () => {
             toast.success("User deleted successfully.");
             setIsDeleteModalOpen(false);
@@ -573,9 +730,9 @@ export default function Users() {
       }
 
       if (isUserAdmin || isCoordinator) {
-        deleteStudentAccount(deleteModalData.id, {
+        hardDeleteStudentAccount(deleteModalData.id, {
           onSuccess: () => {
-            toast.success("User deleted successfully.");
+            toast.success("User hard deleted successfully.");
             setIsDeleteModalOpen(false);
             setDeleteModalData({
               id: '',
@@ -585,7 +742,7 @@ export default function Users() {
             setLoading(false);
           },
           onError: (error) => {
-            console.error("Error deleting user:", error);
+            console.error("Error hard deleting user:", error);
             toast.error("Failed to delete user. Please try again.");
             setLoading(false);
           }
@@ -593,9 +750,9 @@ export default function Users() {
       }
 
     } catch (error) {
-      console.error("Error deleting user:", error);
+      console.error("Error hard deleting user:", error);
       setLoading(false);
-      toast.error("Failed to delete user. Please try again.");
+      toast.error("Failed to hard delete user. Please try again.");
     } finally {
       setLoading(false);
       setIsDeleteModalOpen(false);
@@ -632,7 +789,7 @@ export default function Users() {
         {(isUserAdmin || isCoordinator) && (
           <>
             <ReusableTable
-              options={["All", "Student", "RSO"]}
+              options={["All", "Student", "RSO", "Deleted Accounts"]}
               totalData={usersData ? usersData?.total : 0}
               onChange={(e) => handleFilterChange(e.target.value)}
               tableRow={adminTableRow || []}
@@ -642,7 +799,7 @@ export default function Users() {
               tableHeading={tableAdminHeading()}
               isLoading={isUsersLoading || accountsLoading}
               onEditClick={handleEditClick}
-              onActionClick={handleDeleteClick}
+              onActionClick={handleModalOpen}
               columnNumber={6}
               limit={filters.limit}
               page={filters.page}
@@ -656,7 +813,7 @@ export default function Users() {
         {isSuperAdmin && (
           <>
             <ReusableTable
-              options={["All", "Admin", "Coordinator", "Director", "AVP"]}
+              options={["All", "Admin", "Coordinator", "Director", "AVP", "Super Admin", "Deleted Accounts"]}
               totalData={usersData ? usersData?.total : 0}
               onChange={(e) => handleSuperAdminFilterChange(e.target.value)}
               tableRow={superAdminTableRow || []}
@@ -666,7 +823,7 @@ export default function Users() {
               tableHeading={tableSuperAdminHeading()}
               isLoading={isUsersLoading || accountsLoading}
               onEditClick={handleEditClick}
-              onActionClick={handleDeleteClick}
+              onActionClick={handleModalOpen}
               columnNumber={6}
               limit={filters.limit}
               page={filters.page}
@@ -721,7 +878,7 @@ export default function Users() {
             {/* table for rso representative */}
             {activeTab === 0 && (
               <ReusableTable
-                options={["All", "Student", "RSO"]}
+                options={["All", "Student", "RSO", "Deleted Accounts"]}
                 showDropdown={false}
                 tableRow={tableRowFiltered}
                 searchQuery={searchQuery}
@@ -848,6 +1005,39 @@ export default function Users() {
                 <div className="flex justify-end gap-2 mt-4">
                   <Button style="secondary" onClick={closeDeleteModal}>Cancel</Button>
                   <Button style="danger" onClick={() => { handleDeleteUser(); setLoading(true); }} disabled={loading}>{loading ? <LoadingSpinner /> : "Delete"}</Button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence
+        initial={false}
+        exitBeforeEnter={true}
+        onExitComplete={() => null}
+      >
+        {actionModalClicked && (
+          <>
+            <Backdrop className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30" />
+            <motion.div
+              className="fixed inset-0 z-50 w-screen overflow-auto flex items-center justify-center p-4"
+              variants={DropIn}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              <div className="bg-white rounded-lg w-full max-w-sm shadow-lg flex flex-col gap-6 p-6 max-h-[85vh] overflow-hidden">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-lg font-semibold text-[#b91c1c]">{`${storeRowData?.type === 'soft-delete' ? 'Soft' : 'Hard'} Delete User`}</h2>
+                  <CloseButton onClick={() => setActionModalClicked(false)} />
+                </div>
+                <div className="space-y-4">
+                  <p className="text-gray-700">Are you sure you want to delete <span className="font-semibold">{deleteModalData.fullName}</span>?</p>
+                </div>
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button style="secondary" onClick={() => setActionModalClicked(false)}>Cancel</Button>
+                  <Button style="danger" onClick={() => { handleActionClick(); setLoading(true); }} disabled={loading}>{loading ? <LoadingSpinner /> : "Delete"}</Button>
                 </div>
               </div>
             </motion.div>

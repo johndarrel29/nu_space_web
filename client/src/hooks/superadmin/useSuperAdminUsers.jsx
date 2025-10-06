@@ -5,11 +5,55 @@ import { useTokenStore, useUserStoreWithAuth } from "../../store";
 // only enable this if the user is super admin
 // this is for super admin to manage SDAO accounts
 
-const deleteSDAOAccount = async (userId) => {
+const hardDeleteSDAOAccountRequest = async (userId) => {
     try {
         const token = useTokenStore.getState().getToken();
-        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/super-admin/user/deleteSDAOAccount/${userId}`, {
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/super-admin/user/hardDeleteSDAOAccount/${userId}`, {
             method: "DELETE",
+            headers: {
+                Authorization: token || "",
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error deleting SDAO account: ${response.statusText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("Error deleting SDAO account:", error);
+        throw error;
+
+    }
+}
+
+const softDeleteSDAOAccountRequest = async (userId) => {
+    try {
+        const token = useTokenStore.getState().getToken();
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/super-admin/user/softDeleteSDAOAccount/${userId}`, {
+            method: "PATCH",
+            headers: {
+                Authorization: token || "",
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error deleting SDAO account: ${response.statusText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("Error deleting SDAO account:", error);
+        throw error;
+
+    }
+}
+
+const restoreSDAOAccountRequest = async (userId) => {
+    try {
+        const token = useTokenStore.getState().getToken();
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/super-admin/user/restoreSDAOAccount/${userId}`, {
+            method: "PATCH",
             headers: {
                 Authorization: token || "",
             },
@@ -121,6 +165,7 @@ function useSuperAdminSDAO({
     role = "",
     limit = 10,
     page = 1,
+    isDeleted = false,
 } = {}) {
     const location = useLocation();
     const isUsersPage = location.pathname === '/users';
@@ -131,6 +176,7 @@ function useSuperAdminSDAO({
         role,
         limit,
         page,
+        isDeleted,
     }
 
     const {
@@ -161,12 +207,38 @@ function useSuperAdminSDAO({
     });
 
     const {
-        mutate: deleteAdminAccount,
-        isLoading: isDeletingAccount,
-        isError: isDeleteAccountError,
-        error: deleteErrorMessage,
+        mutate: hardDeleteAdminAccount,
+        isLoading: isHardDeletingAccount,
+        isError: isHardDeleteAccountError,
+        error: hardDeleteErrorMessage,
     } = useMutation({
-        mutationFn: deleteSDAOAccount,
+        mutationFn: hardDeleteSDAOAccountRequest,
+        onSuccess: () => {
+            refetchAccounts();
+        },
+        enabled: isUsersPage && isSuperAdmin,
+    });
+
+    const {
+        mutate: softDeleteAdminAccount,
+        isLoading: isSoftDeletingAccount,
+        isError: isSoftDeleteAccountError,
+        error: softDeleteErrorMessage,
+    } = useMutation({
+        mutationFn: softDeleteSDAOAccountRequest,
+        onSuccess: () => {
+            refetchAccounts();
+        },
+        enabled: isUsersPage && isSuperAdmin,
+    });
+
+    const {
+        mutate: restoreAdminAccount,
+        isLoading: isRestoringAccount,
+        isError: isRestoreAccountError,
+        error: restoreErrorMessage,
+    } = useMutation({
+        mutationFn: restoreSDAOAccountRequest,
         onSuccess: () => {
             refetchAccounts();
         },
@@ -203,16 +275,28 @@ function useSuperAdminSDAO({
         createErrorMessage,
 
         // SDAO delete
-        deleteAdminAccount,
-        isDeletingAccount,
-        isDeleteAccountError,
-        deleteErrorMessage,
+        hardDeleteAdminAccount,
+        isHardDeletingAccount,
+        isHardDeleteAccountError,
+        hardDeleteErrorMessage,
 
         // SDAO update role
         updateAdminRole,
         isUpdatingSDAORole,
         isUpdateSDAORoleError,
-        updateSDAORoleErrorMessage
+        updateSDAORoleErrorMessage,
+
+        // SDAO soft delete
+        softDeleteAdminAccount,
+        isSoftDeletingAccount,
+        isSoftDeleteAccountError,
+        softDeleteErrorMessage,
+
+        // SDAO restore
+        restoreAdminAccount,
+        isRestoringAccount,
+        isRestoreAccountError,
+        restoreErrorMessage,
     };
 }
 
