@@ -1,26 +1,230 @@
-import { useEffect, useRef, useState } from 'react';
+import { Input as BaseInput } from '@mui/base/Input';
+import { Box, styled } from '@mui/system';
+import { useQuery } from "@tanstack/react-query";
+import { PDFDocument } from 'pdf-lib';
+import PropTypes from 'prop-types';
+import React, { useEffect, useRef, useState } from 'react';
 import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Button, CloseButton, DraggableSandbox, PDFViewer } from '../../../components';
-import { useAVPDocuments, useCoordinatorDocuments, useDirectorDocuments, useLogin } from '../../../hooks';
-import { useUserStoreWithAuth } from '../../../store';
-// import watermarkImage from '../../../assets/images/NUSpace_blue.png';
-import { useAdminUser, useModal, useSignature } from '../../../hooks';
-
-// ================================================TODO===============================================
-// TODO: add modal, and prepare the request body for saving the watermarked document to the server
-
-
-
-import { useQuery } from "@tanstack/react-query";
-import { PDFDocument } from 'pdf-lib';
 import { toast } from 'react-toastify';
-import { useTokenStore } from "../../../store";
-// import { useAdminDocuments } from '../../../hooks';
+import { Button, CloseButton, DraggableSandbox, PDFViewer } from '../../../components';
+import { useAdminUser, useAVPDocuments, useCoordinatorDocuments, useDirectorDocuments, useLogin, useModal, useSignature } from '../../../hooks';
+import { useTokenStore, useUserStoreWithAuth } from '../../../store';
+
+const blue = {
+    100: '#DAECFF',
+    200: '#80BFFF',
+    400: '#3399FF',
+    500: '#007FFF',
+    600: '#0072E5',
+    700: '#0059B2',
+};
+
+const grey = {
+    50: '#F3F6F9',
+    100: '#E5EAF2',
+    200: '#DAE2ED',
+    300: '#C7D0DD',
+    400: '#B0B8C4',
+    500: '#9DA8B7',
+    600: '#6B7A90',
+    700: '#434D5B',
+    800: '#303740',
+    900: '#1C2025',
+};
+
+const InputElement = styled('input')(
+    ({ theme }) => `
+  width: 40px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.5;
+  padding: 8px 0;
+  border-radius: 8px;
+  text-align: center;
+  color: ${theme.palette.mode === 'dark' ? grey[300] : grey[900]};
+  background: ${theme.palette.mode === 'dark' ? grey[900] : '#fff'};
+  border: 1px solid ${theme.palette.mode === 'dark' ? grey[700] : grey[200]};
+  box-shadow: 0 2px 4px ${theme.palette.mode === 'dark' ? 'rgba(0,0,0, 0.5)' : 'rgba(0,0,0, 0.05)'
+        };
+
+  &:hover {
+    border-color: ${blue[400]};
+  }
+
+  &:focus {
+    border-color: ${blue[400]};
+    box-shadow: 0 0 0 3px ${theme.palette.mode === 'dark' ? blue[600] : blue[200]};
+  }
+
+  /* firefox */
+  &:focus-visible {
+    outline: 0;
+  }
+`,
+);
+
+function OTP({ separator, length, value, onChange }) {
+    const inputRefs = useRef(new Array(length).fill(null));
+
+    const focusInput = (targetIndex) => {
+        const targetInput = inputRefs.current[targetIndex];
+        targetInput.focus();
+    };
+
+    const selectInput = (targetIndex) => {
+        const targetInput = inputRefs.current[targetIndex];
+        targetInput.select();
+    };
+
+    const handleKeyDown = (event, currentIndex) => {
+        switch (event.key) {
+            case 'ArrowUp':
+            case 'ArrowDown':
+            case ' ':
+                event.preventDefault();
+                break;
+            case 'ArrowLeft':
+                event.preventDefault();
+                if (currentIndex > 0) {
+                    focusInput(currentIndex - 1);
+                    selectInput(currentIndex - 1);
+                }
+                break;
+            case 'ArrowRight':
+                event.preventDefault();
+                if (currentIndex < length - 1) {
+                    focusInput(currentIndex + 1);
+                    selectInput(currentIndex + 1);
+                }
+                break;
+            case 'Delete':
+                event.preventDefault();
+                onChange((prevOtp) => {
+                    const otp =
+                        prevOtp.slice(0, currentIndex) + prevOtp.slice(currentIndex + 1);
+                    return otp;
+                });
+
+                break;
+            case 'Backspace':
+                event.preventDefault();
+                if (currentIndex > 0) {
+                    focusInput(currentIndex - 1);
+                    selectInput(currentIndex - 1);
+                }
+
+                onChange((prevOtp) => {
+                    const otp =
+                        prevOtp.slice(0, currentIndex) + prevOtp.slice(currentIndex + 1);
+                    return otp;
+                });
+                break;
+
+            default:
+                break;
+        }
+    };
+
+    const handleChange = (event, currentIndex) => {
+        const currentValue = event.target.value;
+        let indexToEnter = 0;
+
+        while (indexToEnter <= currentIndex) {
+            if (inputRefs.current[indexToEnter].value && indexToEnter < currentIndex) {
+                indexToEnter += 1;
+            } else {
+                break;
+            }
+        }
+        onChange((prev) => {
+            const otpArray = prev.split('');
+            const lastValue = currentValue[currentValue.length - 1];
+            otpArray[indexToEnter] = lastValue;
+            return otpArray.join('');
+        });
+        if (currentValue !== '') {
+            if (currentIndex < length - 1) {
+                focusInput(currentIndex + 1);
+            }
+        }
+    };
+
+    const handleClick = (event, currentIndex) => {
+        selectInput(currentIndex);
+    };
+
+    const handlePaste = (event, currentIndex) => {
+        event.preventDefault();
+        const clipboardData = event.clipboardData;
+
+        // Check if there is text data in the clipboard
+        if (clipboardData.types.includes('text/plain')) {
+            let pastedText = clipboardData.getData('text/plain');
+            pastedText = pastedText.substring(0, length).trim();
+            let indexToEnter = 0;
+
+            while (indexToEnter <= currentIndex) {
+                if (inputRefs.current[indexToEnter].value && indexToEnter < currentIndex) {
+                    indexToEnter += 1;
+                } else {
+                    break;
+                }
+            }
+
+            const otpArray = value.split('');
+
+            for (let i = indexToEnter; i < length; i += 1) {
+                const lastValue = pastedText[i - indexToEnter] ?? ' ';
+                otpArray[i] = lastValue;
+            }
+
+            onChange(otpArray.join(''));
+        }
+    };
+
+    return (
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            {new Array(length).fill(null).map((_, index) => (
+                <React.Fragment key={index}>
+                    <BaseInput
+                        slots={{
+                            input: InputElement,
+                        }}
+                        aria-label={`Digit ${index + 1} of OTP`}
+                        slotProps={{
+                            input: {
+                                ref: (ele) => {
+                                    inputRefs.current[index] = ele;
+                                },
+                                onKeyDown: (event) => handleKeyDown(event, index),
+                                onChange: (event) => handleChange(event, index),
+                                onClick: (event) => handleClick(event, index),
+                                onPaste: (event) => handlePaste(event, index),
+                                value: value[index] ?? '',
+                            },
+                        }}
+                    />
+                    {index === length - 1 ? null : separator}
+                </React.Fragment>
+            ))}
+        </Box>
+    );
+}
+
+OTP.propTypes = {
+    length: PropTypes.number.isRequired,
+    onChange: PropTypes.func.isRequired,
+    separator: PropTypes.node,
+    value: PropTypes.string.isRequired,
+};
+
 
 export default function WaterMarkPage() {
     const token = useTokenStore.getState().getToken();
+    const [otp, setOtp] = useState("");
     const viewerRef = useRef(null);
     const {
         approveDocumentMutate,
@@ -75,7 +279,7 @@ export default function WaterMarkPage() {
     const { documentId, url } = state || {};
     const [count, setCount] = useState(0)
     const [otpModalOpen, setOTPModalOpen] = useState(false);
-    const [otpValue, setOtpValue] = useState(0);
+    const [otpValue, setOtpValue] = useState("");
     const [coords, setCoords] = useState(null);
     const [generatedPdfUrl, setGeneratedPdfUrl] = useState(null);
     // Modal preview controls
@@ -86,7 +290,8 @@ export default function WaterMarkPage() {
     const { isOpen, openModal, closeModal } = useModal();
     const [directorModalOpen, setDirectorModalOpen] = useState(false);
     const { isCoordinator, isAVP, isDirector } = useUserStoreWithAuth();
-
+    const [resendTimer, setResendTimer] = useState(0);
+    const timerRef = useRef(null);
 
     const {
         // fetching admin profile
@@ -122,6 +327,18 @@ export default function WaterMarkPage() {
             }
         }
     }, [watermark]);
+
+    // Countdown timer for resend button
+    useEffect(() => {
+        if (resendTimer > 0) {
+            timerRef.current = setTimeout(() => {
+                setResendTimer(resendTimer - 1);
+            }, 1000);
+        } else {
+            clearTimeout(timerRef.current);
+        }
+        return () => clearTimeout(timerRef.current);
+    }, [resendTimer]);
 
     const nullWatermarkImage = signatureData?.data?.signedUrl === null;
 
@@ -515,6 +732,7 @@ export default function WaterMarkPage() {
                 onSuccess: (data) => {
                     setLoading(false);
                     setOTPModalOpen(true);
+                    setResendTimer(120);
                     toast.success("OTP sent to your email.");
                 },
                 onError: (error) => {
@@ -538,6 +756,7 @@ export default function WaterMarkPage() {
             }
             sendCodeVerificationMutate(adminProfile?.user?.email, {
                 onSuccess: (data) => {
+                    setResendTimer(120);
                     toast.success("OTP resent to your email.");
                     setLoading(false);
                 },
@@ -704,28 +923,35 @@ export default function WaterMarkPage() {
                                     <h2 className="text-base md:text-lg font-semibold text-gray-900">OTP Confirmation</h2>
                                 </div>
                             </div>
-                            <h1 className="text-center text-gray-600 text-sm">A verification code was sent to your email address. Please check your inbox.</h1>
 
                             {/* Modal Body */}
                             <div className="px-6 py-6 flex flex-col gap-4">
+                                <h1 className="text-left text-gray-600 text-sm">A verification code was sent to your email address. Please check your inbox.</h1>
                                 <div className="flex flex-col gap-1">
                                     <label className="text-sm text-gray-700 font-medium">Email</label>
                                     <div className="px-3 py-2 bg-gray-100 rounded text-gray-800 text-sm select-text">
                                         {adminProfile?.user?.email || 'user@email.com'}
                                     </div>
                                 </div>
-                                <p className='text-sm text-gray-600'>OTP not received? <a onClick={() => { handleResendOTP(); setLoading(true); }} disabled={loading} className="text-indigo-600 hover:underline cursor-pointer">{loading ? 'Resending...' : 'Resend OTP'}</a></p>
-                                <div className="flex flex-col gap-1">
-                                    <label htmlFor="otp-input" className="text-sm text-gray-700 font-medium">Verification Code</label>
-                                    <input
-                                        id="otp-input"
-                                        type="text"
-                                        className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-400 text-gray-900 text-base"
+                                {resendTimer > 0 ? (
+                                    <p className='text-sm text-gray-600'>{`Allow OTP resending in ${resendTimer} seconds`}</p>
+                                ) : (
+                                    <p className='text-sm text-gray-600'>OTP not received? <a onClick={() => { handleResendOTP(); setLoading(true); }} disabled={loading} className="text-indigo-600 hover:underline cursor-pointer">{loading ? 'Resending...' : 'Resend OTP'}</a></p>
+                                )}
+
+                                <label htmlFor="code" className="text-sm text-gray-600">Code</label>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    <OTP
+                                        separator={<span>-</span>}
                                         value={otpValue}
-                                        onChange={e => setOtpValue(e.target.value)}
-                                        placeholder="Enter OTP code"
+                                        onChange={(newOtp) => {
+                                            setOtpValue(newOtp);
+                                            // We don't need to manually update formData here anymore
+                                            // as the useEffect will handle the synchronization
+                                        }}
+                                        length={6}
                                     />
-                                </div>
+                                </Box>
                             </div>
                             {/* Modal Footer */}
                             <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-2 bg-white">

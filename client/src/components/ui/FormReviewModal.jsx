@@ -3,22 +3,17 @@ import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import { DropIn } from "../../animations/DropIn";
-import { Backdrop, Button, CloseButton } from "../../components";
+import { Backdrop, Button, CloseButton, LoadingSpinner } from "../../components";
 import { useRSOUsers } from "../../hooks";
 
 export default function FormReviewModal({ userModalData, isOpen, onClose }) {
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [rejecting, setRejecting] = useState(false);
     const location = useLocation();
     const isOnActivityDetailsPage = location.pathname.startsWith("/activities/");
 
     const {
-        rsoMembers,
-        isLoadingMembers,
-        isErrorFetchingMembers,
-        errorFetchingMembers,
-        isRefetchingMembers,
-        refetchMembers,
-
         rsoApplicants,
         isErrorFetchingApplicants,
         isLoadingApplicants,
@@ -38,36 +33,59 @@ export default function FormReviewModal({ userModalData, isOpen, onClose }) {
     };
 
     const handleApproveMembership = () => {
+        setLoading(true);
+        try {
+            approveMembership({ id: userModalData.applicationId, approval: true }, {
+                onSuccess: () => {
+                    refetchApplicants();
+                    setLoading(false);
+                    // Optionally close the modal or give feedback
+                    toast.success("Membership approved successfully");
+                    onClose();
+                },
+                onError: (error) => {
+                    setLoading(false);
+                    console.error("Error approving membership:", error);
+                    toast.error("Failed to approve membership. Please try again.");
+                }
 
-        approveMembership({ id: userModalData.applicationId, approval: true }, {
-            onSuccess: () => {
-                refetchApplicants();
-                // Optionally close the modal or give feedback
-                toast.success("Membership approved successfully");
-                onClose();
-            },
-            onError: (error) => {
-                console.error("Error approving membership:", error);
-                toast.error("Failed to approve membership. Please try again.");
-            }
+            })
 
-        })
+        } catch (error) {
+            setLoading(false);
+            console.error("Error approving membership:", error);
+            toast.error("Failed to approve membership. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+
     }
 
     const handleRejectMembership = () => {
-        console.log("Reject Membership clicked for user ID:", userModalData.applicationId);
-        // Implement reject logic here
-        approveMembership({ id: userModalData.applicationId, approval: false }, {
-            onSuccess: () => {
-                refetchApplicants();
-                toast.success("Membership rejected successfully");
-                onClose();
-            },
-            onError: (error) => {
-                console.error("Error rejecting membership:", error);
-                toast.error("Failed to reject membership. Please try again.");
-            }
-        })
+        setRejecting(true);
+        try {
+            console.log("Reject Membership clicked for user ID:", userModalData.applicationId);
+            // Implement reject logic here
+            approveMembership({ id: userModalData.applicationId, approval: false }, {
+                onSuccess: () => {
+                    setRejecting(false);
+                    refetchApplicants();
+                    toast.success("Membership rejected successfully");
+                    onClose();
+                },
+                onError: (error) => {
+                    setRejecting(false);
+                    console.error("Error rejecting membership:", error);
+                    toast.error("Failed to reject membership. Please try again.");
+                }
+            })
+        } catch (error) {
+            console.error("Error rejecting membership:", error);
+            throw error;
+        } finally {
+            setRejecting(false);
+        }
+
     };
 
     return (
@@ -166,20 +184,22 @@ export default function FormReviewModal({ userModalData, isOpen, onClose }) {
                                                     <h4 className="text-sm font-semibold text-gray-700 mb-2">Action</h4>
                                                     <div className="flex flex-col gap-3">
                                                         <Button
-                                                            onClick={handleApproveMembership}
+                                                            disabled={isApprovingMembership || loading}
+                                                            onClick={() => { handleApproveMembership(); setLoading(true); }}
                                                             className="w-full"
                                                         >
-                                                            Approve Membership
+                                                            {loading ? <LoadingSpinner /> : 'Approve Membership'}
                                                         </Button>
                                                         <Button
-                                                            onClick={handleRejectMembership}
+                                                            onClick={() => { handleRejectMembership(); setRejecting(true); }}
+                                                            disabled={rejecting || loading}
                                                             style={"secondary"}
                                                             className="w-full"
                                                         >
-                                                            <div className="flex items-center justify-center gap-2">
+                                                            {rejecting ? <LoadingSpinner /> : <div className="flex items-center justify-center gap-2">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" className="size-4 text-off-black" viewBox="0 0 640 640"><path d="M183.1 137.4C170.6 124.9 150.3 124.9 137.8 137.4C125.3 149.9 125.3 170.2 137.8 182.7L275.2 320L137.9 457.4C125.4 469.9 125.4 490.2 137.9 502.7C150.4 515.2 170.7 515.2 183.2 502.7L320.5 365.3L457.9 502.6C470.4 515.1 490.7 515.1 503.2 502.6C515.7 490.1 515.7 469.8 503.2 457.3L365.8 320L503.1 182.6C515.6 170.1 515.6 149.8 503.1 137.3C490.6 124.8 470.3 124.8 457.8 137.3L320.5 274.7L183.1 137.4z" /></svg>
                                                                 Reject Membership
-                                                            </div>
+                                                            </div>}
                                                         </Button>
                                                     </div>
                                                 </div>

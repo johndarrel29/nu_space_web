@@ -13,10 +13,11 @@ import {
   Button,
   CloseButton,
   DropdownSearch,
+  LoadingSpinner,
   ReusableDropdown,
   Searchbar
 } from "../../../components";
-import { useAdminActivity, useRSOActivities } from "../../../hooks";
+import { useAdminAcademicYears, useAdminActivity, useRSOActivities } from "../../../hooks";
 import { useUserStoreWithAuth } from '../../../store';
 
 // fix the rso path first to manipulate the activity data.
@@ -59,18 +60,6 @@ const Backdrop = ({ children, ...props }) => {
   );
 };
 
-// const CloseButton = ({ onClick }) => {
-//   return (
-//     <button
-//       onClick={onClick}
-//       className="text-gray-500 hover:text-gray-700"
-//     >
-//       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-//       </svg>
-//     </button>
-//   );
-// };
 
 export default function MainDocuments() {
 
@@ -80,6 +69,7 @@ export default function MainDocuments() {
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [sorted, setSorted] = useState("All");
   const [RSO, setRSO] = useState("All");
+  const [loading, setLoading] = useState(false);
   const [RSOType, setRSOType] = useState("All");
   const [college, setCollege] = useState("All");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -92,8 +82,20 @@ export default function MainDocuments() {
   const [preDocDeadline, setPreDocDeadline] = useState(null);
   const [postDocDeadline, setPostDocDeadline] = useState(null);
   const [selectedActivityId, setSelectedActivityId] = useState(null);
+  const [academicYear, setAcademicYear] = useState(null);
+
+  // Academic years data
+  const {
+    academicYears,
+    academicYearsLoading,
+    academicYearsError,
+    academicYearsErrorMessage,
+    refetchAcademicYears,
+    isRefetchingAcademicYears,
+    isAcademicYearsFetched,
 
 
+  } = useAdminAcademicYears({ manualEnabled: true });
 
   // revised rso route
   const {
@@ -142,6 +144,7 @@ export default function MainDocuments() {
     RSOType,
     college,
     isGPOA: gpoa.value,
+    academicYearId: academicYear,
   });
 
 
@@ -204,6 +207,12 @@ export default function MainDocuments() {
     }
     setCollege(value);
   }
+
+
+  const handleAcademicYear = (value) => {
+    setAcademicYear(value);
+    console.log("Selected Academic Year:", value);
+  };
 
   const handleActivityClick = (activity) => {
     setSelectedActivity(activity);
@@ -274,53 +283,66 @@ export default function MainDocuments() {
         [];
 
   const handleDateSelected = () => {
+    try {
+      if (!selectedActivityId || !preDocDeadline || !postDocDeadline) {
+        setLoading(false);
+        toast.error('No activity selected');
+        return;
+      }
+      // Log the deadline states from the modal
+      console.log('Pre Document Deadline:', preDocDeadline ? dayjs(preDocDeadline).toISOString() : null);
+      console.log('Post Document Deadline:', postDocDeadline ? dayjs(postDocDeadline).toISOString() + " id: " + selectedActivityId : null);
 
-
-
-    // Log the deadline states from the modal
-    console.log('Pre Document Deadline:', preDocDeadline ? dayjs(preDocDeadline).toISOString() : null);
-    console.log('Post Document Deadline:', postDocDeadline ? dayjs(postDocDeadline).toISOString() + " id: " + selectedActivityId : null);
-
-    if (preDocDeadline) {
-      preDocumentDeadlineMutate({
-        activityId: selectedActivityId,
-        preDocumentDeadline: dayjs(preDocDeadline).toISOString(),
-      },
-        {
-          onSuccess: () => {
-            console.log('Pre-document deadline updated successfully');
-            toast.success('Pre-document deadline updated successfully');
-            // clear the select state and the date state
-            setSelectedActivityId(null);
-            setPreDocDeadline(null);
-            setPostDocDeadline(null);
-          },
-          onError: (error) => {
-            console.error('Error updating pre-document deadline:', error);
-            toast.error(error.message || 'Error updating pre-document deadline');
+      if (preDocDeadline) {
+        preDocumentDeadlineMutate({
+          activityId: selectedActivityId,
+          preDocumentDeadline: dayjs(preDocDeadline).toISOString(),
+        },
+          {
+            onSuccess: () => {
+              console.log('Pre-document deadline updated successfully');
+              toast.success('Pre-document deadline updated successfully');
+              setLoading(false);
+              // clear the select state and the date state
+              setSelectedActivityId(null);
+              setPreDocDeadline(null);
+              setPostDocDeadline(null);
+            },
+            onError: (error) => {
+              setLoading(false);
+              console.error('Error updating pre-document deadline:', error);
+              toast.error(error.message || 'Error updating pre-document deadline');
+            }
           }
-        }
-      );
-    }
-    if (postDocDeadline) {
-      postDocumentDeadlineMutate({
-        activityId: selectedActivityId,
-        postDocumentDeadline: dayjs(postDocDeadline).toISOString(),
-      },
-        {
-          onSuccess: () => {
-            toast.success('Post-document deadline updated successfully');
-            // clear the select state and the date state
-            setSelectedActivityId(null);
-            setPreDocDeadline(null);
-            setPostDocDeadline(null);
-          },
-          onError: (error) => {
-            console.error('Error updating post-document deadline:', error);
-            toast.error(error.message || 'Error updating post-document deadline');
+        );
+      }
+      if (postDocDeadline) {
+        postDocumentDeadlineMutate({
+          activityId: selectedActivityId,
+          postDocumentDeadline: dayjs(postDocDeadline).toISOString(),
+        },
+          {
+            onSuccess: () => {
+              toast.success('Post-document deadline updated successfully');
+              setLoading(false);
+              // clear the select state and the date state
+              setSelectedActivityId(null);
+              setPreDocDeadline(null);
+              setPostDocDeadline(null);
+            },
+            onError: (error) => {
+              setLoading(false);
+              console.error('Error updating post-document deadline:', error);
+              toast.error(error.message || 'Error updating post-document deadline');
+            }
           }
-        }
-      );
+        );
+      }
+    } catch (error) {
+      setLoading(false);
+      console.error('Error selecting dates:', error);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -457,6 +479,26 @@ export default function MainDocuments() {
                   buttonClass="border-primary  text-primary "
                 />
               </div>
+              <div className="w-full mb-2 md:mb-0">
+                <label htmlFor="academic-year" className="block text-sm font-medium text-gray-700 mb-1">
+                  Academic Year
+                </label>
+                <select
+                  id="academic-year"
+                  onChange={(e) => handleAcademicYear(e.target.value)}
+                  className="w-full h-10 rounded-md bg-white border border-mid-gray p-1"
+                >
+                  <option value="">Select Academic Year</option>
+                  {academicYears?.years?.map(year => (
+                    <option
+                      key={year._id}
+                      value={year._id}
+                    >
+                      {year.label || "no data"}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         )}
@@ -571,7 +613,7 @@ export default function MainDocuments() {
                 <div className="bg-white rounded-lg p-6 sm:p-8 w-full max-w-[90%] sm:max-w-xl md:max-w-2xl">
                   <div className='flex justify-between items-center mb-6'>
                     <h2 className="text-lg font-medium text-[#312895]">Set Activity Deadlines</h2>
-                    <CloseButton onClick={() => setIsDeadlineModalOpen(false)} />
+                    <CloseButton onClick={() => { setIsDeadlineModalOpen(false); setLoading(false); }} />
                   </div>
                   {/* Deadline fields */}
                   <div className='space-y-4'>
@@ -625,10 +667,11 @@ export default function MainDocuments() {
                   {/* Button to log deadlines */}
                   <div className="flex justify-end mt-6 gap-3">
                     <Button
-                      onClick={() => handleDateSelected()}
+                      onClick={() => { handleDateSelected(); setLoading(true); }}
+                      disabled={loading}
                       style="primary"
                     >
-                      Set Deadlines
+                      {loading ? <LoadingSpinner /> : 'Set Deadlines'}
                     </Button>
                   </div>
                 </div>

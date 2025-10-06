@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { DropIn } from "../../../animations/DropIn";
-import { Backdrop, Button, CloseButton } from '../../../components';
+import { Backdrop, Button, CloseButton, LoadingSpinner } from '../../../components';
 import { useAcademicYears, useModal } from '../../../hooks';
 import { FormatDate } from '../../../utils';
 
@@ -17,6 +17,7 @@ export default function AcademicYear() {
     const [activeYear, setActiveYear] = useState(null);
     const [academicYearHistory, setAcademicYearHistory] = useState([]);
     const [academicYearToDelete, setAcademicYearToDelete] = useState(null);
+    const [loading, setLoading] = useState(false);
     const [academicYearData, setAcademicYearData] = useState({
         _id: null,
         label: '',
@@ -131,7 +132,16 @@ export default function AcademicYear() {
 
     const handleOpenDeleteModal = (yearId, yearLabel) => {
         console.log('Opening delete modal for year:', yearId, yearLabel);
-        setAcademicYearToDelete({ id: yearId, label: yearLabel });
+        setAcademicYearToDelete({ id: yearId, label: yearLabel }, {
+
+            onSuccess: () => {
+                setLoading(false);
+            },
+            onError: () => {
+                setLoading(false);
+            },
+
+        });
         setIsDeleteModalOpen(true);
 
         // Only open modal if no yearId and yearLabel provided(i.e., from delete button)
@@ -184,96 +194,120 @@ export default function AcademicYear() {
     };
 
     const handleSaveChanges = (yearId) => {
-        console.log('Data to be sent: ', academicYearData, "and data id is:", yearId);
+        try {
+            console.log('Data to be sent: ', academicYearData, "and data id is:", yearId);
 
-        // validate if no other data has an isActive true or isUpcoming true when setting either to true
-        const currentId = yearId || academicYearData._id;
-        console.log('Current ID for validation:', currentId);
-        const isAnyOtherActive = academicYears.years.some(year => year.isActive && year._id !== currentId);
-        if (academicYearData.isActive) {
-            // Check if any other academic year is active
-            if (isAnyOtherActive) {
-                toast.error("Another academic year is already active.");
-                return;
-            }
-        }
-
-
-        if (academicYearData.isUpcoming) {
-            // Check if any other academic year is upcoming
-            const isAnyOtherUpcoming = academicYears.years.some(year => year.isUpcoming && year._id !== yearId);
-            if (isAnyOtherUpcoming) {
-                toast.error("Another academic year is already upcoming.");
-                return;
-            }
-        }
-
-        if (mode === 'edit') {
-            console.log('active year id:', activeYear?._id);
-            // editAcademicYear({ academicYearData: academicYearData, yearId: activeYear?._id },
-            editAcademicYear({ academicYearData: academicYearData, yearId: yearId },
-                {
-                    onSuccess: () => {
-                        toast.success("Academic Year updated successfully");
-                        handleCloseAllModals();
-                    },
-                    onError: (error) => {
-                        console.error("Error editing academic year:", error);
-                        toast.error(error.message || "Failed to update Academic Year");
-                    }
+            // validate if no other data has an isActive true or isUpcoming true when setting either to true
+            const currentId = yearId || academicYearData._id;
+            console.log('Current ID for validation:', currentId);
+            const isAnyOtherActive = academicYears.years.some(year => year.isActive && year._id !== currentId);
+            if (academicYearData.isActive) {
+                // Check if any other academic year is active
+                if (isAnyOtherActive) {
+                    toast.error("Another academic year is already active.");
+                    setLoading(false);
+                    return;
                 }
-            );
-        } else {
-            // Handle create functionality here
+            }
 
-            console.log('Creating new academic year:', academicYearData);
-            createAcademicYear({ academicYearData: academicYearData },
-                {
-                    onSuccess: () => {
-                        toast.success("Academic Year created successfully");
-                        handleCloseModal();
-                    },
-                    onError: (error) => {
-                        console.error("Error creating academic year:", error);
-                    }
+            if (academicYearData.isUpcoming) {
+                // Check if any other academic year is upcoming
+                const isAnyOtherUpcoming = academicYears.years.some(year => year.isUpcoming && year._id !== yearId);
+                if (isAnyOtherUpcoming) {
+                    toast.error("Another academic year is already upcoming.");
+                    setLoading(false);
+                    return;
                 }
-            );
+            }
+
+            if (mode === 'edit') {
+                console.log('active year id:', activeYear?._id);
+                // editAcademicYear({ academicYearData: academicYearData, yearId: activeYear?._id },
+                editAcademicYear({ academicYearData: academicYearData, yearId: yearId },
+                    {
+                        onSuccess: () => {
+                            toast.success("Academic Year updated successfully");
+                            handleCloseAllModals();
+                            setLoading(false);
+                        },
+                        onError: (error) => {
+                            console.error("Error editing academic year:", error);
+                            toast.error(error.message || "Failed to update Academic Year");
+                            setLoading(false);
+                        }
+                    }
+                );
+            } else {
+                // Handle create functionality here
+
+                console.log('Creating new academic year:', academicYearData);
+                createAcademicYear({ academicYearData: academicYearData },
+                    {
+                        onSuccess: () => {
+                            toast.success("Academic Year created successfully");
+                            handleCloseModal();
+                            setLoading(false);
+                        },
+                        onError: (error) => {
+                            console.error("Error creating academic year:", error);
+                            setLoading(false);
+                        }
+                    }
+                );
+            }
+        } catch (error) {
+            console.error("Error in handleSaveChanges:", error);
+            setLoading(false);
         }
     };
 
     const handleDelete = () => {
-        console.log('Deleting academic year:', academicYearToDelete, "or active year:", activeYear);
+        try {
+            console.log('Deleting academic year:', academicYearToDelete, "or active year:", activeYear);
 
 
-        if (academicYearToDelete && academicYearToDelete.id) {
-            console.log('Deleting year with id:', academicYearToDelete.id);
-            deleteAcademicYear({ yearId: academicYearToDelete.id }, {
-                onSuccess: () => {
-                    refetchAcademicYears();
-                    toast.success("Academic Year deleted successfully");
-                    handleCloseAllModals();
-                },
-                onError: (error) => {
-                    console.error("Error deleting academic year:", error);
-                    toast.error("Failed to delete Academic Year");
-                }
-            });
-            return;
-        } else if (activeYear && activeYear._id && !academicYearToDelete) {
-            deleteAcademicYear({ yearId: activeYear._id }, {
-                onSuccess: () => {
-                    refetchAcademicYears();
-                    toast.success("Academic Year deleted successfully");
-                    handleCloseAllModals();
-                },
-                onError: (error) => {
-                    console.error("Error deleting academic year:", error);
-                    toast.error("Failed to delete Academic Year");
-                }
-            });
-            return;
-        } else {
-            toast.error("No Academic Year selected for deletion");
+            if (academicYearToDelete && academicYearToDelete.id) {
+                console.log('Deleting year with id:', academicYearToDelete.id);
+                deleteAcademicYear({ yearId: academicYearToDelete.id }, {
+                    onSuccess: () => {
+                        setLoading(false);
+                        refetchAcademicYears();
+                        toast.success("Academic Year deleted successfully");
+                        handleCloseAllModals();
+                    },
+                    onError: (error) => {
+                        setLoading(false);
+                        console.error("Error deleting academic year:", error);
+                        toast.error("Failed to delete Academic Year");
+                    }
+                });
+                return;
+            } else if (activeYear && activeYear._id && !academicYearToDelete) {
+                deleteAcademicYear({ yearId: activeYear._id }, {
+                    onSuccess: () => {
+                        setLoading(false);
+                        refetchAcademicYears();
+                        toast.success("Academic Year deleted successfully");
+                        handleCloseAllModals();
+                    },
+                    onError: (error) => {
+                        setLoading(false);
+                        console.error("Error deleting academic year:", error);
+                        toast.error("Failed to delete Academic Year");
+                    }
+                });
+                return;
+            } else {
+                console.log('No year selected for deletion');
+                setLoading(false);
+                toast.error("No Academic Year selected for deletion");
+            }
+        } catch (error) {
+            setLoading(false);
+            console.error("Error in handleDelete:", error);
+            toast.error("Failed to delete Academic Year");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -523,14 +557,15 @@ export default function AcademicYear() {
 
                                         {/* Delete Button */}
                                         <div
+                                            disabled={loading || mode === 'create'}
                                             className={`flex items-center justify-center px-3 py-2 rounded cursor-pointer text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors ${mode === 'edit' ? 'visible' : 'invisible'}`}
                                             onClick={() => {
-                                                console.log("academicYearData in delete:", academicYearData._id, academicYearData.label);
+                                                setLoading(true);
                                                 handleOpenDeleteModal(academicYearData._id, academicYearData.label)
                                             }}
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" className='fill-current size-5 mr-1' viewBox="0 0 640 640"><path d="M232.7 69.9L224 96L128 96C110.3 96 96 110.3 96 128C96 145.7 110.3 160 128 160L512 160C529.7 160 544 145.7 544 128C544 110.3 529.7 96 512 96L416 96L407.3 69.9C402.9 56.8 390.7 48 376.9 48L263.1 48C249.3 48 237.1 56.8 232.7 69.9zM512 208L128 208L149.1 531.1C150.7 556.4 171.7 576 197 576L443 576C468.3 576 489.3 556.4 490.9 531.1L512 208z" /></svg>
-                                            Delete
+                                            {loading ? <LoadingSpinner /> : 'Delete'}
                                         </div>
                                         <div className='flex gap-3'>
                                             <Button
@@ -540,10 +575,11 @@ export default function AcademicYear() {
                                                 Cancel
                                             </Button>
                                             <Button
-                                                onClick={() => handleSaveChanges(academicYearData._id ? academicYearData._id : activeYear?._id)}
+                                                disabled={loading}
+                                                onClick={() => { handleSaveChanges(academicYearData._id ? academicYearData._id : activeYear?._id); setLoading(true); }}
                                                 className="px-6 bg-[#312895] hover:bg-[#312895]/90 text-white"
                                             >
-                                                {mode === 'edit' ? 'Save Changes' : 'Create'}
+                                                {loading ? <LoadingSpinner /> : (mode === 'edit' ? 'Save Changes' : 'Create')}
                                             </Button>
                                         </div>
                                     </div>
@@ -613,11 +649,11 @@ export default function AcademicYear() {
                                             Cancel
                                         </Button>
                                         <Button
-                                            onClick={handleDelete}
+                                            onClick={() => { handleDelete(); setLoading(true); }}
                                             className="px-6 bg-red-500 hover:bg-red-600 text-white"
-                                            disabled={isDeletingAcademicYear}
+                                            disabled={loading}
                                         >
-                                            {isDeletingAcademicYear ? 'Deleting...' : 'Delete'}
+                                            {loading ? <LoadingSpinner /> : 'Delete'}
                                         </Button>
                                     </div>
                                 </div>

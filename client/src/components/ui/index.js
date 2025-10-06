@@ -10,6 +10,7 @@ export { default as DropdownSearch } from './DropdownSearch';
 export { default as FormCard } from './FormCard';
 export { default as FormReviewModal } from './FormReviewModal';
 export { default as GlobalTooltip } from './GlobalTooltip';
+export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as Notification } from './Notification';
 export { default as NumberPane } from './NumberPane';
 export { default as OTPInput } from './OTPInput';

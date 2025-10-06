@@ -4,7 +4,7 @@ import Cropper from "react-easy-crop";
 import { toast } from "react-toastify";
 import { DropIn } from "../../../animations/DropIn";
 import DefaultPicture from "../../../assets/images/default-profile.jpg";
-import { Backdrop, Badge, Button, CloseButton, ReusableRSODescription, TabSelector, TextInput } from "../../../components";
+import { Backdrop, Badge, Button, CloseButton, LoadingSpinner, ReusableRSODescription, TabSelector, TextInput } from "../../../components";
 import ErrorBoundary from '../../../components/ErrorBoundary';
 import { useAdminUser, useModal, useRSODetails } from "../../../hooks";
 import { useUserStoreWithAuth } from '../../../store';
@@ -21,7 +21,7 @@ const adminTabs = [
 
 export default function Account() {
   const { isUserRSORepresentative, isUserAdmin, isCoordinator, isSuperAdmin } = useUserStoreWithAuth();
-
+  const [loading, setLoading] = useState(false);
 
 
   const {
@@ -130,12 +130,15 @@ export default function Account() {
 
 
   useEffect(() => {
+
     // Handle errors
     if (isUpdateOfficerError) {
       toast.error("Error updating officer. Please try again.");
-    } else if (isDeleteError) {
+    }
+    if (isDeleteError) {
       toast.error("Error deleting officer. Please try again.");
-    } else if (isCreatingOfficer) {
+    }
+    if (isCreateOfficerError) {
       toast.error("Error creating officer. Please try again.");
     }
 
@@ -185,17 +188,18 @@ export default function Account() {
       });
 
       return;
+    } else if (officer) {
+      setOfficerId(officer._id);
+      console.log("officerId: ", officer._id);
+      setFormData({
+        OfficerName: officer.OfficerName || "",
+        OfficerPosition: officer.OfficerPosition || "",
+        OfficerPicture: officer.OfficerPicture || null,
+        OfficerPicturePreview: officer.OfficerPictureUrl || "",
+      });
+      setCreate(false);
     }
 
-    setOfficerId(officer._id);
-    console.log("officerId: ", officer._id);
-    setFormData({
-      OfficerName: officer.OfficerName || "",
-      OfficerPosition: officer.OfficerPosition || "",
-      OfficerPicture: officer.OfficerPicture || null,
-      OfficerPicturePreview: officer.OfficerPictureUrl || "",
-    });
-    setCreate(false);
 
     openModal();
 
@@ -223,38 +227,74 @@ export default function Account() {
 
     formDataToSubmit.append("OfficerName", OfficerName);
     formDataToSubmit.append("OfficerPosition", OfficerPosition);
+    try {
+      if (create) {
+        console.log("Creating new officer...");
+        { console.log("profileOnRole", profileOnRole()) }
+        { console.log("formDataToSubmit", formDataToSubmit) }
+        { console.log("officerId: ", officerId) }
 
-    if (create) {
-      console.log("Creating new officer...");
-      { console.log("profileOnRole", profileOnRole()) }
-      { console.log("formDataToSubmit", formDataToSubmit) }
-      { console.log("officerId: ", officerId) }
+        // Method 1: Log individual FormData entries
+        console.log("FormData contents:");
+        for (let [key, value] of formDataToSubmit.entries()) {
+          console.log(`${key}:`, value);
+        }
 
-      // Method 1: Log individual FormData entries
-      console.log("FormData contents:");
-      for (let [key, value] of formDataToSubmit.entries()) {
-        console.log(`${key}:`, value);
+
+        createOfficerMutate({
+          // id: profileOnRole()?._id,
+          createdOfficer: formDataToSubmit
+        },
+          {
+            onSuccess: () => {
+              // Reset form data after submission
+              setLoading(false);
+              setFormData({
+                OfficerPicture: null,
+                OfficerPicturePreview: null,
+                OfficerName: "",
+                OfficerPosition: "",
+              });
+
+              handleCloseModal();
+              toast.success("Officer created successfully!");
+              return;
+            },
+            onError: () => {
+              setLoading(false);
+              toast.error("Error creating officer. Please try again.");
+              return;
+            }
+          }
+        );
+      } else {
+        updateOfficerMutate({
+          id: officerId,
+          updatedOfficer: formDataToSubmit
+        },
+          {
+            onSuccess: () => {
+              handleCloseModal();
+              toast.success("Officer updated successfully!");
+              setLoading(false);
+              return;
+            },
+            onError: () => {
+              setLoading(false);
+              toast.error("Error updating officer. Please try again.");
+              return;
+            }
+          }
+        );
       }
 
-      createOfficerMutate({
-        // id: profileOnRole()?._id,
-        createdOfficer: formDataToSubmit
-      });
-    } else {
-      updateOfficerMutate({
-        id: officerId,
-        updatedOfficer: formDataToSubmit
-      });
-    }
 
-    // Reset form data after submission
-    setFormData({
-      OfficerPicture: null,
-      OfficerPicturePreview: null,
-      OfficerName: "",
-      OfficerPosition: "",
-    });
-    handleCloseModal();
+    } catch (error) {
+      setLoading(false);
+      toast.error("Error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const handleChange = (e) => {
@@ -310,10 +350,28 @@ export default function Account() {
   };
 
   const handleOfficerDelete = (officerId) => {
-    if (officerId) {
-      console.log("Deleting officer with ID:", officerId);
-      deleteOfficerMutate(officerId);
+    try {
+      setLoading(true);
+      if (officerId) {
+        console.log("Deleting officer with ID:", officerId);
+        deleteOfficerMutate(officerId, {
+          onSuccess: () => {
+            toast.success("Officer deleted successfully!");
+            setLoading(false);
+          },
+          onError: () => {
+            setLoading(false);
+            toast.error("Error deleting officer. Please try again.");
+          }
+        });
+      }
+    } catch (error) {
+      setLoading(false);
+      toast.error("Error deleting officer. Please try again.");
+    } finally {
+      setLoading(false);
     }
+
   }
 
   return (
@@ -387,19 +445,22 @@ export default function Account() {
                         <>
                           <div
                             key={index}
-                            onClick={(e) => handleOfficer(officer)}
+                            onClick={() => handleOfficer(officer)}
 
-                            className="relative cursor-pointer hover:bg-gray-100 transition ease-in-out flex flex-col justify-center w-full max-w-xs p-6 rounded-xl sm:px-12 dark:bg-gray-50 dark:text-gray-800 mx-auto">
+                            className={`
+                            relative ${loading ? "opacity-50 cursor-not-allowed" : ""} cursor-pointer hover:bg-gray-100 transition ease-in-out flex flex-col justify-center w-full max-w-xs p-6 rounded-xl sm:px-12 dark:bg-gray-50 dark:text-gray-800 mx-auto`}>
+
+                            {/* delete icon */}
                             <div
-                              onClick={
-                                (e) => {
-                                  e.stopPropagation();
-                                  handleOfficerDelete(officer?._id);
-
-                                }
-                              }
+                              onClick={(e) => {
+                                if (loading) return;
+                                e.stopPropagation();
+                                handleOfficerDelete(officer?._id);
+                                setLoading(true);
+                              }}
                               className="bg-white h-8 w-8 aspect-square rounded-full flex items-center justify-center mb-2 absolute top-0 right-0 mr-2 mt-2 cursor-pointer group transition ease-in-out">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="size-4 fill-gray-400 group-hover:fill-gray-700" viewBox="0 0 448 512"><path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" /></svg>
+                              {loading ? <LoadingSpinner /> :
+                                <svg xmlns="http://www.w3.org/2000/svg" className="size-4 fill-gray-400 group-hover:fill-gray-700" viewBox="0 0 448 512"><path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" /></svg>}
                             </div>
                             {console.log("officer.OfficerPicture", officer.OfficerPicture)}
                             <img src={officer.OfficerPictureUrl || DefaultPicture} alt="" className="mx-auto rounded-full dark:bg-gray-500 aspect-square h-32 object-cover shrink-1" />
@@ -522,9 +583,9 @@ export default function Account() {
                       disabled={
                         !formData.OfficerPicture ||
                         !formData.OfficerName.trim() ||
-                        !formData.OfficerPosition.trim()
+                        !formData.OfficerPosition.trim() || loading
                       }
-                      onClick={handleSubmit}>Save</Button>
+                      onClick={() => { handleSubmit(); setLoading(true); }}>{loading ? <LoadingSpinner /> : `Save`}</Button>
                   </div>
                 </div>
                 {officerError && (

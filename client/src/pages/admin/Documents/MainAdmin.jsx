@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { DropIn } from "../../../animations/DropIn";
-import { Backdrop, BackendTable, Button, CloseButton, TabSelector } from "../../../components";
+import { Backdrop, BackendTable, Button, CloseButton, LoadingSpinner, TabSelector } from "../../../components";
 import { useAcademicYears, useAdminDocuments } from "../../../hooks";
 import { useUserStoreWithAuth } from '../../../store';
 
@@ -17,6 +17,7 @@ export default function MainAdmin() {
         { label: "Activity Documents" }
     ]
     const [activeTab, setActiveTab] = useState(0);
+    const [loading, setLoading] = useState(false);
     const { isUserRSORepresentative, isUserAdmin, isCoordinator } = useUserStoreWithAuth();
     const {
 
@@ -70,32 +71,42 @@ export default function MainAdmin() {
     }
 
     const handleSubmit = (data = modalData) => {
-        // For now just log the modal data. Pass probationary as boolean.
-        console.log("Modal submit:", {
-            ...data,
-            probationary: data.probationary
-        });
+        try {
+            // For now just log the modal data. Pass probationary as boolean.
+            console.log("Modal submit:", {
+                ...data,
+                probationary: data.probationary
+            });
 
-        const dataToSubmit = {
-            ...data,
-            probationary: data.probationary
-        };
+            const dataToSubmit = {
+                ...data,
+                probationary: data.probationary
+            };
 
-        setAccreditationDeadline(
-            dataToSubmit
-            ,
-            {
-                onSuccess: (data) => {
-                    console.log("Accreditation deadline set successfully:", data);
-                    toast.success("Accreditation deadline set successfully");
-                    setDeadlineOpen(false);
-                },
-                onError: (error) => {
-                    console.error("Error setting accreditation deadline:", error);
-                    toast.error("Failed to set accreditation deadline");
+            setAccreditationDeadline(
+                dataToSubmit
+                ,
+                {
+                    onSuccess: (data) => {
+                        setLoading(false);
+                        console.log("Accreditation deadline set successfully:", data);
+                        toast.success("Accreditation deadline set successfully");
+                        setDeadlineOpen(false);
+                    },
+                    onError: (error) => {
+                        setLoading(false);
+                        console.error("Error setting accreditation deadline:", error);
+                        toast.error("Failed to set accreditation deadline");
+                    }
                 }
-            }
-        );
+            );
+        } catch (error) {
+            console.error("Error submitting accreditation deadline:", error);
+            toast.error("Failed to submit accreditation deadline");
+        } finally {
+            setLoading(false);
+        }
+
 
     }
 
@@ -242,7 +253,9 @@ export default function MainAdmin() {
 
                                 <div className="flex justify-end mt-6 gap-2">
                                     <Button onClick={handleCloseDeadline} style={"secondary"}>Cancel</Button>
-                                    <Button onClick={() => handleSubmit()}>Save</Button>
+                                    <Button disabled={loading} onClick={() => { handleSubmit(); setLoading(true); }}>
+                                        {loading ? <LoadingSpinner /> : "Save"}
+                                    </Button>
                                 </div>
                             </div>
                         </motion.div>

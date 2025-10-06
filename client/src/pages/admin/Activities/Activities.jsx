@@ -270,9 +270,11 @@ export default function Activities() {
       month: 'short',
       day: 'numeric',
     }),
-    url: doc.url,
+    url: doc.docURL,
     status: doc.document_status,
   }));
+
+  console.log("filtered activity documents:", filterActivityDocuments);
 
   // Table configuration
   const tableHeading = [
@@ -614,7 +616,10 @@ export default function Activities() {
                     value={filter}
                     onChange={(e) => setFilter(e.target.value)}
                     showAllOption={false}
-                    onClick={(row) => navigate(`/documents/${activityId}/${row.id}`, { state: { documentId: row.id } })}
+                    onClick={(row) => {
+                      navigate(`/activities/${activityId}/${row.id}`, { state: { documentId: row.id, url: row.url } });
+                      console.log("Document clicked:", row);
+                    }}
                     headerColor="#312895"
                     activityId={activityId}
                   />

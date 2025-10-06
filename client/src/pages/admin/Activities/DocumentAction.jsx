@@ -9,7 +9,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { DropIn } from "../../../animations/DropIn";
 import DefaultPicture from '../../../assets/images/default-picture.png';
-import { Backdrop, Button, CloseButton, ReusableDropdown, TextInput } from '../../../components';
+import { Backdrop, Button, CloseButton, LoadingSpinner, ReusableDropdown, TextInput } from '../../../components';
 import { useRSOActivities } from '../../../hooks';
 import { useSelectedFormStore } from '../../../store';
 import getCroppedImg from '../../../utils/cropImage';
@@ -19,8 +19,10 @@ function DocumentAction() {
   const location = useLocation();
   const navigate = useNavigate();
   const { mode, data, from } = location.state || {};
+  const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const selectedForm = useSelectedFormStore((state) => state.selectedForm);
-  const { createActivity, updateActivity, deleteActivity, error, success, loading } = useRSOActivities();
+  const { createActivity, updateActivity, deleteActivity, error, success } = useRSOActivities();
 
   // hook for creating activity
   const {
@@ -250,14 +252,17 @@ function DocumentAction() {
       const storeFormsUsed = [selectedForm.feedbackForm?._id, selectedForm.preActForm?._id].filter(Boolean);
       const formsChanged = originalFormsUsed.length !== storeFormsUsed.length || originalFormsUsed.some((id, idx) => id !== storeFormsUsed[idx]);
       if (formsChanged) {
+        setLoading(true);
         changedFields.formsUsed = storeFormsUsed;
         console.log("formsused comparison from original data", originalFormsUsed, "to store", storeFormsUsed);
         console.log("FormsUsed changed, will update this field. ", selectedForm);
       } else {
+        setLoading(false);
         console.log("FormsUsed unchanged, skipping update for this field.");
       }
 
       if (Object.keys(changedFields).length === 0) {
+        setLoading(false);
         console.log("No changes detected, not submitting.");
         return;
       }
@@ -265,6 +270,7 @@ function DocumentAction() {
 
     // block GPOA edit if changed
     if (changedFields.Activity_GPOA) {
+      setLoading(false);
       toast.error("GPOA status cannot be changed once set.");
       return;
     }
@@ -274,6 +280,7 @@ function DocumentAction() {
       setTimeout(() => {
         setDescriptionError("");
       }, 1000);
+      setLoading(false);
 
       return;
 
@@ -282,14 +289,16 @@ function DocumentAction() {
       setTimeout(() => {
         setDescriptionError("");
       }, 1000);
-
+      setLoading(false);
       return;
     } else {
+
       setDescriptionError("");
 
     }
 
     if (error || descriptionError) {
+      setLoading(false);
       return;
     }
 
@@ -312,18 +321,20 @@ function DocumentAction() {
 
     try {
       let result;
-
+      setLoading(true);
       if (isEdit && data?._id) {
         // Update existing activity
         console.log("Updating activity with data ", changedFields);
         result = await updateActivityMutate({ activityId: data._id, updatedData: changedFields },
           {
             onSuccess: (data) => {
+              setLoading(false);
               console.log("Activity updated successfully:", data);
               toast.success("Activity updated successfully!");
               navigate(-1);
             },
             onError: (error) => {
+              setLoading(false);
               console.error("Error updating activity:", error);
               toast.error("Error updating activity");
             },
@@ -337,10 +348,12 @@ function DocumentAction() {
             onSuccess: (data) => {
               console.log("Activity created successfully:", data);
               toast.success("Activity created successfully!");
+              setLoading(false);
               navigate("/activities");
             },
             onError: (error) => {
               console.error("Error creating activity:", error);
+              setLoading(false);
               toast.error(error.message || "Error creating activity");
             },
           }
@@ -357,6 +370,9 @@ function DocumentAction() {
     }
     catch (error) {
       console.error("Error submitting form:", error);
+      setLoading(false);
+    } finally {
+      setLoading(false);
     }
     setHasSubmitted(true);
   };
@@ -373,12 +389,14 @@ function DocumentAction() {
     deleteActivityMutate(data._id,
       {
         onSuccess: () => {
+          setDeleting(false);
           console.log("Activity deleted successfully");
           toast.success("Activity deleted successfully");
           setDeleteModalOpen(false);
           navigate('/activities');
         },
         onError: (error) => {
+          setDeleting(false);
           console.error("Error deleting activity:", error);
           setDeleteModalOpen(false);
           toast.error("Error deleting activity");
@@ -701,12 +719,14 @@ function DocumentAction() {
           </div>
         )}
         {isEdit && (
-          <Button style="secondary" onClick={handleDelete}>
+          <Button style="secondary" disabled={deleting} onClick={() => { handleDelete(); setDeleting(true); }}>
             Delete Activity
           </Button>
         )}
-        <Button onClick={handleSubmit}>
-          {isEdit ? "Save Changes" : "Create Activity"}
+        <Button
+          disabled={loading}
+          onClick={() => { handleSubmit(); setLoading(true); }}>
+          {loading ? <LoadingSpinner /> : (isEdit ? "Save Changes" : "Create Activity")}
         </Button>
       </div>
 

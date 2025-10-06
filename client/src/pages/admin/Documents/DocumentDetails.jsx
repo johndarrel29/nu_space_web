@@ -143,7 +143,11 @@ export default function DocumentDetails() {
     }, [isUserAdmin, isUserRSORepresentative, documentIsApproved, doc?.coordinator_approved, activeTab]);
 
     const handleBackClick = () => {
-        navigate("/general-documents");
+        if (!isUserRSORepresentative) {
+            navigate("/general-documents");
+        } else {
+            navigate(-1);
+        }
     };
 
     const handleDocumentClick = () => {
@@ -345,22 +349,24 @@ export default function DocumentDetails() {
 
 
     return (
-        <div className="flex flex-col items-center justify-start w-full relative px-3 sm:px-4 lg:px-6 pb-16">
-            {/* Back navigation button */}
-            <div
-                onClick={handleBackClick}
-                className="absolute top-0 left-2 flex items-center justify-center rounded-full h-8 w-8 cursor-pointer border border-gray-300 group"
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="fill-gray-600 size-4 group-hover:fill-off-black"
-                    viewBox="0 0 448 512"
-                >
-                    <path d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.2 288 416 288c17.7 0 32-14.3 32-32s-14.3-32-32-32l-306.7 0L214.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z" />
-                </svg>
-            </div>
 
+        <div className="flex flex-col items-center justify-start w-full  px-3 sm:px-4 lg:px-6 pb-16">
             <div className="flex flex-col w-full max-w-5xl justify-center mb-6">
+                <div className='w-full flex justify-start mb-6'>
+                    {/* Back navigation button */}
+                    <div
+                        onClick={handleBackClick}
+                        className="flex items-center justify-center rounded-full h-8 w-8 cursor-pointer border border-gray-300 group"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="fill-gray-600 size-4 group-hover:fill-off-black"
+                            viewBox="0 0 448 512"
+                        >
+                            <path d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.2 288 416 288c17.7 0 32-14.3 32-32s-14.3-32-32-32l-306.7 0L214.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z" />
+                        </svg>
+                    </div>
+                </div>
                 {/* Document Detail Card */}
                 <div
                     onClick={handleDocumentClick}

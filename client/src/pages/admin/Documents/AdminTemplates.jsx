@@ -1,9 +1,11 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
 import { useNavigate } from 'react-router-dom';
 import { DropIn } from "../../../animations/DropIn";
-import { Backdrop, Button, CloseButton } from '../../../components';
+import { Backdrop, Button, CloseButton, LoadingSpinner } from '../../../components';
 import { useAdminDocuments } from '../../../hooks';
 
 import { toast } from 'react-toastify';
@@ -19,6 +21,7 @@ export default function AdminTemplates() {
     const [uploadStep, setUploadStep] = useState(1); // 1 for document type selection, 2 for file upload
     const [documentType, setDocumentType] = useState("");
     const [uploadFiles, setUploadFiles] = useState([]);
+    const [loading, setLoading] = useState(false);
     const [selectedTemplateCategory, setSelectedTemplateCategory] = useState("");
     const [filters, setFilters] = useState({
         documentType: "",
@@ -121,18 +124,21 @@ export default function AdminTemplates() {
             {
                 onSuccess: () => {
                     toast.success("Document template uploaded successfully");
+                    setLoading(false);
+                    setShowUploadModal(false);
+                    setUploadStep(1);
+                    setDocumentType("");
+                    setUploadFiles([]);
                     refetchDocumentTemplate();
                 },
                 onError: (error) => {
+                    setLoading(false);
                     console.error("Error uploading document template:", error);
                     toast.error("Failed to upload document template");
                 }
             });
 
-        setShowUploadModal(false);
-        setUploadStep(1);
-        setDocumentType("");
-        setUploadFiles([]);
+
     };
 
     // Dropzone configuration
@@ -236,44 +242,71 @@ export default function AdminTemplates() {
                     </div>
                 </div>
                 {/* Template item */}
-                {flattenedDocuments.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="mb-4 w-12 h-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2a4 4 0 018 0v2m-6 4h6a2 2 0 002-2v-5a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-2.414-2.414A2 2 0 0012.586 7H7a2 2 0 00-2 2v7a2 2 0 002 2h2" />
-                        </svg>
-                        <div className="text-center text-gray-500 text-lg font-medium">No templates found.</div>
-                        <div className="text-gray-400 text-sm mt-2">Try uploading a new template or changing your filter.</div>
-                    </div>
-                ) : (
-                    documentTemplate?.documents?.map((doc, index) => (
-                        doc?.documents.map((subDoc, i) => (
+                {documentTemplateLoading ? (
+                    <>
+                        {Array.from({ length: 4 }).map((_, i) => (
                             <div
-                                key={subDoc.id}
-                                className="w-full bg-white rounded border border-mid-gray p-3 sm:p-4 flex justify-between items-center gap-3 sm:gap-4 cursor-pointer hover:bg-gray-100 mb-3 sm:mb-4"
-                            // onClick={() => setSelectedTemplate(doc)}
+                                key={i}
+                                className="w-full bg-white rounded border border-mid-gray p-3 sm:p-4 flex justify-between items-center gap-3 sm:gap-4 mb-3 sm:mb-4"
                             >
                                 <div className="flex items-center justify-between w-full px-2 sm:px-4">
                                     <div className='flex gap-3 sm:gap-6 items-center flex-1 min-w-0'>
-                                        <p className="text-xs sm:text-sm w-5 sm:w-6 text-gray-600 tabular-nums">{i + 1}</p>
+                                        <Skeleton width={24} height={20} />
                                         <div className="flex flex-col min-w-0">
-                                            <h1 className="font-semibold text-sm sm:text-base truncate max-w-[12rem] sm:max-w-[20rem] lg:max-w-[30rem]">{subDoc.title}</h1>
+                                            <Skeleton width={180} height={18} style={{ marginBottom: 6 }} />
                                             <div className='flex gap-2 items-center text-xs sm:text-sm'>
-                                                <h2 className="text-gray-600">{handleDocumentTypeName(doc?.documentFor)}</h2>
-                                                <div className='aspect-square rounded-full bg-gray-400 h-1 w-1'></div>
-                                                <h1 className="text-gray-600">{subDoc.documentSize} MB</h1>
+                                                <Skeleton width={120} height={14} />
+                                                <div className='aspect-square rounded-full bg-gray-300 h-1 w-1'></div>
+                                                <Skeleton width={40} height={14} />
                                             </div>
                                         </div>
                                     </div>
-                                    <div
-                                        onClick={() => handleDeleteDocument(subDoc._id, doc._id)}
-                                        className='rounded-full aspect-square h-8 flex items-center justify-center bg-white hover group'>
-                                        <svg xmlns="http://www.w3.org/2000/svg" className='fill-gray-600 size-4 group-hover:fill-gray-800' viewBox="0 0 640 640"><path d="M232.7 69.9L224 96L128 96C110.3 96 96 110.3 96 128C96 145.7 110.3 160 128 160L512 160C529.7 160 544 145.7 544 128C544 110.3 529.7 96 512 96L416 96L407.3 69.9C402.9 56.8 390.7 48 376.9 48L263.1 48C249.3 48 237.1 56.8 232.7 69.9zM512 208L128 208L149.1 531.1C150.7 556.4 171.7 576 197 576L443 576C468.3 576 489.3 556.4 490.9 531.1L512 208z" /></svg>
+                                    <div className='rounded-full aspect-square h-8 flex items-center justify-center bg-white'>
+                                        <Skeleton circle width={24} height={24} />
                                     </div>
                                 </div>
                             </div>
+                        ))}
+                    </>
+                ) :
+                    (flattenedDocuments.length === 0) ? (
+                        <div className="flex flex-col items-center justify-center py-16">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="mb-4 w-12 h-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2a4 4 0 018 0v2m-6 4h6a2 2 0 002-2v-5a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-2.414-2.414A2 2 0 0012.586 7H7a2 2 0 00-2 2v7a2 2 0 002 2h2" />
+                            </svg>
+                            <div className="text-center text-gray-500 text-lg font-medium">No templates found.</div>
+                            <div className="text-gray-400 text-sm mt-2">Try uploading a new template or changing your filter.</div>
+                        </div>
+                    ) : (
+                        documentTemplate?.documents?.map((doc, index) => (
+                            doc?.documents.map((subDoc, i) => (
+                                <div
+                                    key={subDoc.id}
+                                    className="w-full bg-white rounded border border-mid-gray p-3 sm:p-4 flex justify-between items-center gap-3 sm:gap-4 cursor-pointer hover:bg-gray-100 mb-3 sm:mb-4"
+                                // onClick={() => setSelectedTemplate(doc)}
+                                >
+                                    <div className="flex items-center justify-between w-full px-2 sm:px-4">
+                                        <div className='flex gap-3 sm:gap-6 items-center flex-1 min-w-0'>
+                                            <p className="text-xs sm:text-sm w-5 sm:w-6 text-gray-600 tabular-nums">{i + 1}</p>
+                                            <div className="flex flex-col min-w-0">
+                                                <h1 className="font-semibold text-sm sm:text-base truncate max-w-[12rem] sm:max-w-[20rem] lg:max-w-[30rem]">{subDoc.title}</h1>
+                                                <div className='flex gap-2 items-center text-xs sm:text-sm'>
+                                                    <h2 className="text-gray-600">{handleDocumentTypeName(doc?.documentFor)}</h2>
+                                                    <div className='aspect-square rounded-full bg-gray-400 h-1 w-1'></div>
+                                                    <h1 className="text-gray-600">{subDoc.documentSize} MB</h1>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div
+                                            onClick={() => handleDeleteDocument(subDoc._id, doc._id)}
+                                            className='rounded-full aspect-square h-8 flex items-center justify-center bg-white hover group'>
+                                            <svg xmlns="http://www.w3.org/2000/svg" className='fill-gray-600 size-4 group-hover:fill-gray-800' viewBox="0 0 640 640"><path d="M232.7 69.9L224 96L128 96C110.3 96 96 110.3 96 128C96 145.7 110.3 160 128 160L512 160C529.7 160 544 145.7 544 128C544 110.3 529.7 96 512 96L416 96L407.3 69.9C402.9 56.8 390.7 48 376.9 48L263.1 48C249.3 48 237.1 56.8 232.7 69.9zM512 208L128 208L149.1 531.1C150.7 556.4 171.7 576 197 576L443 576C468.3 576 489.3 556.4 490.9 531.1L512 208z" /></svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
                         ))
-                    ))
-                )}
+                    )}
             </div>
 
             {/* Delete Template Modal */}
@@ -441,10 +474,10 @@ export default function AdminTemplates() {
                                                     Cancel
                                                 </Button>
                                                 <Button
-                                                    onClick={handleUploadSubmit}
-                                                    disabled={uploadFiles.length === 0}
+                                                    disabled={loading || uploadFiles.length === 0}
+                                                    onClick={() => { handleUploadSubmit(); setLoading(true); }}
                                                 >
-                                                    Upload
+                                                    {loading ? <LoadingSpinner /> : 'Upload'}
                                                 </Button>
                                             </div>
                                         </div>

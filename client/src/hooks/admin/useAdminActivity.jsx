@@ -9,7 +9,7 @@ const fetchAdminActivity = async ({ queryKey, pageParam = 1 }) => {
     const token = useTokenStore.getState().getToken();
 
     const [_, filter] = queryKey;
-    const { limit = 12, query = "", sorted = "", RSO = "", RSOType = "", college = "", isGPOA = "All", page = 1 } = filter;
+    const { limit = 12, query = "", sorted = "", RSO = "", RSOType = "", college = "", isGPOA = "All", page = 1, academicYearId } = filter;
 
     // figure out how page is being passed
 
@@ -26,6 +26,7 @@ const fetchAdminActivity = async ({ queryKey, pageParam = 1 }) => {
     if (isGPOA && isGPOA !== "All") url.searchParams.set("isGPOA", isGPOA === true ? "true" : "false");
     if (college) url.searchParams.set("college", college);
     if (sorted) url.searchParams.set("sorted", sorted);
+    if (academicYearId) url.searchParams.set("academicYearId", academicYearId);
 
     console.log("Fetching admin activities with params:", {
         page: pageParam,
@@ -35,6 +36,7 @@ const fetchAdminActivity = async ({ queryKey, pageParam = 1 }) => {
         RSO,
         RSOType,
         college,
+        academicYearId
     });
 
     console.log("url with params :", url.toString());
@@ -225,7 +227,8 @@ function useAdminActivity({
     isGPOA = "All",
     page = 1,
     manualEnable = false,
-    activityId
+    activityId,
+    academicYearId,
 } = {}) {
     const { user } = useAuth();
     const { isUserAdmin, isCoordinator } = useUserStoreWithAuth();
@@ -241,6 +244,7 @@ function useAdminActivity({
         RSOType,
         college,
         page,
+        academicYearId,
     };
 
     const {
@@ -321,7 +325,7 @@ function useAdminActivity({
     } = useQuery({
         queryKey: ["activity", activityId],
         queryFn: viewActivityAPI,
-        enabled: activityId && (isUserAdmin || isCoordinator),
+        enabled: manualEnable ? manualEnable : (activityId && (isUserAdmin || isCoordinator)),
         onSuccess: (data) => {
             console.log("Activities fetched successfully:", data);
         },

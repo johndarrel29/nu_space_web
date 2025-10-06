@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import Select from 'react-select';
 import { toast } from "react-toastify";
 import { DropIn } from "../../../animations/DropIn";
-import { Backdrop, Button, CloseButton, CreateUserModal, FormReviewModal, ReusableDropdown, ReusableTable, TabSelector } from "../../../components";
+import { Backdrop, Button, CloseButton, CreateUserModal, FormReviewModal, LoadingSpinner, ReusableDropdown, ReusableTable, TabSelector } from "../../../components";
 import { useAdminRSO, useAdminUser, useModal, useRSODetails, useRSOUsers, useSuperAdminUsers } from "../../../hooks";
 import { useUserStoreWithAuth } from "../../../store";
 import { FormatDate } from "../../../utils";
@@ -252,6 +252,7 @@ export default function Users() {
 
   // Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [deleteModalData, setDeleteModalData] = useState({
     id: '',
     fullName: '',
@@ -465,114 +466,145 @@ export default function Users() {
   ];
 
   const handleSaveEdit = () => {
-    // Prepare the data to be sent to the server
-    const removeRSO = editModalData.role !== 'rso_representative' ? true : false;
+    try {
+      // Prepare the data to be sent to the server
+      const removeRSO = editModalData.role !== 'rso_representative' ? true : false;
 
 
-    const updatedData = {
-      id: editModalData.id,
-      role: editModalData.role,
-      ...(!isSuperAdmin && {
-        assignedRSO: removeRSO ? '' : editModalData.assignedRSO,
-      }),
+      const updatedData = {
+        id: editModalData.id,
+        role: editModalData.role,
+        ...(!isSuperAdmin && {
+          assignedRSO: removeRSO ? '' : editModalData.assignedRSO,
+        }),
 
-    };
+      };
 
-    // don't continue if role is rso representative and assignedRSO is empty
-    if (editModalData.role === 'rso_representative' && !editModalData.assignedRSO) {
-      toast.error("Please assign an RSO to the RSO Representative.");
-      return;
+      // don't continue if role is rso representative and assignedRSO is empty
+      if (editModalData.role === 'rso_representative' && !editModalData.assignedRSO) {
+        setLoading(false);
+        toast.error("Please assign an RSO to the RSO Representative.");
+        return;
+      }
+
+      // don't continue if no changes were made
+      if (
+        checkerData.role === editModalData.role &&
+        checkerData.assignedRSO === editModalData.assignedRSO
+      ) {
+        toast.info("No changes were made.");
+        setLoading(false);
+        setIsEditModalOpen(false);
+        return;
+      }
+      if (isSuperAdmin) {
+        updateAdminRole({ userId: updatedData.id, role: updatedData.role }, {
+          onSuccess: () => {
+            toast.success("User updated successfully.");
+            setIsEditModalOpen(false);
+            setCheckerData({
+              id: '',
+              email: '',
+              fullName: '',
+              role: '',
+              assignedRSO: '',
+            });
+            setLoading(false);
+            refetchAccounts();
+          },
+          onError: (error) => {
+            setLoading(false);
+            console.error("Error updating user:", error);
+            toast.error("Failed to update user. Please try again.");
+          }
+        });
+      }
+      if (isCoordinator || isUserAdmin) {
+        updateUserMutate({ userId: updatedData.id, userData: updatedData }, {
+          onSuccess: () => {
+            toast.success("User updated successfully.");
+            setIsEditModalOpen(false);
+            setCheckerData({
+              id: '',
+              email: '',
+              fullName: '',
+              role: '',
+              assignedRSO: '',
+            });
+            setLoading(false);
+            refetchUsersData();
+          },
+          onError: (error) => {
+            console.error("Error updating user:", error);
+            toast.error("Failed to update user. Please try again.");
+            setLoading(false);
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Error in handleSaveEdit:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
     }
 
-    // don't continue if no changes were made
-    if (
-      checkerData.role === editModalData.role &&
-      checkerData.assignedRSO === editModalData.assignedRSO
-    ) {
-      toast.info("No changes were made.");
-      setIsEditModalOpen(false);
-      return;
-    }
-    if (isSuperAdmin) {
-      updateAdminRole({ userId: updatedData.id, role: updatedData.role }, {
-        onSuccess: () => {
-          toast.success("User updated successfully.");
-          setIsEditModalOpen(false);
-          setCheckerData({
-            id: '',
-            email: '',
-            fullName: '',
-            role: '',
-            assignedRSO: '',
-          });
-          refetchAccounts();
-        },
-        onError: (error) => {
-          console.error("Error updating user:", error);
-          toast.error("Failed to update user. Please try again.");
-        }
-      });
-    }
-    if (isCoordinator || isUserAdmin) {
-      updateUserMutate({ userId: updatedData.id, userData: updatedData }, {
-        onSuccess: () => {
-          toast.success("User updated successfully.");
-          setIsEditModalOpen(false);
-          setCheckerData({
-            id: '',
-            email: '',
-            fullName: '',
-            role: '',
-            assignedRSO: '',
-          });
-
-          refetchUsersData();
-        },
-        onError: (error) => {
-          console.error("Error updating user:", error);
-          toast.error("Failed to update user. Please try again.");
-        }
-      });
-    }
   }
 
   const handleDeleteUser = () => {
+    try {
+      if (isSuperAdmin) {
+        deleteAdminAccount(deleteModalData.id, {
+          onSuccess: () => {
+            toast.success("User deleted successfully.");
+            setIsDeleteModalOpen(false);
+            setDeleteModalData({
+              id: '',
+              fullName: '',
+            });
+            refetchAccounts();
+            setLoading(false);
+          },
+          onError: (error) => {
+            console.error("Error deleting user:", error);
+            toast.error("Failed to delete user. Please try again.");
+            setLoading(false);
+          }
+        });
+      }
 
-    if (isSuperAdmin) {
-      deleteAdminAccount(deleteModalData.id, {
-        onSuccess: () => {
-          toast.success("User deleted successfully.");
-          setIsDeleteModalOpen(false);
-          setDeleteModalData({
-            id: '',
-            fullName: '',
-          });
-          refetchAccounts();
-        },
-        onError: (error) => {
-          console.error("Error deleting user:", error);
-          toast.error("Failed to delete user. Please try again.");
-        }
+      if (isUserAdmin || isCoordinator) {
+        deleteStudentAccount(deleteModalData.id, {
+          onSuccess: () => {
+            toast.success("User deleted successfully.");
+            setIsDeleteModalOpen(false);
+            setDeleteModalData({
+              id: '',
+              fullName: '',
+            });
+            refetchUsersData();
+            setLoading(false);
+          },
+          onError: (error) => {
+            console.error("Error deleting user:", error);
+            toast.error("Failed to delete user. Please try again.");
+            setLoading(false);
+          }
+        });
+      }
+
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      setLoading(false);
+      toast.error("Failed to delete user. Please try again.");
+    } finally {
+      setLoading(false);
+      setIsDeleteModalOpen(false);
+      setDeleteModalData({
+        id: '',
+        fullName: '',
       });
     }
 
-    if (isUserAdmin || isCoordinator) {
-      deleteStudentAccount(deleteModalData.id, {
-        onSuccess: () => {
-          toast.success("User deleted successfully.");
-          setIsDeleteModalOpen(false);
-          setDeleteModalData({
-            id: '',
-            fullName: '',
-          });
-          refetchUsersData();
-        },
-        onError: (error) => {
-          console.error("Error deleting user:", error);
-          toast.error("Failed to delete user. Please try again.");
-        }
-      });
-    }
   }
 
   const tabs = [
@@ -785,7 +817,7 @@ export default function Users() {
                 </div>
                 <div className="flex justify-end gap-2 mt-4">
                   <Button style="secondary" onClick={closeEditModal}>Close</Button>
-                  <Button onClick={handleSaveEdit}>Save</Button>
+                  <Button onClick={() => { handleSaveEdit(); setLoading(true); }} disabled={loading}>{loading ? <LoadingSpinner /> : "Save"}</Button>
                 </div>
               </div>
             </motion.div>
@@ -815,7 +847,7 @@ export default function Users() {
                 </div>
                 <div className="flex justify-end gap-2 mt-4">
                   <Button style="secondary" onClick={closeDeleteModal}>Cancel</Button>
-                  <Button style="danger" onClick={handleDeleteUser}>Delete</Button>
+                  <Button style="danger" onClick={() => { handleDeleteUser(); setLoading(true); }} disabled={loading}>{loading ? <LoadingSpinner /> : "Delete"}</Button>
                 </div>
               </div>
             </motion.div>

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { Button, CloseButton, ReusableDropdown } from '../../components';
+import { Button, CloseButton, LoadingSpinner, ReusableDropdown } from '../../components';
 import { useRSODocuments } from '../../hooks';
 
 // TODO: Implement forceful download of file to avoid redirects to file URL
@@ -12,6 +12,7 @@ function UploadBatchModal({ handleCloseModal, page, activityId }) {
     const [file, setFile] = useState(null);
     const [fileList, setFileList] = useState([]);
     const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
     const [initialPage, setInitialPage] = useState("templates");
     const [data, setData] = useState([]);
     // Add selectedTemplate state
@@ -162,41 +163,58 @@ function UploadBatchModal({ handleCloseModal, page, activityId }) {
         fileList.forEach(fileEntry => {
             uploadFormData.append("files", fileEntry.file);
         });
-
-        // Document upload
-        if (isDocumentPage) {
-            uploadAccreditationDocument({ formData: uploadFormData },
-                {
-                    onSuccess: () => {
-                        console.log("Document uploaded successfully");
-                        toast.success("Document uploaded successfully");
-                        // Clear the file list after upload
-                        setFileList([]);
-                    },
-                    onError: (error) => {
-                        console.error("Error uploading document:", error);
-                        toast.error(error.message || '');
+        try {
+            // Document upload
+            if (isDocumentPage) {
+                uploadAccreditationDocument({ formData: uploadFormData },
+                    {
+                        onSuccess: () => {
+                            setLoading(false);
+                            console.log("Document uploaded successfully");
+                            toast.success("Document uploaded successfully");
+                            // Clear the file list after upload
+                            setFileList([]);
+                        },
+                        onError: (error) => {
+                            setLoading(false);
+                            console.error("Error uploading document:", error);
+                            toast.error(error.message || '');
+                        }
                     }
-                }
-            );
+                );
+            }
+        } catch (error) {
+            console.error("Error uploading document:", error);
+            toast.error(error.message || '');
+        } finally {
+            setLoading(false);
         }
 
-        if (isActivitiesPage) {
-            uploadActivityDocument({ formData: uploadFormData, activityId: activityId },
-                {
-                    onSuccess: () => {
-                        console.log("Activity uploaded successfully");
-                        toast.success("Activity uploaded successfully");
-                        // Clear the file list after upload
-                        setFileList([]);
-                    },
-                    onError: (error) => {
-                        console.error("Error uploading activity:", error);
-                        toast.error(error.message || '');
+        try {
+            if (isActivitiesPage) {
+                uploadActivityDocument({ formData: uploadFormData, activityId: activityId },
+                    {
+                        onSuccess: () => {
+                            setLoading(false);
+                            console.log("Activity uploaded successfully");
+                            toast.success("Activity uploaded successfully");
+                            // Clear the file list after upload
+                            setFileList([]);
+                        },
+                        onError: (error) => {
+                            setLoading(false);
+                            console.error("Error uploading activity:", error);
+                            toast.error(error.message || '');
+                        }
                     }
-                }
-            );
+                );
+            }
+        } catch (error) {
+            setLoading(false);
+            console.error("Error uploading activity:", error);
+            toast.error(error.message || '');
         }
+
     };
 
     return (
@@ -370,10 +388,10 @@ function UploadBatchModal({ handleCloseModal, page, activityId }) {
 
                             <Button
                                 className={`w-full ${fileList.length === 0 ? 'bg-gray-200 text-gray-500' : ''}`}
-                                disabled={fileList.length === 0}
-                                onClick={handleUploadDocuments}
+                                disabled={fileList.length === 0 || loading}
+                                onClick={() => { handleUploadDocuments(); setLoading(true); }}
                             >
-                                Upload Documents
+                                {loading ? <LoadingSpinner /> : `Upload Documents`}
                             </Button>
                         </div>
                     </div>

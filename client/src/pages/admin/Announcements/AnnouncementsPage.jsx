@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Select from 'react-select';
 import { toast } from "react-toastify";
 import { DropIn } from "../../../animations/DropIn";
-import { Backdrop, Button, CloseButton, ReusableTable, TabSelector, TextInput } from "../../../components";
+import { Backdrop, Button, CloseButton, LoadingSpinner, ReusableTable, TabSelector, TextInput } from "../../../components";
 import { useAdminNotification, useAdminRSO, useModal, useRSONotification } from "../../../hooks";
 import { useUserStoreWithAuth } from '../../../store';
 import { FormatDate } from "../../../utils";
@@ -18,6 +18,7 @@ function AnnouncementsPage() {
     const [selectedRSOs, setSelectedRSOs] = useState([]);
     const [filters, setFilters] = useState({ date: "latest" });
     const [selectedRSOsForEdit, setSelectedRSOsForEdit] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     const {
         rsoData,
@@ -196,6 +197,7 @@ function AnnouncementsPage() {
                         onSuccess: () => {
                             toast.success("Announcement created successfully!");
                             console.log("Notification posted successfully");
+                            setLoading(false);
                             // Reset form + close
                             setTitle("");
                             setDescription("");
@@ -203,6 +205,7 @@ function AnnouncementsPage() {
                         },
                         onError: (err) => {
                             setError(err.message || "Failed to create announcement.");
+                            setLoading(false);
                             toast.error(`Error: ${err.message || "Failed to create announcement."}`);
                         }
                     }
@@ -211,6 +214,7 @@ function AnnouncementsPage() {
                 postSpecificRSONotification({ title, content: description, rsoIds: selectedRSOs },
                     {
                         onSuccess: () => {
+                            setLoading(false);
                             toast.success("Announcement created successfully!");
                             console.log("RSO-specific notification posted successfully");
                             // Reset form + close
@@ -220,6 +224,7 @@ function AnnouncementsPage() {
                             closeModal();
                         },
                         onError: (err) => {
+                            setLoading(false);
                             setError(err.message || "Failed to create announcement.");
                             toast.error(`Error: ${err.message || "Failed to create announcement."}`);
                         }
@@ -232,6 +237,7 @@ function AnnouncementsPage() {
                     onSuccess: () => {
                         toast.success("Announcement created successfully!");
                         refetchRSOCreatedNotifications();
+                        setLoading(false);
                         // Reset form + close
                         setTitle("");
                         setDescription("");
@@ -239,6 +245,7 @@ function AnnouncementsPage() {
                         console.log("RSO representative notification posted successfully");
                     },
                     onError: (err) => {
+                        setLoading(false);
                         setError(err.message || "Failed to create announcement.");
                         toast.error(`Error: ${err.message || "Failed to create announcement."}`);
                     }
@@ -274,6 +281,7 @@ function AnnouncementsPage() {
                 updateSentRSOAnnouncement({ announcementId: selectedAnnouncement._id, title: selectedAnnouncement.title, content: selectedAnnouncement.content },
                     {
                         onSuccess: () => {
+                            setLoading(false);
                             toast.success("Announcement updated successfully!");
                             refetchRSOCreatedNotifications();
                             closeDetailsModal();
@@ -283,6 +291,7 @@ function AnnouncementsPage() {
                             console.log("RSO representative notification updated successfully");
                         },
                         onError: (err) => {
+                            setLoading(false);
                             setError(err.message || "Failed to update announcement.");
                             toast.error(`Error: ${err.message || "Failed to update announcement."}`);
                         }
@@ -295,6 +304,7 @@ function AnnouncementsPage() {
                     updateSentAdminAnnouncement({ announcementId: selectedAnnouncement._id, title: selectedAnnouncement.title, content: selectedAnnouncement.content, targetedRSOs: selectedRSOsForEdit.map(rso => rso.value) || [] },
                         {
                             onSuccess: () => {
+                                setLoading(false);
                                 toast.success("Announcement updated successfully!");
                                 refetchRSOCreatedNotifications();
                                 closeDetailsModal();
@@ -304,19 +314,24 @@ function AnnouncementsPage() {
                                 console.log("Admin notification updated successfully");
                             },
                             onError: (err) => {
+                                setLoading(false);
                                 setError(err.message || "Failed to update announcement.");
                                 toast.error(`Error: ${err.message || "Failed to update announcement."}`);
                             }
                         }
                     );
                 } catch (error) {
+                    setLoading(false);
                     console.error("Error updating announcement:", error);
                     toast.error("Failed to update announcement.");
                 }
             }
         } catch (error) {
+            setLoading(false);
             console.error("Error updating announcement:", error);
             toast.error("Failed to update announcement.");
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -342,9 +357,11 @@ function AnnouncementsPage() {
     return (
         <>
             <div className="flex flex-col md:flex-row justify-between mb-4">
-                <div className='flex justify-start md:order-2 p-2'>
-                    <Button onClick={openModal}>Create an Announcement</Button>
-                </div>
+                {(isUserAdmin || isCoordinator || isUserRSORepresentative) && (
+                    <div className='flex justify-start md:order-2 p-2'>
+                        <Button onClick={openModal}>Create an Announcement</Button>
+                    </div>
+                )}
                 <TabSelector tabs={notificationTab} activeTab={activeTab} onTabChange={setActiveTab} />
             </div>
             <div >
@@ -429,10 +446,10 @@ function AnnouncementsPage() {
                                     Cancel
                                 </Button>
                                 <Button
-                                    disabled={postNotificationLoading || postRSONotificationLoading || postSpecificRSONotificationLoading}
-                                    onClick={handleNotification}
+                                    disabled={loading || postNotificationLoading || postRSONotificationLoading || postSpecificRSONotificationLoading}
+                                    onClick={() => { handleNotification(); setLoading(true); }}
                                 >
-                                    Create Announcement
+                                    {loading ? <LoadingSpinner /> : 'Create Announcement'}
                                 </Button>
                             </div>
                         </motion.div>
@@ -460,15 +477,17 @@ function AnnouncementsPage() {
                             </div>
 
                             <div className="space-y-5">
-                                <div>
-                                    <h3 className="text-sm font-medium text-gray-500">Targeted RSOs</h3>
-                                    <Select
-                                        isMulti
-                                        className="basic-multi-select"
-                                        onChange={handleEditSelectedRSOs}
-                                        options={rsos}
-                                        value={selectedRSOsForEdit} />
-                                </div>
+                                {!isUserRSORepresentative && (
+                                    <div>
+                                        <h3 className="text-sm font-medium text-gray-500">Targeted RSOs</h3>
+                                        <Select
+                                            isMulti
+                                            className="basic-multi-select"
+                                            onChange={handleEditSelectedRSOs}
+                                            options={rsos}
+                                            value={selectedRSOsForEdit} />
+                                    </div>
+                                )}
 
                                 <div>
                                     <h3 className="text-sm font-medium text-gray-500">Title</h3>
@@ -512,10 +531,10 @@ function AnnouncementsPage() {
                             <div className="flex justify-end mt-6 gap-2">
                                 <Button
                                     style="primary"
-                                    disabled={updateSentAdminAnnouncementLoading || updateSentRSOAnnouncementLoading}
-                                    onClick={handleUpdateAnnouncement}
+                                    disabled={updateSentAdminAnnouncementLoading || updateSentRSOAnnouncementLoading || loading}
+                                    onClick={() => { handleUpdateAnnouncement(); setLoading(true); }}
                                 >
-                                    Edit
+                                    {loading ? <LoadingSpinner /> : 'Edit'}
                                 </Button>
                                 <Button style="secondary" onClick={closeDetailsModal}>
                                     Close

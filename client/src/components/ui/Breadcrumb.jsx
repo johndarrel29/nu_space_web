@@ -13,7 +13,7 @@ export default function Breadcrumb({ style, unSelected }) {
         specificDocument,
         specificDocumentLoading,
         specificDocumentError,
-    } = useRSODocuments({ documentId });
+    } = useRSODocuments({ documentId, manualEnabled: isUserRSORepresentative ? true : false });
 
     const {
         // view admin activity details
@@ -22,7 +22,7 @@ export default function Breadcrumb({ style, unSelected }) {
         viewAdminActivityLoading,
         refetchViewAdminActivity,
         viewAdminActivityError,
-    } = useAdminActivity({ activityId });
+    } = useAdminActivity({ activityId, manualEnabled: !isUserRSORepresentative ? true : false });
 
     const {
         // activity view
@@ -39,7 +39,7 @@ export default function Breadcrumb({ style, unSelected }) {
         documentDetailQueryError,
         refetchDocumentDetail,
         isDocumentDetailRefetching,
-    } = useAdminDocuments({ documentId });
+    } = useAdminDocuments({ documentId, manualEnabled: !isUserRSORepresentative ? true : false });
 
     const renderActivityOnRole = () => {
         if (!isUserRSORepresentative) {

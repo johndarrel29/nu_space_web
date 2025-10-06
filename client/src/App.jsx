@@ -286,6 +286,8 @@ function App() {
                     </Route>
                   </Route>
 
+                  {/* Catch-all route for unmatched URLs */}
+                  <Route path="*" element={<ErrorPage />} />
                 </Routes>
               </SkeletonTheme>
             )}

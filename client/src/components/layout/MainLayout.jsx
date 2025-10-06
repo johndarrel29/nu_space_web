@@ -28,6 +28,8 @@ function MainLayout({ children }) {
   const rsoID = selectedRSOStore((state) => state.selectedRSO);
   const rsoStatus = selectedRSOStatusStore((state) => state.selectedRSOStatus);
   const activityStatus = useActivityStatusStore((state) => state.activityStatus);
+  const [rejectLoading, setRejectLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
 
   const {
@@ -94,7 +96,6 @@ function MainLayout({ children }) {
   // UI state
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [isNotificationClicked, setIsNotificationClicked] = useState(false);
 
@@ -177,6 +178,8 @@ function MainLayout({ children }) {
 
     if (!isUserAdmin && !isCoordinator) {
       console.error("Only Admins and Coordinators can approve documents");
+      toast.error("Only Admins and Coordinators can approve documents");
+      setLoading(false);
       return;
     }
 
@@ -184,10 +187,12 @@ function MainLayout({ children }) {
       approveActivityMutate({ activityId: documentId }, {
         onSuccess: () => {
           console.log("Document approved successfully");
+          setLoading(false);
           toast.success("Document approved successfully");
         },
         onError: (error) => {
           console.error("Error approving document:", error);
+          setLoading(false);
           toast.error(error.message || "Error approving document");
         }
       });
@@ -198,10 +203,12 @@ function MainLayout({ children }) {
       recognizeRSOMutate({ id: rsoID }, {
         onSuccess: () => {
           console.log("RSO Document recognized successfully");
+          setLoading(false);
           toast.success("RSO Document recognized successfully");
         },
         onError: (error) => {
           console.error("Error recognizing RSO document:", error);
+          setLoading(false);
           toast.error(error.message || "Error recognizing RSO document");
         }
       });
@@ -213,15 +220,19 @@ function MainLayout({ children }) {
       rejectActivityMutate({ activityId: documentId, remark: rejectRemark }, {
         onSuccess: () => {
           console.log("Document rejected successfully");
+          setRejectLoading(false);
           toast.success("Document rejected successfully");
         },
         onError: (error) => {
           console.error("Error rejecting document:", error);
+          setRejectLoading(false);
           toast.error(error.message || "Error rejecting document");
         }
       });
     } catch (error) {
       throw error;
+    } finally {
+      setRejectLoading(false);
     }
   }
 
@@ -667,16 +678,18 @@ function MainLayout({ children }) {
             <div className="w-full py-6 bg-white fixed bottom-0 z-40 mt-auto flex items-center justify-center gap-4 border-t border-mid-gray">
               {isActivityDetailsPage && (
                 <Button
+                  disabled={rejectLoading}
                   onClick={handleOpenRejectModal}
                   style="secondary"
                 >
-                  Reject
+                  {rejectLoading ? `Rejecting...` : `Reject`}
                 </Button>
               )}
               <Button
-                onClick={handleDocumentApproval}
+                disabled={loading}
+                onClick={() => { handleDocumentApproval(); setLoading(true); }}
               >
-                {` Approve ${isActivityDetailsPage ? "Activity" : "RSO Recognition"}`}
+                {loading ? `Approving...` : ` Approve ${isActivityDetailsPage ? "Activity" : "RSO Recognition"}`}
               </Button>
             </div>
           )}
@@ -693,7 +706,7 @@ function MainLayout({ children }) {
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <div className="bg-white rounded-lg p-6 max-w-md shadow-xl border border-gray-100">
+                  <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl border border-gray-100">
                     <div className='flex justify-between items-center mb-4'>
                       <h2 className='text-lg font-semibold'>Reject Document</h2>
                       <button
@@ -723,10 +736,11 @@ function MainLayout({ children }) {
                       </Button>
                       <Button
                         style="danger"
-                        onClick={handleRejectDocumentWithRemark}
-                        disabled={!rejectRemark.trim()}
+                        loading={rejectLoading}
+                        onClick={() => { handleRejectDocumentWithRemark(); setRejectLoading(true); }}
+                        disabled={!rejectRemark.trim() || rejectLoading}
                       >
-                        Reject
+                        {rejectLoading ? 'Rejecting...' : 'Reject'}
                       </Button>
                     </div>
                   </div>

@@ -5,7 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { DropIn } from "../../../animations/DropIn";
 import DefaultPicture from '../../../assets/images/default-profile.jpg';
-import { Backdrop, Button, CloseButton, ReusableDropdown, TextInput } from '../../../components';
+import { Backdrop, Button, CloseButton, LoadingSpinner, ReusableDropdown, TextInput } from '../../../components';
 import TagSelector from '../../../components/TagSelector';
 import { useAcademicYears, useAdminRSO, useTagSelector } from '../../../hooks';
 
@@ -22,6 +22,7 @@ import getCroppedImg from '../../../utils/cropImage';
 function RSOAction() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const { mode, data, from, id } = location.state || {};
   const {
     rsoDetailData,
@@ -60,7 +61,7 @@ function RSOAction() {
     refetchAcademicYears,
     isRefetchingAcademicYears,
     isAcademicYearsFetched
-  } = useAcademicYears();
+  } = useAcademicYears({ manualEnabled: true });
 
   const [showSearch, setShowSearch] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -263,188 +264,209 @@ function RSOAction() {
 
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const originalUrl = rsoDetailData?.data?.RSOid?.RSO_picture?.signedURL || null;
-
-    const pictureUnchanged = (() => {
-      // If user produced a File, it's definitely a change
-      if (formData.RSO_picture instanceof File) return false;
-      // If both are strings, normalize and compare
-      if (typeof formData.RSO_picture === 'string' && typeof originalUrl === 'string') {
-        // Optional: strip query params from signed URLs to compare base path
-        const stripQuery = url => url.split('?')[0];
-        return stripQuery(formData.RSO_picture) === stripQuery(originalUrl);
-      }
-      // Null vs null = unchanged
-      return formData.RSO_picture == null && originalUrl == null;
-    })();
-
-
-    // No need to find the year object again, we already have the ID
-    const payload = {
-      ...formData,
-      RSO_tags: selectedTags,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      // Use the stored academicYearId directly
-      // academicYearId: formData.academicYearId || null,
-    };
-
-    console.log("compare formData from edit:", formData.RSO_picture, "with rsoDetailData:", rsoDetailData?.data?.RSOid?.RSO_picture?.signedURL);
-
-
-    // go through all the fields and check one by one if the formData matches rsoDetailData
-    // if it is, remove it from the payload
-    if (isEdit && rsoDetailData) {
-      if (formData.academicYearId === (rsoDetailData?.data?.academicYear || "")) {
-        delete payload.academicYearId;
-        delete payload.RSO_academicYear;
-      }
-
-      if (formData.RSO_name === (rsoDetailData?.data?.RSOid?.RSO_name || "")) {
-        delete payload.RSO_name;
-      }
-
-      if (formData.RSO_acronym === (rsoDetailData?.data?.RSOid?.RSO_acronym || "")) {
-        delete payload.RSO_acronym;
-      }
-
-      if (formData.RSO_category === (rsoDetailData?.data?.RSOid?.RSO_category || "")) {
-        delete payload.RSO_category;
-      }
-
-      if (JSON.stringify(selectedTags) === JSON.stringify(rsoDetailData?.data?.RSOid?.RSO_tags?.map(tagObj => typeof tagObj === 'object' ? tagObj.tag : tagObj) || [])) {
-        delete payload.RSO_tags;
-      }
-      if (formData.RSO_College === (rsoDetailData?.data?.RSOid?.RSO_College || "")) {
-        delete payload.RSO_College;
-      }
-      // Removed RSO_status comparison block
-      if (formData.RSO_description === (rsoDetailData?.data?.RSO_snapshot?.description || "")) {
-        delete payload.RSO_description;
-      }
-      if (formData.RSO_probationary === (rsoDetailData?.data?.RSO_snapshot?.probationary || false)) {
-        delete payload.RSO_probationary;
-      }
-
-      // find out why they are not equal when they are the samex`
-      if (pictureUnchanged) {
-        console.log("compare formData from edit:", formData.RSO_picture, "with rsoDetailData:", rsoDetailData?.data?.RSOid?.RSO_picture?.signedURL);
-        delete payload.RSO_picture;
-      }
-
-      // dont include RSO_picture, RSO_picturePreview, createdAt, picture, and updatedAt in payload
-
-      delete payload.RSO_picturePreview;
-      // delete payload.RSO_picture;
-      delete payload.picture;
-      delete payload.createdAt;
-      delete payload.updatedAt;
-    }
-
-    if (isEdit && !Object.keys(payload).length) {
-      console.log("type of formData.RSO_picture:", typeof rsoDetailData?.data?.RSOid?.RSO_picture?.signedURL, "Is file?", formData.RSO_picture instanceof File);
-      toast.info("No changes made.");
-      return;
-    }
-
-    // Remove display-only fields from payload
-    delete payload.RSO_academicYear;
-
-    // Validate form data
-    if (formData.RSO_description === "" || formData.RSO_description === null) {
-      setDescriptionError("Description is required");
-      return;
-    } else if (formData.RSO_description.length > 500) {
-      setDescriptionError("Description must not exceed 500 characters.");
-      return;
-    } else {
-      setDescriptionError("");
-    }
-
-    if (selectedTags.length === 0) {
-      setTagError("At least one tag is required");
-      return;
-    } else if (selectedTags.length < 3) {
-      setTagError("You must select at least 3 tags");
-      return;
-    } else if (selectedTags.length > 5) {
-      setTagError("You can only select up to 5 tags");
-      return;
-    } else {
-      setTagError("");
-    }
-    // Don't proceed if there are any errors
-    if (error || descriptionError || tagError) {
-      return;
-    }
-
     try {
-      let result;
-      if (isEdit && data?.id) {
-        console.log("Sending to updateRSOMutate:", payload);
-        result = await updateRSOMutate({ id: data.id, updatedOrg: payload, academicYearId: formData.academicYearId },
-          {
-            onSuccess: (data) => {
-              console.log("RSO updated successfully:", data);
-              toast.success('RSO updated successfully!');
-              navigate(-1);
-            },
-            onError: (error) => {
-              console.error("Error updating RSO:", error);
-              toast.error(error.message || "Failed to update RSO");
-              resetUpdate();
-            }
-          }
-        );
-      } else if (isCreate) {
-        console.log("Sending to createRSO:", payload);
-        createRSOMutate(payload,
-          {
-            onSuccess: (data) => {
-              console.log("RSO created successfully:", data);
-              toast.success('RSO created successfully!');
-              navigate(-1);
-            },
-            onError: (error) => {
-              console.error("Error creating RSO:", error);
-              toast.error(error.message || "Failed to create RSO");
-            }
-          }
-        );
+      if (e && typeof e.preventDefault === 'function') {
+        e.preventDefault();
+      }
+      const originalUrl = rsoDetailData?.data?.RSOid?.RSO_picture?.signedURL || null;
+
+      const pictureUnchanged = (() => {
+        // If user produced a File, it's definitely a change
+        if (formData.RSO_picture instanceof File) return false;
+        // If both are strings, normalize and compare
+        if (typeof formData.RSO_picture === 'string' && typeof originalUrl === 'string') {
+          // Optional: strip query params from signed URLs to compare base path
+          const stripQuery = url => url.split('?')[0];
+          return stripQuery(formData.RSO_picture) === stripQuery(originalUrl);
+        }
+        // Null vs null = unchanged
+        return formData.RSO_picture == null && originalUrl == null;
+      })();
+
+
+      // No need to find the year object again, we already have the ID
+      const payload = {
+        ...formData,
+        RSO_tags: selectedTags,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        // Use the stored academicYearId directly
+        // academicYearId: formData.academicYearId || null,
+      };
+
+      console.log("compare formData from edit:", formData.RSO_picture, "with rsoDetailData:", rsoDetailData?.data?.RSOid?.RSO_picture?.signedURL);
+
+
+      // go through all the fields and check one by one if the formData matches rsoDetailData
+      // if it is, remove it from the payload
+      if (isEdit && rsoDetailData) {
+        if (formData.academicYearId === (rsoDetailData?.data?.academicYear || "")) {
+          delete payload.academicYearId;
+          delete payload.RSO_academicYear;
+        }
+
+        if (formData.RSO_name === (rsoDetailData?.data?.RSOid?.RSO_name || "")) {
+          delete payload.RSO_name;
+        }
+
+        if (formData.RSO_acronym === (rsoDetailData?.data?.RSOid?.RSO_acronym || "")) {
+          delete payload.RSO_acronym;
+        }
+
+        if (formData.RSO_category === (rsoDetailData?.data?.RSOid?.RSO_category || "")) {
+          delete payload.RSO_category;
+        }
+
+        if (JSON.stringify(selectedTags) === JSON.stringify(rsoDetailData?.data?.RSOid?.RSO_tags?.map(tagObj => typeof tagObj === 'object' ? tagObj.tag : tagObj) || [])) {
+          delete payload.RSO_tags;
+        }
+        if (formData.RSO_College === (rsoDetailData?.data?.RSOid?.RSO_College || "")) {
+          delete payload.RSO_College;
+        }
+        // Removed RSO_status comparison block
+        if (formData.RSO_description === (rsoDetailData?.data?.RSO_snapshot?.description || "")) {
+          delete payload.RSO_description;
+        }
+        if (formData.RSO_probationary === (rsoDetailData?.data?.RSO_snapshot?.probationary || false)) {
+          delete payload.RSO_probationary;
+        }
+
+        // find out why they are not equal when they are the samex`
+        if (pictureUnchanged) {
+          console.log("compare formData from edit:", formData.RSO_picture, "with rsoDetailData:", rsoDetailData?.data?.RSOid?.RSO_picture?.signedURL);
+          delete payload.RSO_picture;
+        }
+
+        // dont include RSO_picture, RSO_picturePreview, createdAt, picture, and updatedAt in payload
+
+        delete payload.RSO_picturePreview;
+        // delete payload.RSO_picture;
+        delete payload.picture;
+        delete payload.createdAt;
+        delete payload.updatedAt;
       }
 
-
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+      if (isEdit && !Object.keys(payload).length) {
+        console.log("type of formData.RSO_picture:", typeof rsoDetailData?.data?.RSOid?.RSO_picture?.signedURL, "Is file?", formData.RSO_picture instanceof File);
+        toast.info("No changes made.");
+        setLoading(false);
+        return;
       }
 
-      setHasSubmitted(true);
+      // Remove display-only fields from payload
+      delete payload.RSO_academicYear;
 
-      // Only navigate on success
-      if (isCreateSuccess) {
-        console.log("RSO operation successful:", result);
-        navigate('..', { relative: 'path' });
+      // Validate form data
+      if (formData.RSO_description === "" || formData.RSO_description === null) {
+        setDescriptionError("Description is required");
+        setLoading(false);
+        return;
+      } else if (formData.RSO_description.length > 500) {
+        setDescriptionError("Description must not exceed 500 characters.");
+        setLoading(false);
+        return;
+      } else {
+        setDescriptionError("");
+      }
 
-        // Only clear form and navigate on success
-        setFormData({
-          RSO_name: "",
-          RSO_acronym: "",
-          RSO_category: "",
-          RSO_tags: "",
-          RSO_College: "",
-          // RSO_status removed from reset form state
-          RSO_description: "",
-          RSO_probationary: false,
-          RSO_picture: null,
-        });
-        setRSOPicture(null);
-        setSelectedTags([]);
-        setSearchQuery("");
+      if (selectedTags.length === 0) {
+        setTagError("At least one tag is required");
+        setLoading(false);
+        return;
+      } else if (selectedTags.length < 3) {
+        setTagError("You must select at least 3 tags");
+        setLoading(false);
+        return;
+      } else if (selectedTags.length > 5) {
+        setTagError("You can only select up to 5 tags");
+        setLoading(false);
+        return;
+      } else {
+        setTagError("");
+      }
+      // Don't proceed if there are any errors
+      if (error || descriptionError || tagError) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        let result;
+        if (isEdit && data?.id) {
+          console.log("Sending to updateRSOMutate:", payload);
+          result = await updateRSOMutate({ id: data.id, updatedOrg: payload, academicYearId: formData.academicYearId },
+            {
+              onSuccess: (data) => {
+                console.log("RSO updated successfully:", data);
+                toast.success('RSO updated successfully!');
+                setLoading(false);
+                navigate(-1);
+              },
+              onError: (error) => {
+                console.error("Error updating RSO:", error);
+                toast.error(error.message || "Failed to update RSO");
+                setLoading(false);
+                resetUpdate();
+              }
+            }
+          );
+        } else if (isCreate) {
+          console.log("Sending to createRSO:", payload);
+          createRSOMutate(payload,
+            {
+              onSuccess: (data) => {
+                console.log("RSO created successfully:", data);
+                toast.success('RSO created successfully!');
+                setLoading(false);
+                navigate(-1);
+              },
+              onError: (error) => {
+                console.error("Error creating RSO:", error);
+                toast.error(error.message || "Failed to create RSO");
+                setLoading(false);
+              }
+            }
+          );
+        }
+
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+
+        setHasSubmitted(true);
+
+        // Only navigate on success
+        if (isCreateSuccess) {
+          console.log("RSO operation successful:", result);
+          navigate('..', { relative: 'path' });
+
+          // Only clear form and navigate on success
+          setFormData({
+            RSO_name: "",
+            RSO_acronym: "",
+            RSO_category: "",
+            RSO_tags: "",
+            RSO_College: "",
+            // RSO_status removed from reset form state
+            RSO_description: "",
+            RSO_probationary: false,
+            RSO_picture: null,
+          });
+          setRSOPicture(null);
+          setSelectedTags([]);
+          setSearchQuery("");
+        }
+      } catch (error) {
+        console.error("Error submitting RSO:", error);
+        setLoading(false);
+        // Keep form data intact on error
       }
     } catch (error) {
-      console.error("Error submitting RSO:", error);
-      // Keep form data intact on error
+      console.error("Error in handleSubmit:", error);
+      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -811,10 +833,11 @@ function RSOAction() {
           <Button
             variant="primary"
             size="small"
-            onClick={handleSubmit}
+            disabled={loading}
+            onClick={() => { handleSubmit(); setLoading(true); }}
             type="submit"
           >
-            {isEdit ? 'Update' : isCreate ? 'Create' : 'Submit'}
+            {loading ? <LoadingSpinner /> : (isEdit ? 'Update' : isCreate ? 'Create' : 'Submit')}
           </Button>
         </div>
       </div>

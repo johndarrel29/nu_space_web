@@ -70,39 +70,45 @@ const createRSO = async (newOrg) => {
 
 // Update RSO function
 const updateRSO = async ({ id, updatedOrg, academicYearId }) => {
-    const token = useTokenStore.getState().getToken();
-    const isFileUpload = updatedOrg.RSO_picture instanceof File;
-    const formData = new FormData();
+    try {
+        const token = useTokenStore.getState().getToken();
+        const isFileUpload = updatedOrg.RSO_picture instanceof File;
+        const formData = new FormData();
 
-    if (isFileUpload) {
-        Object.keys(updatedOrg).forEach((key) => {
-            if (key === "RSO_picture") {
-                formData.append("RSO_image", updatedOrg[key]);
-            } else {
-                formData.append(key, updatedOrg[key]);
-            }
+        if (isFileUpload) {
+            Object.keys(updatedOrg).forEach((key) => {
+                if (key === "RSO_picture") {
+                    formData.append("RSO_image", updatedOrg[key]);
+                } else {
+                    formData.append(key, updatedOrg[key]);
+                }
+            });
+        }
+
+        const headers = {
+            "Authorization": token || "",
+            ...(!isFileUpload && { "Content-Type": "application/json" }),
+        };
+
+
+        console.log("Updating RSO ID:", id, "with data:", updatedOrg, "academicYearId:", academicYearId);
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/admin/rso/update-rso/${id}/${academicYearId}`, {
+            method: "PATCH",
+            headers,
+            body: isFileUpload ? formData : JSON.stringify(updatedOrg),
         });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `Error: ${response.status} - ${response.statusText}`);
+        }
+
+        return response.json();
+    } catch (error) {
+        console.error("Error updating RSO:", error);
+        throw error;
     }
 
-    const headers = {
-        "Authorization": token || "",
-        ...(!isFileUpload && { "Content-Type": "application/json" }),
-    };
-
-
-    console.log("Updating RSO ID:", id, "with data:", updatedOrg);
-    const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/admin/rso/update-rso/${id}/${academicYearId}`, {
-        method: "PATCH",
-        headers,
-        body: isFileUpload ? formData : JSON.stringify(updatedOrg),
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Error: ${response.status} - ${response.statusText}`);
-    }
-
-    return response.json();
 };
 
 // Update RSO status
@@ -402,6 +408,7 @@ function useAdminRSO({
     search = "",
     category = "",
     manualEnable = false,
+    academicYearId = "",
 } = {}) {
     const queryClient = useQueryClient();
     const { isUserAdmin, isUserCoordinator } = useUserStoreWithAuth();
@@ -426,7 +433,8 @@ function useAdminRSO({
         isDeleted,
         recognitionStatus,
         search,
-        category
+        category,
+        academicYearId,
     }
 
     const {

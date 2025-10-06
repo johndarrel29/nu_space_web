@@ -8,10 +8,11 @@ export default function DraggableSandbox({ onUpdate, imageSample }) {
     // Track dynamic width/height based on the intrinsic image size
     // Start with a desired initial height (60px) and compute width once image loads
     const DESIRED_INITIAL_HEIGHT = 60;
-    const [dimensions, setDimensions] = useState({ width: 80, height: 80 });
+    const [dimensions, setDimensions] = useState({ width: 20, height: 20 });
     const boxRef = useRef(null);
     const imgRef = useRef(null);
-    const [pos, setPos] = useState({ x: 40, y: 50 });
+    const [pos, setPos] = useState({ x: 0, y: 0 });
+    // const [pos, setPos] = useState({ x: 40, y: 50 });
 
     useEffect(() => {
         if (!boxRef.current) return;

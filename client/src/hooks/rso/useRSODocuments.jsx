@@ -212,7 +212,7 @@ const fetchSpecificDocument = async ({ queryKey }) => {
     }
 }
 
-function useRSODocuments({ documentFor = "", documentId = "" } = {}) {
+function useRSODocuments({ documentFor = "", documentId = "", manualEnabled = false } = {}) {
     const queryClient = useQueryClient();
     const { user } = useAuth();
     const { isUserRSORepresentative } = useUserStoreWithAuth();
@@ -325,7 +325,7 @@ function useRSODocuments({ documentFor = "", documentId = "" } = {}) {
     } = useQuery({
         queryKey: ["documents", documentId],
         queryFn: fetchSpecificDocument,
-        enabled: !!documentId && !!isUserRSORepresentative && isDocumentsPage,
+        enabled: manualEnabled ? manualEnabled : !!documentId && !!isUserRSORepresentative && isDocumentsPage,
     });
 
     return {

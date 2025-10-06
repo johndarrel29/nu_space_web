@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { DropIn } from "../../animations/DropIn";
-import { Button, CloseButton } from "../../components";
+import { Button, CloseButton, LoadingSpinner } from "../../components";
 import { useSuperAdminUsers } from "../../hooks";
 import { Backdrop, ReusableDropdown, TextInput } from "../ui";
 
@@ -10,6 +10,7 @@ import { Backdrop, ReusableDropdown, TextInput } from "../ui";
 
 
 export default function CreateUserModal({ closeModal }) {
+    const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         firstName: "",
         lastName: "",
@@ -31,22 +32,53 @@ export default function CreateUserModal({ closeModal }) {
 
 
     const handleSubmit = () => {
-        // Handle form submission logic here
-        console.log("Form submitted with data:", formData);
-        // You can add your API call here to create the user
-        createAccount(formData,
-            {
-                onSuccess: () => {
-                    toast.success("User created successfully");
-                    refetchAccounts();
-                    closeModal();
-                },
-                onError: (error) => {
-                    toast.error(`Error creating user: ${error.message}`);
-                }
+        setLoading(true);
+        try {
+            if (!formData.firstName || !formData.lastName || !formData.email || !formData.role || !formData.password || !formData.confirmpassword) {
+                toast.error("All fields are required.");
+                setLoading(false);
+                return;
             }
-        );
+
+            // Handle form submission logic here
+            console.log("Form submitted with data:", formData);
+            // You can add your API call here to create the user
+            createAccount(formData,
+                {
+                    onSuccess: () => {
+                        toast.success("User created successfully");
+                        refetchAccounts();
+                        setLoading(false);
+                        closeModal();
+                    },
+                    onError: (error) => {
+                        toast.error(`Error creating user: ${error.message}`);
+                        setLoading(false);
+                    }
+                }
+            );
+        } catch (error) {
+            toast.error("Error creating user: " + error.message);
+            setLoading(false);
+            throw new Error("Error creating user: " + error.message);
+        } finally {
+            setLoading(false);
+        }
     };
+
+    // Function to determine if the Create Account button should be disabled
+    function isCreateButtonDisabled() {
+        return (
+            isCreatingAccount ||
+            formData.password !== formData.confirmpassword ||
+            !formData.firstName ||
+            !formData.lastName ||
+            !formData.email ||
+            !formData.role ||
+            !formData.password ||
+            !formData.confirmpassword
+        );
+    }
 
     return (
         <>
@@ -118,13 +150,15 @@ export default function CreateUserModal({ closeModal }) {
                         <div className="flex flex-row space-x-2  justify-end">
                             <Button onClick={closeModal} className="text-off-black px-4" style="secondary">Cancel</Button>
                             <Button
-                                onClick={handleSubmit}
-                                disabled={isCreatingAccount || formData.password !== formData.confirmpassword || !formData.firstName || !formData.lastName || !formData.email || !formData.role || !formData.password || !formData.confirmpassword}
+                                onClick={() => { handleSubmit(); setLoading(true); }}
+                                disabled={loading}
                                 className="px-4">
-                                <div className="flex flex-row space-x-2 items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" className="fill-white size-4"><path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 144L48 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l144 0 0 144c0 17.7 14.3 32 32 32s32-14.3 32-32l0-144 144 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-144 0 0-144z" /></svg>
-                                    <h1>Create Account</h1>
-                                </div>
+                                {loading ? <LoadingSpinner /> :
+                                    <div className="flex flex-row space-x-2 items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" className="fill-white size-4"><path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 144L48 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l144 0 0 144c0 17.7 14.3 32 32 32s32-14.3 32-32l0-144 144 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-144 0 0-144z" /></svg>
+                                        <h1>Create Account</h1>
+                                    </div>
+                                }
                             </Button>
                         </div>
 
