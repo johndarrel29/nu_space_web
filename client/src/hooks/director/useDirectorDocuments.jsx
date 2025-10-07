@@ -66,7 +66,7 @@ const getDirectorActivityDocumentsRequest = async ({ queryKey, pageParam = 1 }) 
     try {
         const token = useTokenStore.getState().getToken();
         const [_, filter] = queryKey;
-        const { limit = 12, query = "", sorted = "", RSO = "", RSOType = "", college = "", isGPOA = "All", page = 1 } = filter;
+        const { limit = 12, query = "", sorted = "", RSO = "", RSOType = "", college = "", isGPOA = "All", page = 1, yearId = "" } = filter;
 
         const url = new URL(`${process.env.REACT_APP_BASE_URL}/api/director/documents/all-activities`);
 
@@ -82,6 +82,7 @@ const getDirectorActivityDocumentsRequest = async ({ queryKey, pageParam = 1 }) 
         if (isGPOA && isGPOA !== "All") url.searchParams.set("isGPOA", isGPOA === true ? "true" : "false");
         if (college) url.searchParams.set("college", college);
         if (sorted) url.searchParams.set("sorted", sorted);
+        if (yearId) url.searchParams.set("yearId", yearId);
 
         const response = await fetch(url, {
             method: "GET",

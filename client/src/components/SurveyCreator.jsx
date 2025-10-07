@@ -10,7 +10,7 @@ import { registerCreatorTheme } from "survey-creator-core";
 import SurveyCreatorTheme from "survey-creator-core/themes";
 import { SurveyCreator, SurveyCreatorComponent } from "survey-creator-react";
 
-import { Button, TextInput } from "../components";
+import { Button, LoadingSpinner, TextInput } from "../components";
 import PreLoader from "../components/Preloader";
 import { useAdminCentralizedForms, useModal } from "../hooks";
 
@@ -32,7 +32,7 @@ export default function SurveyCreatorWidget(props) {
     const location = useLocation();
     const navigate = useNavigate();
     const { isOpen, openModal, closeModal } = useModal();
-
+    const [loading, setLoading] = useState(false);
     const [creator, setCreator] = useState(null);
     const [surveyMode, setSurveyMode] = useState("create");
     const [notAllowedList, setNotAllowedList] = useState([]);
@@ -109,6 +109,7 @@ export default function SurveyCreatorWidget(props) {
 
     // Event handlers
     const handleSubmitForm = () => {
+
         if (!creator) return;
 
         if (!validateForm()) return;
@@ -123,6 +124,8 @@ export default function SurveyCreatorWidget(props) {
         if (surveyMode === "edit" && formId) {
             submitEditForm();
         }
+
+        setLoading(false);
     };
 
     const handleExit = () => {
@@ -172,10 +175,12 @@ export default function SurveyCreatorWidget(props) {
     const submitCreateForm = () => {
         createFormMutate(temporaryData, {
             onSuccess: (data) => {
+                setLoading(false);
                 console.log("Form created successfully:", data);
                 handleSuccess("Form created successfully");
             },
             onError: (error) => {
+                setLoading(false);
                 console.error("Error creating form:", error);
             }
         });
@@ -185,10 +190,12 @@ export default function SurveyCreatorWidget(props) {
         console.log("received edit mutate. sending: ", { formData: temporaryData, formId });
         editFormMutate({ formData: temporaryData, formId }, {
             onSuccess: (data) => {
+                setLoading(false);
                 console.log("Form edited successfully:", data);
                 handleSuccess("Form edited successfully");
             },
             onError: (error) => {
+                setLoading(false);
                 console.error("Error editing form:", error);
             }
         });
@@ -235,6 +242,8 @@ export default function SurveyCreatorWidget(props) {
                     isCreatingFormError={isCreatingFormError}
                     onClose={closeModal}
                     onSubmit={handleSubmitForm}
+                    setLoading={setLoading}
+                    loading={loading}
                 />
             )}
         </>
@@ -261,7 +270,9 @@ const SubmissionModal = ({
     createFormError,
     isCreatingFormError,
     onClose,
-    onSubmit
+    onSubmit,
+    setLoading,
+    loading
 }) => (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
         <div className="bg-white p-6 rounded shadow-lg">
@@ -302,7 +313,7 @@ const SubmissionModal = ({
 
             <div className="mt-4 flex justify-end gap-2">
                 <Button onClick={onClose} style="secondary">Cancel</Button>
-                <Button onClick={onSubmit}>Confirm</Button>
+                <Button disabled={loading} onClick={() => { onSubmit(); setLoading(true); }}>{loading ? <LoadingSpinner /> : 'Confirm'}</Button>
             </div>
         </div>
     </div>

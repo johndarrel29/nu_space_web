@@ -46,6 +46,30 @@ const fetchApplicants = async () => {
     }
 }
 
+const fetchApplicantAnswerRequest = async ({ queryKey }) => {
+    try {
+        const token = useTokenStore.getState().getToken();
+        const userId = queryKey[1]; // Get userId from queryKey
+
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/rsoRep/user/fetch-applicant-answer/${userId}`, {
+            method: "GET",
+            headers: {
+                Authorization: token,
+            },
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            return data;
+        } else {
+            throw new Error("Failed to fetch applicants");
+        }
+    } catch (error) {
+        console.error("error getting RSO applicants", error.message);
+    }
+}
+
+
 const approveUserMembership = async ({ id, approval }) => {
     try {
         const token = useTokenStore.getState().getToken();
@@ -80,7 +104,7 @@ const approveUserMembership = async ({ id, approval }) => {
     }
 }
 
-function useRSOUsers() {
+function useRSOUsers({ userId } = {}) {
     const { isUserRSORepresentative } = useUserStoreWithAuth();
     const location = useLocation();
     const isUsersPage = location.pathname === '/users';
@@ -137,6 +161,18 @@ function useRSOUsers() {
         }
     });
 
+    const {
+        data: applicantAnswer,
+        isError: isErrorFetchingApplicantAnswer,
+        error: errorFetchingApplicantAnswer,
+        isLoading: isLoadingApplicantAnswer,
+        refetch: refetchApplicantAnswer,
+    } = useQuery({
+        enabled: !!userId && isUserRSORepresentative && isUsersPage,
+        queryKey: ["applicantAnswer", userId],
+        queryFn: fetchApplicantAnswerRequest,
+    });
+
     return {
         rsoMembers,
         isErrorFetchingMembers,
@@ -157,6 +193,12 @@ function useRSOUsers() {
         isErrorApprovingMembership,
         errorApprovingMembership,
         isSuccessApprovingMembership,
+
+        applicantAnswer,
+        isErrorFetchingApplicantAnswer,
+        errorFetchingApplicantAnswer,
+        isLoadingApplicantAnswer,
+        refetchApplicantAnswer,
     };
 }
 

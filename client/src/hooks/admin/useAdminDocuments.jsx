@@ -173,6 +173,31 @@ const fetchDocumentTemplate = async ({ queryKey }) => {
     }
 }
 
+const fetchTemplateCategories = async () => {
+    try {
+        const token = useTokenStore.getState().getToken();
+
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/admin/documents/templateDocuments/categories`, {
+            method: "GET",
+            headers: {
+                'Authorization': token,
+                'Content-Type': 'application/json'
+            },
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Fetch failed: ${errorText}`);
+        }
+
+        const json = await response.json();
+        return json;
+    } catch (error) {
+        console.error("Error in fetchTemplateCategories:", error);
+        throw error;
+    }
+}
+
 const deleteSingleDocumentTemplateRequest = async ({ documentId, templateId }) => {
     try {
         const token = useTokenStore.getState().getToken();
@@ -211,7 +236,9 @@ const deleteDocumentTemplateRequest = async (templateId) => {
         });
 
         if (!response.ok) {
-            throw new Error(`Fetch failed: ${response.status} - ${response.statusText}`);
+            const errorData = await response.json(); // try to read the server's message
+            throw new Error(errorData.message || `Error: ${response.status} - ${response.statusText}`);
+
         }
 
         const json = await response.json();
@@ -492,6 +519,18 @@ function useAdminDocuments({
     });
 
     const {
+        data: templateCategories,
+        isLoading: templateCategoriesLoading,
+        isError: templateCategoriesError,
+        error: templateCategoriesQueryError,
+        refetch: refetchTemplateCategories,
+    } = useQuery({
+        queryKey: ["templateCategories"],
+        queryFn: fetchTemplateCategories,
+        enabled: (isUserAdmin || isCoordinator),
+    });
+
+    const {
         data: allDocuments,
         isLoading: allDocumentsLoading,
         isError: allDocumentsError,
@@ -732,6 +771,11 @@ function useAdminDocuments({
         rejectError,
         rejectQueryError,
 
+        templateCategories,
+        templateCategoriesLoading,
+        templateCategoriesError,
+        templateCategoriesQueryError,
+        refetchTemplateCategories,
     };
 }
 

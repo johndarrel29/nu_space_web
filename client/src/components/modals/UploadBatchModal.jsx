@@ -42,7 +42,7 @@ function UploadBatchModal({ handleCloseModal, page, activityId }) {
 
     // Determine page type
     const currentPage = location.pathname;
-    const isDocumentPage = currentPage.includes('/documents') && !currentPage.includes('/activities');
+    const isDocumentPage = currentPage.includes('/accreditation') && !currentPage.includes('/activities');
     const isActivitiesPage = currentPage.startsWith('/activities') && !isDocumentPage;
 
     console.log("activityId ", activityId);
@@ -89,8 +89,6 @@ function UploadBatchModal({ handleCloseModal, page, activityId }) {
         maxFiles: 10,
         accept: {
             'application/pdf': ['.pdf'],
-            'application/msword': ['.doc'],
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
         }
     });
 
@@ -153,6 +151,7 @@ function UploadBatchModal({ handleCloseModal, page, activityId }) {
         console.log("Uploading documents:", fileList);
         if (fileList.length === 0) {
             setError("Please add files to upload.");
+            toast.error("Please add files to upload.");
             return;
         }
 
@@ -312,18 +311,21 @@ function UploadBatchModal({ handleCloseModal, page, activityId }) {
                                 {isDragActive ? (
                                     "Drop the files here..."
                                 ) : file ? (
-                                    <div className='p-4 bg-background border border-primary rounded flex items-center justify-between text-primary w-full'>
-                                        {file.name}
+                                    <div className='p-4 bg-background border border-primary rounded flex items-center justify-between text-primary w-[200px] relative'>
+                                        <h1 className='text-sm font-medium truncate'>{file.name}</h1>
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 setFile(null);
                                             }}
-                                            className='aspect-square flex items-center justify-center cursor-pointer bg-primary rounded-full hover:bg-primary-dark'
+                                            data-tooltip-id="global-tooltip"
+                                            data-tooltip-content="Remove file"
+                                            className='aspect-square flex items-center justify-center cursor-pointer bg-primary rounded-full hover:bg-primary-dark absolute right-2'
                                         >
+
                                             <svg
                                                 xmlns="http://www.w3.org/2000/svg"
-                                                className='size-4 fill-background'
+                                                className='size-4 fill-background '
                                                 viewBox="0 0 384 512"
                                             >
                                                 <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" />
@@ -365,7 +367,7 @@ function UploadBatchModal({ handleCloseModal, page, activityId }) {
                                         key={fileEntry.id}
                                         className='p-4 border border-mid-gray rounded flex items-center justify-between hover:bg-gray-50'
                                     >
-                                        <span className='truncate'>{fileEntry.file.name}</span>
+                                        <span className='truncate max-w-[200px]'>{fileEntry.file.name}</span>
                                         <button
                                             onClick={() => removeFileFromList(fileEntry.id)}
                                             className='aspect-square flex items-center justify-center cursor-pointer rounded-full hover:bg-gray-200 p-1'

@@ -140,7 +140,7 @@ function RSOAction() {
         RSO_picturePreview: rsoDetailData?.data?.RSOid?.RSO_picture?.signedURL || DefaultPicture,
         RSO_probationary: rsoDetailData?.data?.RSO_snapshot?.probationary || false,
         RSO_academicYear: rsoDetailData?.data?.academicYear || "",
-        academicYearId: rsoDetailData?.data?.academicYear || "",
+        // academicYearId: rsoDetailData?.data?.academicYear || "",
 
       });
       { console.log("RSO details data for tags:", rsoDetailData?.data?.RSOid?.RSO_tags) }
@@ -181,8 +181,6 @@ function RSOAction() {
     RSO_probationary: false,
     RSO_picture: null,
     RSO_picturePreview: DefaultPicture,
-    RSO_academicYear: "", // Label for display
-    academicYearId: "", // ID for submission
   });
 
   console.log("formData:", formData);
@@ -300,10 +298,7 @@ function RSOAction() {
       // go through all the fields and check one by one if the formData matches rsoDetailData
       // if it is, remove it from the payload
       if (isEdit && rsoDetailData) {
-        if (formData.academicYearId === (rsoDetailData?.data?.academicYear || "")) {
-          delete payload.academicYearId;
-          delete payload.RSO_academicYear;
-        }
+
 
         if (formData.RSO_name === (rsoDetailData?.data?.RSOid?.RSO_name || "")) {
           delete payload.RSO_name;
@@ -340,6 +335,7 @@ function RSOAction() {
         // dont include RSO_picture, RSO_picturePreview, createdAt, picture, and updatedAt in payload
 
         delete payload.RSO_picturePreview;
+        delete payload.RSO_academicYear;
         // delete payload.RSO_picture;
         delete payload.picture;
         delete payload.createdAt;
@@ -390,12 +386,16 @@ function RSOAction() {
         return;
       }
 
+      if (payload.RSO_academicYear) {
+        console.log("Academic year selected:", payload.RSO_academicYear);
+      }
+
       try {
         setLoading(true);
         let result;
         if (isEdit && data?.id) {
           console.log("Sending to updateRSOMutate:", payload);
-          result = await updateRSOMutate({ id: data.id, updatedOrg: payload, academicYearId: formData.academicYearId },
+          result = await updateRSOMutate({ id: data.id, updatedOrg: payload },
             {
               onSuccess: (data) => {
                 console.log("RSO updated successfully:", data);
@@ -532,11 +532,6 @@ function RSOAction() {
     setImage(null);
   };
 
-  useEffect(() => {
-    if (isCreateSuccess) {
-      toast.success(isEdit ? 'RSO updated successfully!' : 'RSO created successfully!')
-    }
-  })
 
 
 
@@ -625,39 +620,6 @@ function RSOAction() {
                 </div>
               </div>
 
-              {/* Academic Year */}
-              <div className='w-full flex flex-col'>
-                <label htmlFor="RSO_academicYear" className='text-sm'>Academic Year</label>
-                <select
-                  name="RSO_academicYear"
-                  id="RSO_academicYear"
-                  value={formData.RSO_academicYear}
-                  onChange={(e) => {
-                    const selectedLabel = e.target.value;
-                    const selectedYear = academicYears?.years?.find(year => year.label === selectedLabel);
-                    console.log("Academic Year selected:", selectedLabel);
-                    console.log("Selected year object:", selectedYear);
-                    console.log("Selected year ID:", selectedYear?._id);
-
-                    setFormData({
-                      ...formData,
-                      RSO_academicYear: selectedLabel,
-                      academicYearId: selectedYear?._id || ""
-                    });
-                  }}
-                  className="bg-textfield border border-mid-gray text-gray-900 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                >
-                  <option value="" disabled>Select Academic Year</option>
-                  {academicYears?.years?.map((year, index) => (
-                    <option key={year.id || index} value={year.label}>
-                      {year.label}
-                    </option>
-                  ))}
-                </select>
-                {!academicYears?.years?.length && (
-                  <p className="text-red-500 text-xs mt-1">No academic years available</p>
-                )}
-              </div>
             </div>
             <div className='w-full'>
               <label htmlFor="RSO_name" className='text-sm'>RSO Name</label>

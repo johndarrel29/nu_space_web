@@ -116,7 +116,7 @@ const updateSentAnnouncementRequest = async ({ announcementId, title, content })
     }
 }
 
-function useNotification({ userId, filters, date } = {}) {
+function useNotification({ userId, filters, date, page = 1 } = {}) {
     const queryClient = useQueryClient();
     const { isUserRSORepresentative } = useUserStoreWithAuth();
     const location = useLocation();

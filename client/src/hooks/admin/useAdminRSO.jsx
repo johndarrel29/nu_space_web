@@ -50,11 +50,13 @@ const createRSO = async (newOrg) => {
             headers,
             body,
         });
+        console.log("Response from createRSO:", response);
 
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(errorText || `Error: ${response.status} - ${response.statusText}`);
         }
+
         // if (!response.ok) {
         //     const errorData = await response.json(); // try to read the server's message
         //     throw new Error(errorData.message || `Error: ${response.status} - ${response.statusText}`);
@@ -409,6 +411,7 @@ function useAdminRSO({
     category = "",
     manualEnable = false,
     academicYearId = "",
+    setActiveAY = false,
 } = {}) {
     const queryClient = useQueryClient();
     const { isUserAdmin, isUserCoordinator } = useUserStoreWithAuth();
@@ -435,6 +438,7 @@ function useAdminRSO({
         search,
         category,
         academicYearId,
+        setActiveAY,
     }
 
     const {

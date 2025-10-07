@@ -6,7 +6,7 @@ import { useTokenStore, useUserStoreWithAuth } from '../../store';
 const getAVPDocuments = async ({ queryKey }) => {
     try {
         const token = useTokenStore.getState().getToken();
-        const [, params = {}] = queryKey;
+        const [_key, params = {}] = queryKey;
 
         // Filter out undefined, null, or empty string values from params
         const filteredParams = {};
@@ -69,7 +69,7 @@ const getAVPActivityDocumentsRequest = async ({ queryKey, pageParam = 1 }) => {
         const token = useTokenStore.getState().getToken();
 
         const [_, filter] = queryKey;
-        const { limit = 12, query = "", sorted = "", RSO = "", RSOType = "", college = "", isGPOA = "All", page = 1 } = filter;
+        const { limit = 12, query = "", sorted = "", RSO = "", RSOType = "", college = "", isGPOA = "All", page = 1, yearId = "" } = filter;
 
         let url = new URL(`${process.env.REACT_APP_BASE_URL}/api/avp/documents/all-activities`);
         if (page > 1) {
@@ -84,6 +84,7 @@ const getAVPActivityDocumentsRequest = async ({ queryKey, pageParam = 1 }) => {
         if (isGPOA && isGPOA !== "All") url.searchParams.set("isGPOA", isGPOA === true ? "true" : "false");
         if (college) url.searchParams.set("college", college);
         if (sorted) url.searchParams.set("sorted", sorted);
+        if (yearId) url.searchParams.set("yearId", yearId);
 
         console.log("Fetching admin activities with params:", {
             page: pageParam,
@@ -132,6 +133,8 @@ function useAVPDocuments({
     college = "",
     isGPOA = "All",
     page = 1,
+    yearId = "",
+    purpose = "",
 } = {}) {
 
     const { isAVP } = useUserStoreWithAuth();
@@ -148,6 +151,8 @@ function useAVPDocuments({
         RSOType,
         college,
         page,
+        yearId,
+        purpose,
     };
 
     useEffect(() => {
@@ -165,7 +170,7 @@ function useAVPDocuments({
         isRefetching: isRefetchingDocuments,
         isFetched: isDocumentsFetched,
     } = useQuery({
-        queryKey: ["avpDocuments"],
+        queryKey: ["avpDocuments", filter],
         queryFn: getAVPDocuments,
         enabled: isAVP && isAdminDocumentsPage,
     });

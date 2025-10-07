@@ -2,7 +2,7 @@ import { DateTimePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from "dayjs";
 import { AnimatePresence, motion } from 'framer-motion';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { DropIn } from "../../animations/DropIn";
@@ -20,6 +20,7 @@ export default function ActivityDeadlineBanner({ activity }) {
     const [postDocDeadline, setPostDocDeadline] = useState(null);
     const { activityId } = useParams();
     const [remarks, setRemarks] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const handleCloseModal = useCallback(() => {
         closeModal();
@@ -64,16 +65,45 @@ export default function ActivityDeadlineBanner({ activity }) {
     const isPreDone = activity?.Activity_pre_document_deadline?.date_status === 'done';
     const isPostDone = activity?.Activity_post_document_deadline?.date_status === 'done';
 
-    const handleDateSelected = () => {
+    useEffect(() => {
+        if (activity?.Activity_pre_document_deadline?.end_deadline) {
+            setPreDocDeadline(dayjs(activity.Activity_pre_document_deadline.end_deadline));
+        }
+        if (activity?.Activity_post_document_deadline?.end_deadline) {
+            setPostDocDeadline(dayjs(activity.Activity_post_document_deadline.end_deadline));
+        }
+    }, [activity]);
 
-        if (preDocDeadline) {
+    const handleDateSelected = () => {
+        const isPreDocDeadlineChanged = dayjs(preDocDeadline).toISOString() !== activity?.Activity_pre_document_deadline?.end_deadline;
+        const isPostDocDeadlineChanged = dayjs(postDocDeadline).toISOString() !== activity?.Activity_post_document_deadline?.end_deadline;
+
+        // check to see if there is a date change
+        if (!preDocDeadline && !postDocDeadline) {
+            setLoading(false);
+            toast.error("Please select at least one deadline to set.");
+            return;
+        }
+
+        if (!isPreDocDeadlineChanged && !isPostDocDeadlineChanged) {
+            setLoading(false);
+            toast.error("No changes detected in the selected deadlines.");
+            return;
+        }
+
+        // Call the mutation to set the deadlines
+
+        if (preDocDeadline && isPreDocDeadlineChanged) {
+            toast.info("Setting pre-document deadline...");
+            setLoading(true);
             preDocumentDeadlineMutate({
-                activityId: activityId,
+                activityId: activity?._id,
                 preDocumentDeadline: dayjs(preDocDeadline).toISOString(),
             },
                 {
-                    onSuccess: () => {
-                        console.log('Pre-document deadline updated successfully');
+                    onSuccess: (data) => {
+                        setLoading(false);
+                        console.log('Pre-document deadline updated successfully', data);
                         toast.success('Pre-document deadline updated successfully');
                         refetchViewAdminActivity();
                         // clear the select state and the date state
@@ -82,19 +112,23 @@ export default function ActivityDeadlineBanner({ activity }) {
                         handleCloseModal();
                     },
                     onError: (error) => {
+                        setLoading(false);
                         console.error('Error updating pre-document deadline:', error);
                         toast.error(error.message || 'Error updating pre-document deadline');
                     }
                 }
             );
         }
-        if (postDocDeadline) {
+        if (postDocDeadline && isPostDocDeadlineChanged) {
+            toast.info("Setting post-document deadline...");
+            setLoading(true);
             postDocumentDeadlineMutate({
-                activityId: activityId,
+                activityId: activity?._id,
                 postDocumentDeadline: dayjs(postDocDeadline).toISOString(),
             },
                 {
                     onSuccess: () => {
+                        setLoading(false);
                         toast.success('Post-document deadline updated successfully');
                         // clear the select state and the date state
                         refetchViewAdminActivity();
@@ -103,6 +137,7 @@ export default function ActivityDeadlineBanner({ activity }) {
                         handleCloseModal();
                     },
                     onError: (error) => {
+                        setLoading(false);
                         console.error('Error updating post-document deadline:', error);
                         toast.error(error.message || 'Error updating post-document deadline');
                     }
@@ -115,6 +150,8 @@ export default function ActivityDeadlineBanner({ activity }) {
         <>
             {(activity?.Activity_pre_document_deadline?.date_status === "ongoing" || activity?.Activity_post_document_deadline?.date_status === "ongoing") && (
                 <div
+                    data-tooltip-id="global-tooltip"
+                    data-tooltip-content={!isUserRSORepresentative ? "Click to set or update deadlines" : null}
                     className={`${!isUserRSORepresentative ? "cursor-pointer" : ""} bg-blue-50 border border-blue-200 rounded-lg px-6 py-4 shadow-sm flex items-start gap-3 mb-6 group`}
                     onClick={!isUserRSORepresentative ? (() => { openModal(); setModalType("banner"); }) : null}
                 >
@@ -125,12 +162,14 @@ export default function ActivityDeadlineBanner({ activity }) {
                         <span className={`text-blue-800 font-semibold text-base ${!isUserRSORepresentative ? "group-hover:underline" : ""}`}>Pre and Post Documents Opened</span>
                         {/* <span className="text-blue-700 text-sm">You can now upload pre and post documents for this activity.</span> */}
                         <div className='flex items-center gap-2'>
-                            <span className="text-blue-700 text-xs mt-1"><span className='font-semibold'>Pre Documents</span> from: {activity?.Activity_pre_document_deadline ? FormatDate(activity.Activity_pre_document_deadline.start_deadline) : "No deadline set"}</span>
+                            {/* <span className="text-blue-700 text-xs mt-1"><span className='font-semibold'>Pre Documents</span> from: {activity?.Activity_pre_document_deadline ? FormatDate(activity.Activity_pre_document_deadline.start_deadline) : "No deadline set"}</span> */}
+                            <span className="text-blue-700 text-xs mt-1"><span className='font-semibold'>Pre Documents Deadline </span> </span>
                             <div className='h-4 w-px bg-blue-200'></div>
                             <span className="text-blue-700 text-xs mt-1">Until: {activity?.Activity_pre_document_deadline ? FormatDate(activity.Activity_pre_document_deadline.end_deadline) : "No deadline set"}</span>
                         </div>
                         <div className='flex items-center gap-2 mt-1'>
-                            <span className="text-blue-700 text-xs"><span className='font-semibold'>Post Documents</span> from: {activity?.Activity_post_document_deadline ? FormatDate(activity.Activity_post_document_deadline.start_deadline) : "No deadline set"}</span>
+                            {/* <span className="text-blue-700 text-xs"><span className='font-semibold'>Post Documents</span> from: {activity?.Activity_post_document_deadline ? FormatDate(activity.Activity_post_document_deadline.start_deadline) : "No deadline set"}</span> */}
+                            <span className="text-blue-700 text-xs"><span className='font-semibold'>Post Documents Deadline </span> </span>
                             <div className='h-4 w-px bg-blue-200'></div>
                             <span className="text-blue-700 text-xs">Until: {activity?.Activity_post_document_deadline ? FormatDate(activity.Activity_post_document_deadline.end_deadline) : "No deadline set"}</span>
                         </div>
@@ -173,7 +212,7 @@ export default function ActivityDeadlineBanner({ activity }) {
 
                                     <div className='flex justify-between items-center mb-6'>
                                         <h2 className="text-lg font-medium text-[#312895]">Set Activity Deadlines</h2>
-                                        <CloseButton onClick={handleCloseModal} />
+                                        <CloseButton onClick={() => { handleCloseModal(); setLoading(false); }} />
                                     </div>
                                     {/* Deadline fields */}
                                     <div className='space-y-4'>
@@ -184,6 +223,7 @@ export default function ActivityDeadlineBanner({ activity }) {
                                                     <h1>{activity?.Activity_name || "No Activity Selected"}</h1>
                                                 </div>
                                             </div>
+                                            {console.log("Pre-document deadline state:", preDocDeadline)}
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div className="w-full">
                                                     <label className="block text-sm font-medium text-gray-700 mb-1">Pre Document Deadline</label>
@@ -225,7 +265,8 @@ export default function ActivityDeadlineBanner({ activity }) {
                                     {/* Button to log deadlines */}
                                     <div className="flex justify-end mt-6 gap-3">
                                         <Button
-                                            onClick={() => handleDateSelected()}
+                                            disabled={loading || (!preDocDeadline && !postDocDeadline)}
+                                            onClick={() => { handleDateSelected(); setLoading(true); }}
                                             style="primary"
                                         >
                                             Set Deadlines

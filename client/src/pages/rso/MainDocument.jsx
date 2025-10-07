@@ -164,6 +164,7 @@ function MainDocument() {
                 showAllOption={false}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
+                showDropdown={false}
                 tableRow={filteredDocuments()}
                 error={generalDocumentsError}
                 isLoading={generalDocumentsLoading}

@@ -69,7 +69,7 @@ const fetchAdminActivity = async ({ queryKey, pageParam = 1 }) => {
 const preDocumentDeadlineRequest = async ({ activityId, preDocumentDeadline }) => {
     try {
         console.log("url:", `${process.env.REACT_APP_BASE_URL}/api/admin/activities/deadline/preDocDeadline/${activityId}`);
-        console.log("preDocumentDeadline:", preDocumentDeadline);
+        console.log("id and preDocumentDeadline:", { activityId, end_deadline: preDocumentDeadline });
 
         const token = useTokenStore.getState().getToken();
         const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/admin/activities/deadline/preDocDeadline/${activityId}`, {

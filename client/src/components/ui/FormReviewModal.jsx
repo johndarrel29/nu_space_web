@@ -13,6 +13,8 @@ export default function FormReviewModal({ userModalData, isOpen, onClose }) {
     const location = useLocation();
     const isOnActivityDetailsPage = location.pathname.startsWith("/activities/");
 
+    console.log("FormReviewModal userModalData:", userModalData);
+
     const {
         rsoApplicants,
         isErrorFetchingApplicants,
@@ -133,6 +135,7 @@ export default function FormReviewModal({ userModalData, isOpen, onClose }) {
                                                     {page.elements.length > 0 && (
                                                         <dl className="divide-y divide-gray-100">
                                                             {page.elements.map((item, idx) => (
+
                                                                 <div
                                                                     key={item.elementIndex || idx}
                                                                     className="py-3 grid grid-cols-12 gap-4"
@@ -140,14 +143,28 @@ export default function FormReviewModal({ userModalData, isOpen, onClose }) {
                                                                     <dt className="col-span-12 md:col-span-5 text-[11px] font-medium uppercase tracking-wide text-gray-500">
                                                                         {item.title || `Question ${idx + 1}`}
                                                                     </dt>
-                                                                    <dd
-                                                                        className="col-span-12 md:col-span-7 text-sm text-gray-900 whitespace-pre-wrap break-words"
-                                                                        title={item.answer}
-                                                                    >
-                                                                        {item.answer === "" || item.answer === null
-                                                                            ? <span className="italic text-gray-400">No answer</span>
-                                                                            : item.answer}
-                                                                    </dd>
+                                                                    {(item.type !== 'file') ? (
+                                                                        <dd
+                                                                            className="col-span-12 md:col-span-7 text-sm text-gray-900 whitespace-pre-wrap break-words"
+                                                                            title={item.answer}
+                                                                        >
+                                                                            {item.answer === "" || item.answer === null
+                                                                                ? <span className="italic text-gray-400">No answer</span>
+                                                                                : item.answer}
+                                                                        </dd>
+                                                                    ) : (
+                                                                        <dd
+
+                                                                            className="col-span-12 md:col-span-7 text-sm text-gray-900 whitespace-pre-wrap break-words"
+                                                                        >
+                                                                            <img
+                                                                                data-tooltip-id="global-tooltip"
+                                                                                data-tooltip-content="Click to view full image"
+                                                                                onClick={() => window.open(item.signedUrl, '_blank', 'noopener,noreferrer')}
+                                                                                className="border rounded h-64 object-contain  cursor-pointer hover:opacity-75" src={item.signedUrl} alt={item.title}
+                                                                            />
+                                                                        </dd>
+                                                                    )}
                                                                 </div>
                                                             ))}
                                                         </dl>

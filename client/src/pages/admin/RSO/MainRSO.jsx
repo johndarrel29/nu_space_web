@@ -358,8 +358,21 @@ export default function MainRSO() {
   }
 
   const handleAcademicYear = (value) => {
+    if (value === filters.academicYearId) return;
+
     setFilters(prev => ({ ...prev, academicYearId: value, page: 1 }));
+
   };
+
+  useEffect(() => {
+    if (academicYears?.status?.activeAY?._id && !filters.academicYearId) {
+      setFilters(prev => ({
+        ...prev,
+        academicYearId: academicYears?.status?.activeAY?._id,
+        page: 1
+      }));
+    }
+  }, [academicYears, filters.academicYearId]);
 
   return (
     <>
@@ -383,6 +396,7 @@ export default function MainRSO() {
 
               <select
                 id="academic-year"
+                value={filters.academicYearId}
                 onChange={(e) => handleAcademicYear(e.target.value)}
                 className="w-full h-10 rounded-md bg-white border border-mid-gray p-1"
               >

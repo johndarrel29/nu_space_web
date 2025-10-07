@@ -13,7 +13,7 @@ export default function NotificationPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedNotif, setSelectedNotif] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [filters, setFilters] = useState({ search: '' });
+    const [filters, setFilters] = useState({ search: '', page: 1 });
     const user = JSON.parse(localStorage.getItem("user")) || {};
 
     const {
@@ -29,6 +29,10 @@ export default function NotificationPage() {
     useEffect(() => {
         setFilters(prev => ({ ...prev, search: searchQuery }));
     }, [searchQuery])
+
+    useEffect(() => {
+        console.log("Page params changed:", filters.page);
+    }, [filters.page])
 
 
     const filteredNotifications = notificationsData?.data?.map(
@@ -112,6 +116,29 @@ export default function NotificationPage() {
                         ))
                     ))
                 }
+            </div>
+
+
+            {/* pagination */}
+            <div className='w-full bottom-20 mt-4'>
+                <nav>
+                    <div className="flex justify-center space-x-2">
+
+                        <div className={`page-item mx-1 px-3 py-2 bg-white border border-mid-gray rounded-md font-semibold rounded`}>
+                            <button
+                                disabled={notificationsData?.pagination?.currentPage <= 1}
+                                className='page-link' onClick={() => setFilters({ ...filters, page: filters.page - 1 })}>Prev</button>
+                        </div>
+                        <div className="px-4 py-2 font-semibold">
+                            {`${notificationsData?.pagination?.currentPage || 1} of ${notificationsData?.pagination?.totalPages || 1}`}
+                        </div>
+                        <div className={`page-item mx-1 px-3 py-2 bg-white border border-mid-gray rounded-md font-semibold rounded`}>
+                            <button
+                                disabled={notificationsData?.pagination?.currentPage >= notificationsData?.pagination?.totalPages}
+                                className='page-link' onClick={() => setFilters({ ...filters, page: filters.page + 1 })}>Next</button>
+                        </div>
+                    </div>
+                </nav>
             </div>
 
             {/* Modal for notification details */}

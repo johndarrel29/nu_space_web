@@ -208,6 +208,12 @@ export default function MainDocuments() {
     setCollege(value);
   }
 
+  useEffect(() => {
+    if (academicYears?.status?.activeAY?._id && !academicYear) {
+      setAcademicYear(academicYears?.status?.activeAY?._id);
+    }
+  }, [academicYears, academicYear]);
+
 
   const handleAcademicYear = (value) => {
     setAcademicYear(value);
@@ -458,7 +464,7 @@ export default function MainDocuments() {
                   id="RSOType"
                   icon={true}
                   placeholder={"Select RSO Type"}
-                  options={["All", "Professional & Affiliates", "Professional", "Special Interest", "Probationary"]}
+                  options={["All", "Professional & Affiliates", "Professional", "Special Interest", "Probationary", "Office Aligned Organization"]}
                   showAllOption={false}
                   onChange={(e) => handleRSOType(e.target.value)}
                   value={RSOType}
@@ -485,6 +491,7 @@ export default function MainDocuments() {
                 </label>
                 <select
                   id="academic-year"
+                  value={academicYear || ""}
                   onChange={(e) => handleAcademicYear(e.target.value)}
                   className="w-full h-10 rounded-md bg-white border border-mid-gray p-1"
                 >

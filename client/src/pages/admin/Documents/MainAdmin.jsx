@@ -49,6 +49,16 @@ export default function MainAdmin() {
     });
 
     useEffect(() => {
+        if (academicYears?.status?.upcomingAY?._id) {
+            setSelectedAcademicYear(academicYears.status.upcomingAY._id);
+            setModalData(prev => ({
+                ...prev,
+                academicYearId: academicYears.status.upcomingAY._id
+            }))
+        }
+    }, [academicYears]);
+
+    useEffect(() => {
         console.log("the modal data is", modalData);
     }, [modalData]);
 
@@ -170,6 +180,25 @@ export default function MainAdmin() {
                                 </div>
 
                                 <div className="space-y-4">
+                                    <div className="mb-8 border-b border-gray-300 pb-4">
+                                        <label htmlFor="category-filter" className="text-sm font-medium text-gray-600">For Upcoming Academic Year</label>
+                                        {/* <select
+                                            id="category-filter"
+                                            value={selectedAcademicYear}
+                                            onChange={handleAcademicYearChange}
+                                            className="py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm"
+                                        >
+                                            <option value="">-- Select Academic Year --</option>
+                                            {academicYears?.years?.map((option) => (
+                                                <option key={option._id} value={option._id}>
+                                                    {option.label}
+                                                </option>
+                                            ))}
+                                        </select> */}
+                                        <div className="mt-2 text-off-black text-sm w-full flex justify-start py-2 px-3 border border-dashed border-gray-300 rounded bg-background">
+                                            {academicYears?.status?.upcomingAY?.label}
+                                        </div>
+                                    </div>
                                     <div>
                                         <label className="block text-sm text-gray-600 mb-1">Start Deadline</label>
                                         <input
@@ -212,20 +241,7 @@ export default function MainAdmin() {
                                     </div>
 
                                     <div className="flex flex-col">
-                                        <label htmlFor="category-filter" className="text-sm font-medium text-gray-600">Academic Year</label>
-                                        <select
-                                            id="category-filter"
-                                            value={selectedAcademicYear}
-                                            onChange={handleAcademicYearChange}
-                                            className="py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm"
-                                        >
-                                            <option value="">-- Select Academic Year --</option>
-                                            {academicYears?.years?.map((option) => (
-                                                <option key={option._id} value={option._id}>
-                                                    {option.label}
-                                                </option>
-                                            ))}
-                                        </select>
+
                                         {/* Category dropdown field */}
                                         <label htmlFor="category-dropdown" className="text-sm font-medium text-gray-600 mt-3">Category</label>
                                         <select

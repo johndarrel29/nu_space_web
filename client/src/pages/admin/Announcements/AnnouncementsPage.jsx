@@ -26,7 +26,7 @@ function AnnouncementsPage() {
         isRSOError,
         rsoError,
         refetchRSOData,
-    } = useAdminRSO({ manualEnable: true }); // manual enable to control when to fetch
+    } = useAdminRSO({ manualEnable: true, setActiveAY: true, }); // manual enable to control when to fetch
 
     console.log("RSO Data: ", rsoData);
 

@@ -32,7 +32,7 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
         startDate: "",
         endDate: "",
         search: "",
-        academicYear: ""
+        yearId: ""
     });
     const {
         adminPaginatedActivities,
@@ -86,7 +86,9 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
         debouncedQuery: searchQuery,
         page: filters.page,
         limit: filters.limit,
-        RSO: filters.rsoId
+        RSO: filters.rsoId,
+        yearId: filters.yearId,
+        purpose: filters.purpose,
     });
     const {
         directorDocuments,
@@ -101,7 +103,9 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
         debouncedQuery: searchQuery,
         page: filters.page,
         limit: filters.limit,
-        RSO: filters.rsoId
+        RSO: filters.rsoId,
+        yearId: filters.yearId,
+        purpose: filters.purpose,
     });
     const {
         coordinatorDocuments,
@@ -174,11 +178,11 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
     // Effects
     useEffect(() => {
         if (coordinatorDocuments && isCoordinator) {
-            setTableData(coordinatorDocuments?.documents);
+            setTableData(coordinatorDocuments);
         } else if (allDocuments && isUserAdmin) {
             setTableData(allDocuments);
         } else if (avpDocuments && isAVP) {
-            setTableData(avpDocuments?.documents);
+            setTableData(avpDocuments);
         } else if (directorDocuments && isDirector) {
             setTableData(directorDocuments);
         }
@@ -273,6 +277,8 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
     };
 
     const handleAcademicYear = (value) => {
+        console.log("Selected Academic Year:", value);
+
         setFilters(prev => ({ ...prev, yearId: value, page: 1 }));
     };
 
@@ -312,6 +318,18 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
         if (!Number.isFinite(page) || !Number.isFinite(limit)) return 0;
         return (page - 1) * limit;
     }, [activityRoleData, filters.page, filters.limit]);
+
+    useEffect(() => {
+        setFilters(prev => ({ ...prev, yearId: "" }));
+    }, [activeTab]);
+
+    useEffect(() => {
+        if (activeTab === 1 && academicYears?.status?.upcomingAY?._id && !filters.yearId) {
+            setFilters(prev => ({ ...prev, yearId: academicYears.status.upcomingAY._id }));
+        } else if (academicYears?.status?.activeAY?._id && activeTab !== 1 && !filters.yearId) {
+            setFilters(prev => ({ ...prev, yearId: academicYears.status.activeAY._id }));
+        }
+    }, [academicYears, filters.yearId, activeTab]);
 
     return (
         <div className="p-4">
@@ -368,10 +386,11 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
                         </label>
                         <select
                             id="academic-year"
+                            value={filters.yearId || ""}
                             onChange={(e) => handleAcademicYear(e.target.value)}
                             className="w-full h-10 rounded-md bg-white border border-mid-gray p-1"
                         >
-                            <option value="">Select Academic Year</option>
+                            <option value="All">All</option>
                             {academicYears?.years?.map(year => (
                                 <option
                                     key={year._id}
@@ -417,7 +436,7 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
             <div className="flex justify-between items-center mb-4 w-full">
                 {activeTab !== 2 && (
                     <span className="text-gray-700 font-semibold">
-                        Showing {tableData?.signedDocuments ? tableData.signedDocuments.length : tableData?.length || 0} results
+                        Showing {tableData?.pagination ? tableData?.pagination?.totalDocuments : 0} results
                     </span>
                 )}
                 {activeTab === 2 && (
@@ -690,8 +709,8 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
                                     </thead>
 
                                     <tbody>
-                                        {(tableData?.signedDocuments || tableData).length > 0 ? (
-                                            (tableData?.signedDocuments || tableData).map((row, index) => (
+                                        {(tableData?.documents || tableData?.signedDocuments)?.length > 0 ? (
+                                            (tableData?.documents || tableData?.signedDocuments)?.map((row, index) => (
                                                 <tr
                                                     key={row.id}
                                                     onClick={() => handleRowClick(row)}

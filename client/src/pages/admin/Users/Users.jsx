@@ -14,6 +14,7 @@ export default function Users() {
   const { isOpen, openModal, closeModal } = useModal();
   const { isUserRSORepresentative, isUserAdmin, isSuperAdmin, isCoordinator, isDirector, isAVP } = useUserStoreWithAuth();
   const [activeTab, setActiveTab] = useState(0);
+  const [selectedUserId, setSelectedUserId] = useState(null);
 
   const [filters, setFilters] = useState({
     search: "",
@@ -34,7 +35,7 @@ export default function Users() {
     isRSOError,
     rsoError,
     refetchRSOData,
-  } = useAdminRSO({ manualEnable: !isUserRSORepresentative ? true : false });
+  } = useAdminRSO({ manualEnable: !isUserRSORepresentative ? true : false, setActiveAY: true });
 
   useEffect(() => {
     console.log("searchQuery changed to:", searchQuery);
@@ -65,7 +66,26 @@ export default function Users() {
     isErrorApprovingMembership,
     errorApprovingMembership,
     isSuccessApprovingMembership,
-  } = useRSOUsers();
+
+    applicantAnswer,
+    isErrorFetchingApplicantAnswer,
+    errorFetchingApplicantAnswer,
+    isLoadingApplicantAnswer,
+    refetchApplicantAnswer,
+  } = useRSOUsers({ userId: selectedUserId });
+
+  useEffect(() => {
+    console.log("applicantAnswer changed to:", selectedUserId, "applicantAnswer is ", applicantAnswer);
+
+    setUserModalData({
+      email: applicantAnswer?.applicant?.studentId?.email || "",
+      fullName: applicantAnswer?.applicant?.studentId?.firstName + " " + applicantAnswer?.applicant?.studentId?.lastName || "",
+      id: applicantAnswer?.applicant?._id || undefined,
+      applicationId: applicantAnswer?.applicant?._id || undefined,
+      index: 0,
+      pages: applicantAnswer?.applicant?.answers?.pages || []
+    });
+  }, [selectedUserId, applicantAnswer]);
 
   const {
     // fetching users admin
@@ -292,13 +312,13 @@ export default function Users() {
 
   const handleOpenUserModal = (row) => {
     console.log("row is ", row);
+    setSelectedUserId(row.applicantData?._id);
     const rawPages = row?.applicantData?.answers?.pages || [];
 
     if (!row || !row.applicantData) {
       toast.error("Applicant data is missing or incomplete.");
       return;
     }
-
 
     const pages = rawPages.map((page, pIdx) => ({
       pageIndex: pIdx,
@@ -312,16 +332,18 @@ export default function Users() {
       }))
     }));
 
-    setUserModalData({
-      email: row.email || "",
-      fullName: row.fullName || "",
-      id: row.id,
-      applicationId: row.applicantData?._id || undefined,
-      index: row.index,
-      pages
-    });
+    // setUserModalData({
+    //   email: row.email || "",
+    //   fullName: row.fullName || "",
+    //   id: row.id,
+    //   applicationId: row.applicantData?._id || undefined,
+    //   index: row.index,
+    //   pages
+    // });
     setIsUserModalOpen(true);
   };
+
+
 
   const handleApproveMembership = () => {
 
@@ -602,6 +624,7 @@ export default function Users() {
 
   useEffect(() => {
     console.log("storeRowData changed to:", storeRowData?.row?.id);
+
   }, [storeRowData]);
 
   const closeEditModal = () => { setIsEditModalOpen(false) };

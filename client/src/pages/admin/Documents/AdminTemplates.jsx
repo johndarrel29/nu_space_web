@@ -15,6 +15,7 @@ import { toast } from 'react-toastify';
 export default function AdminTemplates() {
     const navigate = useNavigate();
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
     const [showUploadModal, setShowUploadModal] = useState(false);
 
     // New states for upload modal
@@ -23,6 +24,8 @@ export default function AdminTemplates() {
     const [uploadFiles, setUploadFiles] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedTemplateCategory, setSelectedTemplateCategory] = useState("");
+    const [documentToDelete, setDocumentToDelete] = useState(null);
+    const [isDocumentDeleteModal, setIsDocumentDeleteModal] = useState(false);
     const [filters, setFilters] = useState({
         documentType: "",
         templatePage: 1,
@@ -55,6 +58,12 @@ export default function AdminTemplates() {
         uploadDocumentTemplateError,
         uploadDocumentTemplateSuccess,
         refetchUploadDocumentTemplate,
+
+        templateCategories,
+        templateCategoriesLoading,
+        templateCategoriesError,
+        templateCategoriesQueryError,
+        refetchTemplateCategories,
     } = useAdminDocuments(filters);
 
     useEffect(() => {
@@ -151,31 +160,52 @@ export default function AdminTemplates() {
         accept: {
             'application/pdf': ['.pdf'],
             'application/msword': ['.doc'],
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+            'application/vnd.ms-excel': ['.xls'],
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+            'image/*': ['.jpeg', '.jpg', '.png', '.webp']
         }
     });
 
     const handleDocumentTypeName = (type) => {
         if (type === "new_applicant_recognition") return "New Applicant Recognition";
         if (type === "off_campus_activities") return "Off-Campus Activities";
+        if (type === "on_campus_activities") return "On-Campus Activities";
         if (type === "renewal_recognition") return "Renewal Recognition";
         return;
     }
 
-    const handleDeleteDocument = (id, templateId) => {
-        deleteSingleDocumentTemplate({ documentId: id, templateId }, {
-            onSuccess: () => {
-                toast.success("Template deleted successfully");
-                refetchDocumentTemplate();
-            },
-            onError: (error) => {
-                console.error("Error deleting template:", error);
-                toast.error("Error deleting template");
-            }
-        });
+    const handleDeleteDocument = ({ id, templateId }) => {
+        setLoading(true);
+        console.log("Deleting document with id:", id, "from template:", templateId);
+        try {
+            deleteSingleDocumentTemplate({ documentId: id, templateId }, {
+                onSuccess: () => {
+                    setLoading(false);
+                    setDocumentToDelete(null);
+                    setIsDocumentDeleteModal(false);
+                    toast.success("Template deleted successfully");
+                    refetchDocumentTemplate();
+                },
+                onError: (error) => {
+                    setLoading(false);
+                    setDocumentToDelete(null);
+                    console.error("Error deleting template:", error.message);
+                    toast.error(error.message || "Error deleting template");
+                }
+            });
+        } catch (error) {
+            setLoading(false);
+            console.error("Error deleting template:", error.message);
+            toast.error("Error deleting template", error.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleConfirmDelete = (e) => {
+        console.log("Deleting document:", e);
+
         setSelectedTemplateCategory(e);
     }
 
@@ -214,7 +244,7 @@ export default function AdminTemplates() {
 
                 {/* Header section */}
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 mb-4">
-                    <h1 className="text-lg sm:text-xl font-semibold">All Templates</h1>
+                    <h1 className="text-lg sm:text-xl font-semibold">{`${documentTemplate?.pagination?.totalDocuments || 0} Templates`}</h1>
                     <div className='flex gap-3 flex-wrap items-center'>
                         {/* Static dropdown filter replacing the filter button */}
                         <div className='flex items-center gap-2 w-full sm:w-auto'>
@@ -225,7 +255,7 @@ export default function AdminTemplates() {
                                 onChange={handleCategoryChange}
                                 className="py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm w-full sm:w-auto"
                             >
-                                <option value="">-- Select Category --</option>
+                                <option value="">All</option>
                                 {templateOptions.map((option, index) => (
                                     <option key={option.value} value={option.value}>
                                         {option.label}
@@ -269,7 +299,7 @@ export default function AdminTemplates() {
                         ))}
                     </>
                 ) :
-                    (flattenedDocuments.length === 0) ? (
+                    (documentTemplate?.documents?.length === 0) ? (
                         <div className="flex flex-col items-center justify-center py-16">
                             <svg xmlns="http://www.w3.org/2000/svg" className="mb-4 w-12 h-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2a4 4 0 018 0v2m-6 4h6a2 2 0 002-2v-5a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-2.414-2.414A2 2 0 0012.586 7H7a2 2 0 00-2 2v7a2 2 0 002 2h2" />
@@ -278,35 +308,65 @@ export default function AdminTemplates() {
                             <div className="text-gray-400 text-sm mt-2">Try uploading a new template or changing your filter.</div>
                         </div>
                     ) : (
-                        documentTemplate?.documents?.map((doc, index) => (
-                            doc?.documents.map((subDoc, i) => (
-                                <div
-                                    key={subDoc.id}
-                                    className="w-full bg-white rounded border border-mid-gray p-3 sm:p-4 flex justify-between items-center gap-3 sm:gap-4 cursor-pointer hover:bg-gray-100 mb-3 sm:mb-4"
-                                // onClick={() => setSelectedTemplate(doc)}
-                                >
-                                    <div className="flex items-center justify-between w-full px-2 sm:px-4">
-                                        <div className='flex gap-3 sm:gap-6 items-center flex-1 min-w-0'>
-                                            <p className="text-xs sm:text-sm w-5 sm:w-6 text-gray-600 tabular-nums">{i + 1}</p>
-                                            <div className="flex flex-col min-w-0">
-                                                <h1 className="font-semibold text-sm sm:text-base truncate max-w-[12rem] sm:max-w-[20rem] lg:max-w-[30rem]">{subDoc.title}</h1>
-                                                <div className='flex gap-2 items-center text-xs sm:text-sm'>
-                                                    <h2 className="text-gray-600">{handleDocumentTypeName(doc?.documentFor)}</h2>
-                                                    <div className='aspect-square rounded-full bg-gray-400 h-1 w-1'></div>
-                                                    <h1 className="text-gray-600">{subDoc.documentSize} MB</h1>
-                                                </div>
+
+                        documentTemplate?.documents?.map((subDoc, i) => (
+                            <div
+                                key={subDoc.id}
+                                className="w-full bg-white rounded border border-mid-gray p-3 sm:p-4 flex justify-between items-center gap-3 sm:gap-4 cursor-pointer hover:bg-gray-100 mb-3 sm:mb-4"
+                                onClick={() => window.open(subDoc.signedUrl, '_blank')}
+                            >
+                                <div className="flex items-center justify-between w-full px-2 sm:px-4">
+                                    <div className='flex gap-3 sm:gap-6 items-center flex-1 min-w-0'>
+                                        <div className="flex flex-col min-w-0">
+                                            <h1 className="font-semibold text-sm sm:text-base truncate max-w-[12rem] sm:max-w-[20rem] lg:max-w-[30rem]">{subDoc.title}</h1>
+                                            <div className='flex gap-2 items-center text-xs sm:text-sm'>
+                                                <h2 className="text-gray-600">{handleDocumentTypeName(subDoc?.documentFor)}</h2>
+                                                <div className='aspect-square rounded-full bg-gray-400 h-1 w-1'></div>
+                                                <h1 className="text-gray-600">{subDoc.documentSize} MB</h1>
                                             </div>
                                         </div>
-                                        <div
-                                            onClick={() => handleDeleteDocument(subDoc._id, doc._id)}
-                                            className='rounded-full aspect-square h-8 flex items-center justify-center bg-white hover group'>
-                                            <svg xmlns="http://www.w3.org/2000/svg" className='fill-gray-600 size-4 group-hover:fill-gray-800' viewBox="0 0 640 640"><path d="M232.7 69.9L224 96L128 96C110.3 96 96 110.3 96 128C96 145.7 110.3 160 128 160L512 160C529.7 160 544 145.7 544 128C544 110.3 529.7 96 512 96L416 96L407.3 69.9C402.9 56.8 390.7 48 376.9 48L263.1 48C249.3 48 237.1 56.8 232.7 69.9zM512 208L128 208L149.1 531.1C150.7 556.4 171.7 576 197 576L443 576C468.3 576 489.3 556.4 490.9 531.1L512 208z" /></svg>
-                                        </div>
+                                    </div>
+                                    <div
+                                        data-tooltip-id="global-tooltip"
+                                        data-tooltip-content="Delete Document"
+                                        onClick={(e) => { e.stopPropagation(); setIsDocumentDeleteModal(true); setDocumentToDelete({ id: subDoc._id, docId: subDoc.templateId, title: subDoc.title }); }}
+                                        className='rounded-full aspect-square h-8 flex items-center justify-center bg-white hover group'>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className='fill-gray-600 size-4 group-hover:fill-gray-800' viewBox="0 0 640 640"><path d="M232.7 69.9L224 96L128 96C110.3 96 96 110.3 96 128C96 145.7 110.3 160 128 160L512 160C529.7 160 544 145.7 544 128C544 110.3 529.7 96 512 96L416 96L407.3 69.9C402.9 56.8 390.7 48 376.9 48L263.1 48C249.3 48 237.1 56.8 232.7 69.9zM512 208L128 208L149.1 531.1C150.7 556.4 171.7 576 197 576L443 576C468.3 576 489.3 556.4 490.9 531.1L512 208z" /></svg>
                                     </div>
                                 </div>
-                            ))
+                            </div>
                         ))
+
                     )}
+
+                {/* pagination */}
+                <div className='w-full bottom-20 mt-4'>
+                    <nav>
+                        <div className="flex justify-center space-x-2">
+
+                            <div className={`page-item mx-1 px-3 py-2 bg-white border border-mid-gray rounded-md font-semibold rounded`}>
+                                <button
+                                    disabled={documentTemplate?.pagination?.hasPrevPage === false || filters.templatePage <= 1}
+                                    className='page-link'
+                                    onClick={() => setFilters({ ...filters, templatePage: Math.max(1, filters.templatePage - 1) })}
+                                >Prev</button>
+                            </div>
+                            <div className="px-4 py-2 font-semibold">
+                                {`${documentTemplate?.pagination?.currentPage || 1} of ${documentTemplate?.pagination?.totalPages || 1}`}
+                            </div>
+                            <div className={`page-item mx-1 px-3 py-2 bg-white border border-mid-gray rounded-md font-semibold rounded`}>
+                                <button
+
+                                    disabled={documentTemplate?.pagination?.hasNextPage === false}
+                                    className='page-link'
+                                    onClick={() => setFilters({ ...filters, templatePage: Math.min(documentTemplate?.pagination?.totalPages || 1, filters.templatePage + 1) })}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    </nav>
+                </div>
             </div>
 
             {/* Delete Template Modal */}
@@ -333,14 +393,12 @@ export default function AdminTemplates() {
                                         onChange={e => handleConfirmDelete(e.target.value)}
                                         className="py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm w-full"
                                     >
-                                        <option value="">-- Select Category --</option>
-                                        {documentTemplate?.documents
-                                            ?.filter(option => Array.isArray(option.documents) && option.documents.length > 0)
-                                            .map((option) => (
-                                                <option key={option._id} value={option._id}>
-                                                    {handleDocumentTypeName(option.documentFor)}
-                                                </option>
-                                            ))}
+                                        <option value="">None</option>
+                                        {templateCategories?.categories?.map((option) => (
+                                            <option key={option.id} value={option.id}>
+                                                {handleDocumentTypeName(option.name)}
+                                            </option>
+                                        ))}
                                     </select>
 
                                     <div className='flex justify-end mt-4 gap-2'>
@@ -352,11 +410,57 @@ export default function AdminTemplates() {
                                         </Button>
                                         <Button
                                             style="danger"
-                                            onClick={handleDeleteTemplate}
+                                            disabled={!selectedTemplateCategory || isDocumentTemplateRefetching}
+                                            onClick={() => setShowConfirmDeleteModal(true)}
                                         >
                                             Confirm Delete
                                         </Button>
                                     </div>
+                                    {/* Confirm Delete Modal */}
+                                    <AnimatePresence>
+                                        {showConfirmDeleteModal && (
+                                            <>
+                                                <Backdrop className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" />
+                                                <motion.div
+                                                    className="fixed inset-0 z-50 w-screen overflow-auto flex items-center justify-center"
+                                                    variants={DropIn}
+                                                    initial="hidden"
+                                                    animate="visible"
+                                                    exit="exit">
+                                                    <div className="bg-white rounded-lg p-6 w-[92%] sm:w-[420px] md:w-[480px] shadow-xl border border-gray-100">
+                                                        <div className='flex justify-between items-center mb-4'>
+                                                            <h2 className='text-sm font-semibold'>Confirm Delete</h2>
+                                                            <CloseButton onClick={() => setShowConfirmDeleteModal(false)} />
+                                                        </div>
+                                                        <div className='flex flex-col gap-4'>
+                                                            <p className='text-sm text-gray-800 mb-2'>
+                                                                Are you sure you want to delete this template? This action cannot be undone.
+                                                            </p>
+                                                            <div className='flex justify-end mt-4 gap-2'>
+                                                                <Button
+                                                                    style="secondary"
+                                                                    onClick={() => setShowConfirmDeleteModal(false)}
+                                                                >
+                                                                    Cancel
+                                                                </Button>
+                                                                <Button
+                                                                    style="danger"
+                                                                    disabled={isDocumentTemplateRefetching}
+                                                                    onClick={() => {
+                                                                        handleDeleteTemplate();
+                                                                        setShowConfirmDeleteModal(false);
+                                                                        setShowDeleteModal(false);
+                                                                    }}
+                                                                >
+                                                                    Confirm
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            </>
+                                        )}
+                                    </AnimatePresence>
                                 </div>
                             </div>
                         </motion.div>
@@ -453,7 +557,7 @@ export default function AdminTemplates() {
                                                 <div className='text-center'>
                                                     <p className='font-medium'>Drag & drop files here, or click to select files</p>
                                                     <p className='text-sm text-gray-500 mt-1'>
-                                                        Supports: PDF, DOC, DOCX
+                                                        Supports: PDF, DOC, DOCX, XLSX, PNG, JPG, JPEG
                                                     </p>
                                                 </div>
                                             )}
@@ -485,6 +589,51 @@ export default function AdminTemplates() {
                                 )}
                             </div>
                         </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {isDocumentDeleteModal && (
+                    <>
+                        <Backdrop className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" />
+                        <motion.div
+                            className="fixed inset-0 z-50 w-screen overflow-auto flex items-center justify-center"
+                            variants={DropIn}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit">
+                            <div className="bg-white rounded-lg p-6 w-[92%] sm:w-[540px] md:w-[640px] shadow-xl border border-gray-100">
+                                <div className='flex justify-between items-center mb-4'>
+                                    <h2 className='text-sm font-semibold'>
+                                        Delete Template
+                                    </h2>
+                                    <CloseButton onClick={() => setIsDocumentDeleteModal(false)} />
+                                </div>
+                                <div className='flex flex-col gap-4'>
+                                    <p className='text-sm text-gray-800 mb-2'>
+                                        {`Are you sure you want to delete ${documentToDelete?.title}? This action cannot be undone.`}
+                                    </p>
+                                </div>
+
+                                {/* Button actions */}
+                                <div className='flex justify-end mt-4 gap-2 flex-wrap'>
+                                    <Button
+                                        style="secondary"
+                                        onClick={() => setIsDocumentDeleteModal(false)}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        style="danger"
+                                        onClick={() => { handleDeleteDocument({ id: documentToDelete.id, templateId: documentToDelete.docId }); console.log("Document deleted:", documentToDelete.id, documentToDelete.docId); setLoading(true); }}
+                                    >
+                                        {loading ? <LoadingSpinner /> : 'Delete'}
+                                    </Button>
+                                </div>
+                            </div>
+                        </motion.div>
+
                     </>
                 )}
             </AnimatePresence>
