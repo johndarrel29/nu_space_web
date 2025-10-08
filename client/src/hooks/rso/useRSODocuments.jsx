@@ -27,7 +27,7 @@ const fetchDocuments = async () => {
         }
 
         const json = await response.json();
-        return json.documents ?? []; // return only array of docs
+        return json ?? []; // return only array of docs
     } catch (error) {
         console.error("Error fetching documents:", error);
         throw error;

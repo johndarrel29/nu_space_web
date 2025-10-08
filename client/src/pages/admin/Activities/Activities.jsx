@@ -546,7 +546,7 @@ export default function Activities() {
               <div className='flex items-center gap-4'>
                 <h1 className='text-2xl font-bold text-off-black'>{activity?.Activity_name}</h1>
                 <div className='flex items-center gap-2'>
-                  {isUserRSORepresentative && !activityDocumentsLoading && (
+                  {isUserRSORepresentative && !activityDocumentsLoading && activity?.Activity_approval_status === 'pending' && (
                     <div
                       data-tooltip-id="global-tooltip"
                       data-tooltip-content="Edit Activity"
@@ -663,6 +663,7 @@ export default function Activities() {
                     <div className="flex justify-end w-full mt-4">
                       <div className="relative inline-block">
                         <Button
+                          disabled={(activity?.Activity_approval_status === "rejected" || activity?.Activity_approval_status === "approved") ? true : false}
                           onClick={handleDocumentUpload}
                           className="px-4 bg-[#312895] hover:bg-[#312895]/90 text-white"
                         >
@@ -689,6 +690,8 @@ export default function Activities() {
                       onChange={(e) => setFilter(e.target.value)}
                       showAllOption={false}
                       onClick={(row) => {
+                        if (activity?.Activity_approval_status === "rejected") return toast.error("Activity has been rejected. Document viewing is disabled.");
+
                         navigate(`/activities/${activityId}/${row.id}`, { state: { documentId: row.id, url: row.url } });
                         console.log("Document clicked:", row);
                       }}

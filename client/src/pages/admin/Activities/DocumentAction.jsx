@@ -179,7 +179,7 @@ function DocumentAction() {
     }
   }, [success, navigate]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     setLoading(true);
     console.log("Submitting form with activityData:", activityData, "selectedForm:", selectedForm);
 
@@ -347,7 +347,7 @@ function DocumentAction() {
       if (isEdit && data?._id) {
         // Update existing activity
         console.log("Updating activity with data ", changedFields);
-        result = await updateActivityMutate({ activityId: data._id, updatedData: changedFields },
+        updateActivityMutate({ activityId: data._id, updatedData: changedFields },
           {
             onSuccess: (data) => {
               setLoading(false);
@@ -365,7 +365,7 @@ function DocumentAction() {
       } else if (isCreate) {
         console.log("Creating new activity with data:", apiData);
 
-        const created = await createActivityMutate(apiData,
+        createActivityMutate(apiData,
           {
             onSuccess: (data) => {
               console.log("Activity created successfully:", data);
@@ -380,13 +380,12 @@ function DocumentAction() {
             },
           }
         );
-        console.log("Activity created:", created);
 
-        if (created) {
-          navigate(from || "/admin/documents", {
-            state: { message: isEdit ? "Activity updated successfully!" : "Activity created successfully!" },
-          });
-        }
+        // if (created) {
+        //   navigate(from || "/admin/documents", {
+        //     state: { message: isEdit ? "Activity updated successfully!" : "Activity created successfully!" },
+        //   });
+        // }
       }
 
     }
@@ -734,7 +733,7 @@ function DocumentAction() {
         <Button
           disabled={loading}
           onClick={() => { handleSubmit(); setLoading(true); }}>
-          {loading ? <LoadingSpinner /> : (isEdit ? "Save Changes" : "Create Activity")}
+          {loading ? <LoadingSpinner /> : isEdit ? "Save Changes" : "Create Activity"}
         </Button>
       </div>
 

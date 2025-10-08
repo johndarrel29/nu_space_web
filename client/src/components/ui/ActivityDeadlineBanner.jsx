@@ -206,7 +206,7 @@ export default function ActivityDeadlineBanner({ activity }) {
                             <span className="text-green-700 text-sm">The submission period has ended. The admin will now undergo activity approval.</span>
                         )}
                         {(isPreDeadlineNull && isPostDeadlineNull) && (
-                            <span className="text-green-700 text-sm">This is a GPOA Activity. The documents submission deadlines are not applicable.</span>
+                            <span className="text-green-700 text-sm">This is a Non-GPOA Activity. The documents submission deadlines are not applicable.</span>
                         )}
                         <div className='flex flex-col mt-2 gap-1'>
                             {isPreDone && (!isPreDeadlineNull && !isPostDeadlineNull) && (

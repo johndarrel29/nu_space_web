@@ -403,6 +403,31 @@ const recognizeRSORequest = async ({ id }) => {
     }
 }
 
+const fetchAccreditationData = async () => {
+    try {
+        const token = useTokenStore.getState().getToken();
+
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/admin/rso/fetch-rso-accreditation`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": token || "",
+            },
+
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json(); // try to read the server's message
+            throw new Error(errorData.message || `Error: ${response.status} - ${response.statusText}`);
+        }
+
+        return response.json();
+    } catch (error) {
+        console.error("Error fetching accreditation data:", error);
+        throw error;
+    }
+}
+
 function useAdminRSO({
     rsoID = "",
     isDeleted = false,
@@ -694,6 +719,22 @@ function useAdminRSO({
         enabled: (isUserAdmin || isUserCoordinator) && isRSOsPage,
     });
 
+    const {
+        data: accreditationData,
+        isLoading: isAccreditationDataLoading,
+        isError: isAccreditationDataError,
+        error: accreditationDataError,
+        refetch: refetchAccreditationData,
+    } = useQuery({
+        queryKey: ["accreditationData"],
+        queryFn: fetchAccreditationData,
+        refetchOnWindowFocus: false,
+        retry: 1,
+        staleTime: 0,
+        cacheTime: 0,
+        // enabled: (isUserAdmin || isUserCoordinator),
+    });
+
 
     return {
         // for admin create RSO
@@ -803,6 +844,13 @@ function useAdminRSO({
         isRestoreRSOError,
         restoreRSOError,
         resetRestoreRSO,
+
+        // for admin fetch accreditation data
+        accreditationData,
+        isAccreditationDataLoading,
+        isAccreditationDataError,
+        accreditationDataError,
+        refetchAccreditationData,
     }
 }
 

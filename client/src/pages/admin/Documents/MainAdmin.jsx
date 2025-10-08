@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { DropIn } from "../../../animations/DropIn";
 import { Backdrop, BackendTable, Button, CloseButton, LoadingSpinner, TabSelector } from "../../../components";
-import { useAcademicYears, useAdminDocuments } from "../../../hooks";
+import { useAcademicYears, useAdminDocuments, useAdminRSO } from "../../../hooks";
 import { useUserStoreWithAuth } from '../../../store';
 
 // todo: change the data to PH standard time for start and end date.
@@ -16,7 +16,12 @@ export default function MainAdmin() {
         { label: "Recognition Documents" },
         { label: "Activity Documents" }
     ]
+    const accreditations = [
+        { label: "Set Accreditation Deadline" },
+        { label: "Accreditation Records" }
+    ]
     const [activeTab, setActiveTab] = useState(0);
+    const [accreditationTab, setAccreditationTab] = useState(0);
     const [loading, setLoading] = useState(false);
     const { isUserRSORepresentative, isUserAdmin, isCoordinator } = useUserStoreWithAuth();
     const {
@@ -36,6 +41,14 @@ export default function MainAdmin() {
         isRefetchingAcademicYears,
         isAcademicYearsFetched,
     } = useAcademicYears();
+
+    const {
+        accreditationData,
+        isAccreditationDataLoading,
+        isAccreditationDataError,
+        accreditationDataError,
+        refetchAccreditationData,
+    } = useAdminRSO();
 
     // new state for deadline modal (replaced with static fields)
     const [deadlineOpen, setDeadlineOpen] = useState(false);
@@ -179,10 +192,16 @@ export default function MainAdmin() {
                                     <CloseButton onClick={handleCloseDeadline} />
                                 </div>
 
-                                <div className="space-y-4">
-                                    <div className="mb-8 border-b border-gray-300 pb-4">
-                                        <label htmlFor="category-filter" className="text-sm font-medium text-gray-600">For Upcoming Academic Year</label>
-                                        {/* <select
+                                <TabSelector tabs={accreditations} activeTab={accreditationTab} onTabChange={setAccreditationTab} />
+
+                                {accreditationTab === 0 && (
+                                    <div>
+                                        <div className="space-y-4 mt-4">
+                                            {console.log("accreditation data", accreditationData)}
+                                            <div className="mb-8 border-b border-gray-300 pb-4">
+
+                                                <label htmlFor="category-filter" className="text-sm font-medium text-gray-600">For Upcoming Academic Year</label>
+                                                {/* <select
                                             id="category-filter"
                                             value={selectedAcademicYear}
                                             onChange={handleAcademicYearChange}
@@ -195,84 +214,125 @@ export default function MainAdmin() {
                                                 </option>
                                             ))}
                                         </select> */}
-                                        <div className="mt-2 text-off-black text-sm w-full flex justify-start py-2 px-3 border border-dashed border-gray-300 rounded bg-background">
-                                            {academicYears?.status?.upcomingAY?.label}
+                                                <div className="mt-2 text-off-black text-sm w-full flex justify-start py-2 px-3 border border-dashed border-gray-300 rounded bg-background">
+                                                    {academicYears?.status?.upcomingAY?.label}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm text-gray-600 mb-1">Start Deadline</label>
+                                                <input
+                                                    type="datetime-local"
+                                                    className="w-full border rounded px-3 py-2 text-sm"
+                                                    value={modalData.start_deadline}
+                                                    onChange={(e) => {
+                                                        setModalData(prev => ({
+                                                            ...prev,
+                                                            start_deadline: e.target.value
+                                                        }))
+                                                    }}
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm text-gray-600 mb-1">End Deadline</label>
+                                                <input
+                                                    type="datetime-local"
+                                                    className="w-full border rounded px-3 py-2 text-sm"
+                                                    value={modalData.end_deadline}
+                                                    onChange={(e) => {
+                                                        setModalData(prev => ({
+                                                            ...prev,
+                                                            end_deadline: e.target.value
+                                                        }))
+                                                    }}
+                                                />
+                                            </div>
+
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    id="probationary"
+                                                    type="checkbox"
+                                                    checked={modalData.probationary}
+                                                    onChange={(e) => setModalData(prev => ({ ...prev, probationary: e.target.checked }))}
+                                                    className="h-4 w-4"
+                                                />
+                                                <label htmlFor="probationary" className="text-sm text-gray-700">Probationary</label>
+                                            </div>
+
+                                            <div className="flex flex-col">
+
+                                                {/* Category dropdown field */}
+                                                <label htmlFor="category-dropdown" className="text-sm font-medium text-gray-600 mt-3">Category</label>
+                                                <select
+                                                    id="category-dropdown"
+                                                    value={modalData.category}
+                                                    onChange={(e) => setModalData(prev => ({ ...prev, category: e.target.value }))}
+                                                    className="py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm"
+                                                >
+                                                    <option value="">-- Select Option --</option>
+                                                    {categories?.map((category, index) => (
+                                                        <option key={index} value={category.value}>
+                                                            {category.label}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm text-gray-600 mb-1">Start Deadline</label>
-                                        <input
-                                            type="datetime-local"
-                                            className="w-full border rounded px-3 py-2 text-sm"
-                                            value={modalData.start_deadline}
-                                            onChange={(e) => {
-                                                setModalData(prev => ({
-                                                    ...prev,
-                                                    start_deadline: e.target.value
-                                                }))
-                                            }}
-                                        />
-                                    </div>
+                                        {console.log("error ", setAccreditationDeadlineError)}
+                                        {/* error message */}
+                                        {setAccreditationDeadlineError && (
+                                            <div className="mt-4 text-sm text-red-600">
+                                                {setAccreditationDeadlineError.message}
+                                            </div>
+                                        )}
 
-                                    <div>
-                                        <label className="block text-sm text-gray-600 mb-1">End Deadline</label>
-                                        <input
-                                            type="datetime-local"
-                                            className="w-full border rounded px-3 py-2 text-sm"
-                                            value={modalData.end_deadline}
-                                            onChange={(e) => {
-                                                setModalData(prev => ({
-                                                    ...prev,
-                                                    end_deadline: e.target.value
-                                                }))
-                                            }}
-                                        />
-                                    </div>
+                                        <div className="flex justify-end mt-6 gap-2">
+                                            <Button onClick={handleCloseDeadline} style={"secondary"}>Cancel</Button>
+                                            <Button disabled={loading} onClick={() => { handleSubmit(); setLoading(true); }}>
+                                                {loading ? <LoadingSpinner /> : "Save"}
+                                            </Button>
+                                        </div>
 
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            id="probationary"
-                                            type="checkbox"
-                                            checked={modalData.probationary}
-                                            onChange={(e) => setModalData(prev => ({ ...prev, probationary: e.target.checked }))}
-                                            className="h-4 w-4"
-                                        />
-                                        <label htmlFor="probationary" className="text-sm text-gray-700">Probationary</label>
-                                    </div>
-
-                                    <div className="flex flex-col">
-
-                                        {/* Category dropdown field */}
-                                        <label htmlFor="category-dropdown" className="text-sm font-medium text-gray-600 mt-3">Category</label>
-                                        <select
-                                            id="category-dropdown"
-                                            value={modalData.category}
-                                            onChange={(e) => setModalData(prev => ({ ...prev, category: e.target.value }))}
-                                            className="py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm"
-                                        >
-                                            <option value="">-- Select Option --</option>
-                                            {categories?.map((category, index) => (
-                                                <option key={index} value={category.value}>
-                                                    {category.label}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-                                {console.log("error ", setAccreditationDeadlineError)}
-                                {/* error message */}
-                                {setAccreditationDeadlineError && (
-                                    <div className="mt-4 text-sm text-red-600">
-                                        {setAccreditationDeadlineError.message}
                                     </div>
                                 )}
 
-                                <div className="flex justify-end mt-6 gap-2">
-                                    <Button onClick={handleCloseDeadline} style={"secondary"}>Cancel</Button>
-                                    <Button disabled={loading} onClick={() => { handleSubmit(); setLoading(true); }}>
-                                        {loading ? <LoadingSpinner /> : "Save"}
-                                    </Button>
-                                </div>
+                                {accreditationTab === 1 && (
+                                    <div className="overflow-y-auto max-h-[400px] mt-4">
+                                        <div className="space-y-3">
+                                            {isAccreditationDataLoading ? (
+                                                <div className="flex justify-center">
+                                                    <LoadingSpinner></LoadingSpinner>
+                                                </div>
+                                            ) : (
+                                                accreditationData?.data?.map((item, i) => (
+                                                    <div
+                                                        className="w-full bg-white rounded border border-gray-200 p-3 flex flex-col gap-1"
+                                                        key={i}
+                                                    >
+                                                        <div className="flex items-center justify-between mb-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-base font-medium text-gray-800">{item.category}</span>
+                                                                <span className="text-xs text-gray-500">{item.totalRSOs} RSOs</span>
+                                                            </div>
+                                                            <span className={`px-2 py-1 rounded text-xs font-semibold ${item.date_status === 'ongoing' ? 'bg-green-100 text-green-700' : item.date_status === 'done' ? 'bg-gray-100 text-gray-700' : 'bg-yellow-100 text-yellow-700'}`}>{item.date_status}</span>
+                                                        </div>
+                                                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 mt-1">
+                                                            <div className="flex flex-col">
+                                                                <span className="text-xs text-gray-400">Start Deadline</span>
+                                                                <span className="text-xs text-gray-700">{new Date(item.start_deadline).toLocaleString()}</span>
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-xs text-gray-400">End Deadline</span>
+                                                                <span className="text-xs text-gray-700">{new Date(item.end_deadline).toLocaleString()}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
                             </div>
                         </motion.div>
                     </>
