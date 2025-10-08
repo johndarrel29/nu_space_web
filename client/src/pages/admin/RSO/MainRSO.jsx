@@ -104,7 +104,8 @@ export default function MainRSO() {
     { label: "Professional" },
     { label: "Professional & Affiliates" },
     { label: "Special Interest" },
-    { label: "Office Aligned Organization" }
+    { label: "Office Aligned Organization" },
+    { label: "Probationary" }
   ];
 
   const activeTabIndex = tabs.findIndex(tab => tab.label === filters.category);
