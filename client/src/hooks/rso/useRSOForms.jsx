@@ -140,7 +140,11 @@ function useRSOForms({
     } = useQuery({
         queryKey: ["specificActivityForms", activityId],
         queryFn: getSpecificActivityFormsResponse,
+        onSuccess: (data) => {
+            console.log("Fetched specific activity forms response:", data);
+        },
         refetchOnWindowFocus: false,
+        // staleTime: 5 * 60 * 1000, // 5 minutes
         enabled: !!isUserRSORepresentative && !!activityId, // Only run if user is an RSO representative and activityId is provided
     });
 

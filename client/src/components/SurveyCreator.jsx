@@ -38,6 +38,17 @@ export default function SurveyCreatorWidget(props) {
     const [notAllowedList, setNotAllowedList] = useState([]);
     const [title, setTitle] = useState(location.state?.activityName ? `${location.state.activityName} Survey` : "");
 
+    useEffect(() => {
+        let timer;
+        if (loading) {
+            timer = setTimeout(() => {
+                setLoading(false);
+            }, 5000); // 5 seconds
+        }
+
+        return () => clearTimeout(timer);
+    }, [loading]);
+
     const { activityId, activityName, rsoId, formId } = location.state || {};
 
     const {

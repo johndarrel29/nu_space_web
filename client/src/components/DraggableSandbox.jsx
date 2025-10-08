@@ -8,11 +8,16 @@ export default function DraggableSandbox({ onUpdate, imageSample }) {
     // Track dynamic width/height based on the intrinsic image size
     // Start with a desired initial height (60px) and compute width once image loads
     const DESIRED_INITIAL_HEIGHT = 60;
-    const [dimensions, setDimensions] = useState({ width: 20, height: 20 });
+    const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const boxRef = useRef(null);
+    const [hovered, setHovered] = useState(false);
+    const [initialActive, setInitialActive] = useState(true);
     const imgRef = useRef(null);
     const [pos, setPos] = useState({ x: 0, y: 0 });
     // const [pos, setPos] = useState({ x: 40, y: 50 });
+
+
+    console.log("dimensions ", dimensions);
 
     useEffect(() => {
         if (!boxRef.current) return;
@@ -110,10 +115,30 @@ export default function DraggableSandbox({ onUpdate, imageSample }) {
         };
     }, []);
 
+    // useEffect(() => {
+    //     setPos({ x: 0, y: 0 });
+    //     setDimensions({ width: 0, height: 0 });
+    //     setInitialActive(true);
+    //     setHovered(false);
+
+    //     if (boxRef.current) {
+    //         boxRef.current.setAttribute('data-x', 0);
+    //         boxRef.current.setAttribute('data-y', 0);
+    //         boxRef.current.style.transform = 'translate(0px, 0px)';
+    //     }
+    // }, [imageSample]);
+
     return (
         <div
+            data-tooltip-id="global-tooltip"
+            data-tooltip-content={initialActive ? "Drag to move, resize handles to adjust size" : ""}
             ref={boxRef}
-            className="hover:border-2 hover:border-dashed hover:border-red-500 cursor-move rounded"
+            className={`hover:border-2 hover:border-dashed hover:border-red-500 cursor-move rounded ${initialActive ? 'border-2 border-dashed border-red-500' : ''}${hovered && !initialActive ? ' border-2 border-dashed border-red-500' : ''}`}
+            onMouseEnter={() => {
+                setHovered(true);
+                if (initialActive) setInitialActive(false);
+            }}
+            onMouseLeave={() => setHovered(false)}
             style={{
                 width: `${dimensions.width}px`,
                 height: `${dimensions.height}px`,

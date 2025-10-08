@@ -325,6 +325,7 @@ function useAdminActivity({
     } = useQuery({
         queryKey: ["activity", activityId],
         queryFn: viewActivityAPI,
+        refetchOnWindowFocus: false,
         enabled: manualEnable ? manualEnable : (activityId && (isUserAdmin || isCoordinator)),
         onSuccess: (data) => {
             console.log("Activities fetched successfully:", data);

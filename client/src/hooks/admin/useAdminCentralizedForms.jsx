@@ -254,6 +254,8 @@ function useAdminCentralizedForms({
     } = useQuery({
         queryKey: ["specific-activity-forms-responses", activityId],
         queryFn: getSpecificActivityFormsResponse,
+        refetchOnWindowFocus: false,
+        staleTime: 5 * 60 * 1000, // 5 minutes
         enabled: manualEnabled ? (isUserAdmin || isCoordinator || isUserRSORepresentative) : false, // only run if formId is provided, user is admin/coordinator/RSO rep, and on forms route
     });
 

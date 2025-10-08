@@ -64,6 +64,18 @@ export default function AcademicYear() {
 
 
     useEffect(() => {
+        let timer;
+        if (loading) {
+            timer = setTimeout(() => {
+                setLoading(false);
+            }, 5000); // 5 seconds
+        }
+
+        return () => clearTimeout(timer);
+    }, [loading]);
+
+
+    useEffect(() => {
         if (isAcademicYearsFetched && academicYears && academicYears.years && academicYears.years.length > 0) {
             // Find the full object where isActive is true
             const activeObj = academicYears.years.find(year => year.isActive);

@@ -19,6 +19,8 @@ function AnnouncementsPage() {
     const [filters, setFilters] = useState({ date: "latest" });
     const [selectedRSOsForEdit, setSelectedRSOsForEdit] = useState([]);
     const [loading, setLoading] = useState(false);
+    const { isOpen, openModal, closeModal } = useModal();
+    const [error, setError] = useState(null);
 
     const {
         rsoData,
@@ -27,6 +29,22 @@ function AnnouncementsPage() {
         rsoError,
         refetchRSOData,
     } = useAdminRSO({ manualEnable: true, setActiveAY: true, }); // manual enable to control when to fetch
+
+    useEffect(() => {
+        let timer;
+        if (loading) {
+            timer = setTimeout(() => {
+                setLoading(false);
+            }, 5000); // 5 seconds
+        }
+
+        if (error) {
+            timer = setTimeout(() => {
+                setError(null);
+            }, 5000); // 5 seconds
+        }
+        return () => clearTimeout(timer);
+    }, [loading, error]);
 
     console.log("RSO Data: ", rsoData);
 
@@ -80,8 +98,7 @@ function AnnouncementsPage() {
 
     console.log("Notifications for rso Data: ", rsoCreatedNotificationsData);
 
-    const { isOpen, openModal, closeModal } = useModal();
-    const [error, setError] = useState(null);
+
 
     // Add state for the details modal
     const [selectedAnnouncement, setSelectedAnnouncement] = useState({});

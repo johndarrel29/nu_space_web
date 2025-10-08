@@ -129,7 +129,7 @@ function OTP({ separator, length, value, onChange }) {
     };
 
     const handleChange = (event, currentIndex) => {
-        const currentValue = event.target.value;
+        const currentValue = event.target.value.replace(/[^0-9]/g, '');
         let indexToEnter = 0;
 
         while (indexToEnter <= currentIndex) {
@@ -327,6 +327,17 @@ export default function WaterMarkPage() {
             }
         }
     }, [watermark]);
+
+    useEffect(() => {
+        let timer;
+        if (loading) {
+            timer = setTimeout(() => {
+                setLoading(false);
+            }, 5000); // 5 seconds
+        }
+
+        return () => clearTimeout(timer);
+    }, [loading]);
 
     // Countdown timer for resend button
     useEffect(() => {

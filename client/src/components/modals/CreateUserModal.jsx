@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { DropIn } from "../../animations/DropIn";
 import { Button, CloseButton, LoadingSpinner } from "../../components";
 import { useSuperAdminUsers } from "../../hooks";
+import { isValidAdminEmail } from "../../utils";
 import { Backdrop, ReusableDropdown, TextInput } from "../ui";
 
 // debug edit API depending on the role
@@ -22,6 +23,16 @@ export default function CreateUserModal({ closeModal }) {
     });
     const { createAccount, isCreatingAccount, isCreateError, createErrorMessage, refetchAccounts } = useSuperAdminUsers();
 
+    useEffect(() => {
+        let timer;
+        if (loading) {
+            timer = setTimeout(() => {
+                setLoading(false);
+            }, 5000); // 5 seconds
+        }
+        return () => clearTimeout(timer);
+    }, [loading]);
+
     const options = [
         { label: "Admin", value: "admin" },
         { label: "Coordinator", value: "coordinator" },
@@ -32,13 +43,20 @@ export default function CreateUserModal({ closeModal }) {
 
 
     const handleSubmit = () => {
-        setLoading(true);
         try {
             if (!formData.firstName || !formData.lastName || !formData.email || !formData.role || !formData.password || !formData.confirmpassword) {
                 toast.error("All fields are required.");
                 setLoading(false);
                 return;
             }
+            const errorMsg = isValidAdminEmail(formData.email);
+
+            setLoading(true);
+            if (errorMsg) {
+                toast.error(errorMsg);
+                return setLoading(false);
+            }
+
 
             // Handle form submission logic here
             console.log("Form submitted with data:", formData);
@@ -151,7 +169,7 @@ export default function CreateUserModal({ closeModal }) {
                             <Button onClick={closeModal} className="text-off-black px-4" style="secondary">Cancel</Button>
                             <Button
                                 onClick={() => { handleSubmit(); setLoading(true); }}
-                                disabled={loading}
+                                disabled={loading || !formData.firstName || !formData.lastName || !formData.email || !formData.role || !formData.password || !formData.confirmpassword || formData.password !== formData.confirmpassword}
                                 className="px-4">
                                 {loading ? <LoadingSpinner /> :
                                     <div className="flex flex-row space-x-2 items-center justify-center">

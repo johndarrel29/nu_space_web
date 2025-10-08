@@ -310,6 +310,16 @@ export default function Users() {
     fullName: '',
   });
 
+  useEffect(() => {
+    let timer;
+    if (loading) {
+      timer = setTimeout(() => {
+        setLoading(false);
+      }, 5000); // 5 seconds
+    }
+    return () => clearTimeout(timer);
+  }, [loading]);
+
   const handleOpenUserModal = (row) => {
     console.log("row is ", row);
     setSelectedUserId(row.applicantData?._id);
@@ -1052,11 +1062,11 @@ export default function Users() {
             >
               <div className="bg-white rounded-lg w-full max-w-sm shadow-lg flex flex-col gap-6 p-6 max-h-[85vh] overflow-hidden">
                 <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-lg font-semibold text-[#b91c1c]">{`${storeRowData?.type === 'soft-delete' ? 'Soft' : 'Hard'} Delete User`}</h2>
+                  <h2 className="text-lg font-semibold text-[#b91c1c]">{`${storeRowData?.type === 'soft-delete' ? '' : 'Permanently'} Delete User`}</h2>
                   <CloseButton onClick={() => setActionModalClicked(false)} />
                 </div>
                 <div className="space-y-4">
-                  <p className="text-gray-700">Are you sure you want to delete <span className="font-semibold">{deleteModalData.fullName}</span>?</p>
+                  <p className="text-gray-700">Are you sure you want to delete this account?</p>
                 </div>
                 <div className="flex justify-end gap-2 mt-4">
                   <Button style="secondary" onClick={() => setActionModalClicked(false)}>Cancel</Button>

@@ -23,6 +23,17 @@ export default function Account() {
   const { isUserRSORepresentative, isUserAdmin, isCoordinator, isSuperAdmin } = useUserStoreWithAuth();
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    let timer;
+    if (loading) {
+      timer = setTimeout(() => {
+        setLoading(false);
+      }, 10000); // 10 seconds
+    }
+
+    return () => clearTimeout(timer);
+  }, [loading]);
+
 
   const {
     rsoDetails,
@@ -74,14 +85,6 @@ export default function Account() {
       return rsoDetails?.rso;
     }
     return null;
-  }
-
-  function profileOnRole() {
-    if (isUserAdmin || isCoordinator || isSuperAdmin) {
-      return adminProfile?.user;
-    } else if (isUserRSORepresentative) {
-      return rsoDetails?.rso;
-    }
   }
 
   const user = JSON.parse(localStorage.getItem("user"));
@@ -377,49 +380,65 @@ export default function Account() {
   return (
     <>
       <div className="grid grid-cols-1 w-full">
-        {/* Profile Overview */}
-        <div className="flex flex-col md:flex-row items-start gap-6 mb-6">
-          <div className="flex flex-col items-start gap-2">
-            {isUserRSORepresentative ? (
-              <img
-                src={profileData?.RSO_picture || DefaultPicture}
-                alt="Profile"
-                className="size-24 rounded-full object-cover"
-              />
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="size-24 fill-gray-700" viewBox="0 0 512 512"><path d="M399 384.2C376.9 345.8 335.4 320 288 320l-64 0c-47.4 0-88.9 25.8-111 64.2c35.2 39.2 86.2 63.8 143 63.8s107.8-24.7 143-63.8zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zm256 16a72 72 0 1 0 0-144 72 72 0 1 0 0 144z" /></svg>
-            )}
-
-          </div>
-          <div className="flex flex-col gap-1">
-            <div className="flex gap-2">
-              {isUserAdmin ? (
-                <Badge text="Admin" style="secondary" />
-              ) : isSuperAdmin &&
-              (<Badge text="Super Admin" style="primary" />)
-              }
-              {isUserRSORepresentative && (
-                <Badge text="RSO" style="secondary" />
-              )}
+        {isRSODetailsLoading && isUserRSORepresentative ? (
+          <div className="flex flex-col md:flex-row items-start gap-6 mb-6 animate-pulse">
+            <div className="flex flex-col items-start gap-2">
+              <div className="size-24 rounded-full bg-gray-200"></div>
             </div>
-            <h1 className="text-2xl font-bold text-gray-800">
-              {isUserRSORepresentative
-                ? (profileData?.RSO_name || "loading...")
-                : (isUserAdmin || isSuperAdmin)
-                  ? (
-                    profileData?.firstName + " " + profileData?.lastName || "loading..."
-                  )
-                  : "loading..."}
-            </h1>
-            <p className="text-base text-gray-600">
-              {isUserRSORepresentative
-                ? (profileData?.RSO_acronym || "loading...")
-                : (isUserAdmin || isSuperAdmin)
-                  ? ('')
-                  : "loading..."}
-            </p>
+            <div className="flex flex-col gap-1">
+              <div className="flex gap-2">
+                <div className="h-6 w-16 bg-gray-200 rounded"></div>
+              </div>
+              <div className="h-8 w-40 bg-gray-300 rounded mb-2"></div>
+              <div className="h-4 w-24 bg-gray-200 rounded"></div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex flex-col md:flex-row items-start gap-6 mb-6">
+            <div className="flex flex-col items-start gap-2">
+              {isUserRSORepresentative ? (
+                <img
+                  src={profileData?.RSO_picture || DefaultPicture}
+                  alt="Profile"
+                  className="size-24 rounded-full object-cover"
+                />
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="size-24 fill-gray-700" viewBox="0 0 512 512"><path d="M399 384.2C376.9 345.8 335.4 320 288 320l-64 0c-47.4 0-88.9 25.8-111 64.2c35.2 39.2 86.2 63.8 143 63.8s107.8-24.7 143-63.8zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zm256 16a72 72 0 1 0 0-144 72 72 0 1 0 0 144z" /></svg>
+              )}
+
+            </div>
+            <div className="flex flex-col gap-1">
+              <div className="flex gap-2">
+                {isUserAdmin ? (
+                  <Badge text="Admin" style="secondary" />
+                ) : isSuperAdmin &&
+                (<Badge text="Super Admin" style="primary" />)
+                }
+                {isUserRSORepresentative && (
+                  <Badge text="RSO" style="secondary" />
+                )}
+              </div>
+              <h1 className="text-2xl font-bold text-gray-800">
+                {isUserRSORepresentative
+                  ? (profileData?.RSO_name || "loading...")
+                  : (isUserAdmin || isSuperAdmin)
+                    ? (
+                      profileData?.firstName + " " + profileData?.lastName || "loading..."
+                    )
+                    : "loading..."}
+              </h1>
+              <p className="text-base text-gray-600">
+                {isUserRSORepresentative
+                  ? (profileData?.RSO_acronym || "loading...")
+                  : (isUserAdmin || isSuperAdmin)
+                    ? ('')
+                    : "loading..."}
+              </p>
+            </div>
+          </div>
+
+        )}
+        {/* Profile Overview */}
 
         {/* Edit Form */}
         <div className="w-full">

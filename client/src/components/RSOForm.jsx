@@ -1,14 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
-import { Backdrop, CloseButton, TextInput, Button } from "../components"
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import defaultPic from '../assets/images/default-profile.jpg';
-import TagSelector from '../components/TagSelector';
-import useSearchQuery from "../hooks/useSearchQuery";
-import useTagSelector from '../hooks/useTagSelector';
-import { AnimatePresence } from "framer-motion";
 import { DropIn } from "../animations/DropIn";
-import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import defaultPic from '../assets/images/default-profile.jpg';
+import { Backdrop, Button, CloseButton, TextInput } from "../components";
+import TagSelector from '../components/TagSelector';
+import useTagSelector from '../hooks/useTagSelector';
 
 
 export default function RSOForm({ createRSO, onSubmit }) {
@@ -43,7 +40,7 @@ export default function RSOForm({ createRSO, onSubmit }) {
 
     const onTagEdit = (tag) => {
         setSelectedTag(tag); // Set the clicked tag as the selected tag
-      };
+    };
 
     const fileInputRef = useRef(null);
 
@@ -65,9 +62,8 @@ export default function RSOForm({ createRSO, onSubmit }) {
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
         const newOrg = {
-            
+
             id: formData.id || Date.now(),
             ...formData,
             RSO_tags: selectedTags,
@@ -105,18 +101,18 @@ export default function RSOForm({ createRSO, onSubmit }) {
 
     useEffect(() => {
         if (showModal) {
-            
+
             if (formData.RSO_tags?.length) {
                 setSelectedTags(formData.RSO_tags);
             }
         }
     }, [showModal]);
-    
-    
+
+
     return (
         <div className="max-w-3xl mx-auto dark:bg-gray-800">
             <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">Create New RSO</h1>
-            
+
             {/* Image Upload Section */}
             <div className="flex items-center space-x-6 mb-8">
                 <div
@@ -279,7 +275,7 @@ export default function RSOForm({ createRSO, onSubmit }) {
                 {/* Modal for Tag Selection */}
                 <AnimatePresence>
                     {showModal && (
-                            <Backdrop className="fixed inset-0 z-50 flex items-center justify-center bg-black  bg-opacity-50">
+                        <Backdrop className="fixed inset-0 z-50 flex items-center justify-center bg-black  bg-opacity-50">
                             <motion.div
                                 className="bg-white overflow-hidden rounded-lg shadow-lg w-[90%] max-w-[800px] p-6"
                                 variants={DropIn}
@@ -288,50 +284,50 @@ export default function RSOForm({ createRSO, onSubmit }) {
                                 exit="exit"
                             >
 
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h2 className="text-xl font-bold text-gray-800 dark:text-white">Edit Tag</h2>
-                                        <div>
-                                            <CloseButton
-                                                onClick={() => setShowModal(false)} 
-                                                className="absolute top-4 right-4 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className='w-full mb-4'>
-                                        <TextInput
-                                        value={selectedModalTag}
+                                <div className="flex justify-between items-center mb-4">
+                                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">Edit Tag</h2>
+                                    <div>
+                                        <CloseButton
+                                            onClick={() => setShowModal(false)}
+                                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
                                         />
                                     </div>
-                                    <div className='flex justify-between '>
-                                        <button
+                                </div>
+
+                                <div className='w-full mb-4'>
+                                    <TextInput
+                                        value={selectedModalTag}
+                                    />
+                                </div>
+                                <div className='flex justify-between '>
+                                    <button
                                         className='px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2'
                                         onClick={() => handleTagDelete(selectedModalTag)}
                                         type="button"
+                                    >
+                                        <span className="text-sm">Delete Tag</span>
+                                    </button>
+                                    <div className='flex items-center gap-2'>
+                                        <Button
+                                            type="button"
+                                            className={"px-2"}
                                         >
-                                            <span className="text-sm">Delete Tag</span>
-                                        </button>
-                                        <div className='flex items-center gap-2'>
-                                            <Button
-                                                type="button"
-                                                className={"px-2"}
-                                            >
-                                                <span className="text-sm">Edit Tag</span>
-                                            </Button>
-                                            <Button
-                                                type="button"
-                                                style={"secondary"}
-                                                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white"
-                                                onClick={() => setShowModal(false)}
-                                            >
-                                                Cancel
-                                            </Button>
-                                        </div>
- 
+                                            <span className="text-sm">Edit Tag</span>
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            style={"secondary"}
+                                            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white"
+                                            onClick={() => setShowModal(false)}
+                                        >
+                                            Cancel
+                                        </Button>
                                     </div>
 
+                                </div>
 
-                                
+
+
                             </motion.div>
                         </Backdrop>
                     )}

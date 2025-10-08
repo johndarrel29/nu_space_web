@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import { DropIn } from "../../animations/DropIn";
@@ -12,6 +12,22 @@ export default function FormReviewModal({ userModalData, isOpen, onClose }) {
     const [rejecting, setRejecting] = useState(false);
     const location = useLocation();
     const isOnActivityDetailsPage = location.pathname.startsWith("/activities/");
+
+    useEffect(() => {
+        let timer;
+        if (loading) {
+            timer = setTimeout(() => {
+                setLoading(false);
+            }, 5000); // 5 seconds
+        }
+
+        if (rejecting) {
+            timer = setTimeout(() => {
+                setRejecting(false);
+            }, 5000); // 5 seconds
+        }
+        return () => clearTimeout(timer);
+    }, [loading, rejecting]);
 
     console.log("FormReviewModal userModalData:", userModalData);
 
@@ -189,10 +205,7 @@ export default function FormReviewModal({ userModalData, isOpen, onClose }) {
                                                             <td className="py-2 pr-4 text-gray-500 align-top">Full Name</td>
                                                             <td className="py-2 font-medium">{userModalData.fullName}</td>
                                                         </tr>
-                                                        <tr>
-                                                            <td className="py-2 pr-4 text-gray-500 align-top">Applicant No.</td>
-                                                            <td className="py-2 font-medium">{userModalData.index}</td>
-                                                        </tr>
+
                                                     </tbody>
                                                 </table>
                                             </div>

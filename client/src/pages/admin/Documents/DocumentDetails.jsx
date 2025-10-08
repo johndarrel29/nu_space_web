@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { Button, CloseButton, TabSelector } from '../../../components';
+import { Button, CloseButton, LoadingSpinner, TabSelector } from '../../../components';
 import { useAdminDocuments, useAdminUser, useAVPDocuments, useCoordinatorDocuments, useDirectorDocuments, useRSODocuments, useSignature } from '../../../hooks';
 import { useUserStoreWithAuth } from '../../../store';
 import { handleDocumentStatus } from '../../../utils/useDocumentStatus';
@@ -12,6 +12,7 @@ import { handleDocumentStatus } from '../../../utils/useDocumentStatus';
 export default function DocumentDetails() {
     const location = useLocation();
     const navigate = useNavigate();
+    const fromActivities = location.pathname.startsWith("/activities/");
     const { isUserRSORepresentative, isUserAdmin, isCoordinator, isDirector, isAVP } = useUserStoreWithAuth();
     const { documentId, documentTitle, documentSize, documentType, url } = location.state || {};
 
@@ -119,6 +120,8 @@ export default function DocumentDetails() {
     // Decline modal state
     const [declineModalOpen, setDeclineModalOpen] = useState(false);
     const [declineRemarks, setDeclineRemarks] = useState("");
+    const [loading, setLoading] = useState(false);
+
     // Approve choice modal state
     const [approveChoiceOpen, setApproveChoiceOpen] = useState(false);
     // Non-PDF warning modal state
@@ -142,9 +145,24 @@ export default function DocumentDetails() {
         }
     }, [isUserAdmin, isUserRSORepresentative, documentIsApproved, doc?.coordinator_approved, activeTab]);
 
+    // delete loading at 5 seconds
+    useEffect(() => {
+        let timer;
+        if (loading) {
+            timer = setTimeout(() => {
+                setLoading(false);
+            }, 5000); // 5 seconds
+        }
+        return () => clearTimeout(timer);
+    }, [loading]);
+
     const handleBackClick = () => {
         if (!isUserRSORepresentative) {
-            navigate("/general-documents");
+            if (fromActivities) {
+                navigate(-1);
+            } else {
+                navigate("/general-documents");
+            }
         } else {
             navigate(-1);
         }
@@ -293,6 +311,7 @@ export default function DocumentDetails() {
                         : null;
 
             if (!declineOnRole) {
+                setLoading(false);
                 toast.error('Unable to decline: role not recognized.');
                 return;
             }
@@ -313,17 +332,20 @@ export default function DocumentDetails() {
                 { formData: payload, documentId },
                 {
                     onSuccess: () => {
+                        setLoading(false);
                         toast.success('Document declined successfully');
                         setDeclineModalOpen(false);
                         refetchDocumentDetail();
                     },
                     onError: (error) => {
+                        setLoading(false);
                         console.error('Error declining document:', error);
                         toast.error(error?.message || 'Failed to decline document');
                     }
                 }
             );
         } catch (error) {
+            setLoading(false);
             console.error('Error declining document:', error);
             toast.error('Unexpected error while declining document');
         }
@@ -414,7 +436,7 @@ export default function DocumentDetails() {
                     <section className="mt-4">
                         <div className="w-full flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
                             <Button
-                                disabled={!documentId || disableBasedOnRole()}
+                                disabled={!documentId || disableBasedOnRole() || !doc}
                                 onClick={() => {
                                     const ext = (doc?.file_path?.split('.').pop() || '').toLowerCase();
                                     if (ext === 'pdf') {
@@ -442,7 +464,7 @@ export default function DocumentDetails() {
                             </Button>
                             <Button
                                 style="secondary"
-                                disabled={!documentId || disableBasedOnRole()}
+                                disabled={!documentId || disableBasedOnRole() || !doc}
                                 onClick={() => setDeclineModalOpen(true)}
                                 className="w-full sm:w-auto"
                             >
@@ -704,10 +726,10 @@ export default function DocumentDetails() {
                         <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-end gap-2 bg-white">
                             <Button style="secondary" onClick={() => setDeclineModalOpen(false)}>Cancel</Button>
                             <Button
-                                onClick={() => handleDocumentDecline()}
-                                disabled={!declineRemarks.trim()}
+                                onClick={() => { handleDocumentDecline(); setLoading(true); }}
+                                disabled={!declineRemarks.trim() || loading}
                             >
-                                Confirm Decline
+                                {loading ? <LoadingSpinner /> : 'Confirm Decline'}
                             </Button>
                         </div>
                     </div>

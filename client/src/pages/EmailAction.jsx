@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { Button, TextInput } from "../components";
+import { Button, LoadingSpinner, TextInput } from "../components";
 import { useLogin } from "../hooks";
 
 import * as React from 'react';
@@ -125,7 +125,7 @@ function OTP({ separator, length, value, onChange }) {
     };
 
     const handleChange = (event, currentIndex) => {
-        const currentValue = event.target.value;
+        const currentValue = event.target.value.replace(/[^0-9]/g, ''); // Only numbers
         let indexToEnter = 0;
 
         while (indexToEnter <= currentIndex) {
@@ -195,6 +195,9 @@ function OTP({ separator, length, value, onChange }) {
                                 ref: (ele) => {
                                     inputRefs.current[index] = ele;
                                 },
+                                type: "tel",
+                                inputMode: "numeric",
+                                pattern: "[0-9]*",
                                 onKeyDown: (event) => handleKeyDown(event, index),
                                 onChange: (event) => handleChange(event, index),
                                 onClick: (event) => handleClick(event, index),
@@ -250,6 +253,17 @@ export default function EmailAction() {
         }
         return () => clearTimeout(timerRef.current);
     }, [resendTimer]);
+
+    useEffect(() => {
+        let timer;
+        if (loading) {
+            timer = setTimeout(() => {
+                setLoading(false);
+            }, 10000); // 10 seconds
+        }
+        return () => clearTimeout(timer);
+    }, [loading]);
+
     const {
         checkEmailExistsMutate,
         isCheckEmailExistsLoading,
@@ -300,6 +314,7 @@ export default function EmailAction() {
             {
                 onSuccess: (data) => {
                     console.log("Email code verified successfully:", data);
+                    setLoading(false);
                     toast.success("Email code verified successfully");
                     // Navigate to the next step or show success message
                     if (fromLogin === true) {
@@ -314,6 +329,7 @@ export default function EmailAction() {
                     }
                 },
                 onError: (error) => {
+                    setLoading(false);
                     console.error("Error verifying email code:", error);
                     toast.error(error.message || "Failed to verify email code. Please try again.");
                 }
@@ -357,13 +373,15 @@ export default function EmailAction() {
     return (
         <div className="flex flex-col items-center justify-center gap-4 w-full">
             <div className="w-full justify-start flex items-center justify-start gap-2 mb-4">
-                <div
-                    onClick={() => {
-                        navigate(-1);
-                    }}
-                    className='flex items-center justify-center rounded-full h-8 w-8 cursor-pointer border border-gray-300 group'>
-                    <svg xmlns="http://www.w3.org/2000/svg" className='fill-gray-600 size-4 group-hover:fill-off-black' viewBox="0 0 448 512"><path d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.2 288 416 288c17.7 0 32-14.3 32-32s-14.3-32-32-32l-306.7 0L214.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z" /></svg>
-                </div>
+                {fromLogin === true && (
+                    <div
+                        onClick={() => {
+                            navigate(-1);
+                        }}
+                        className='flex items-center justify-center rounded-full h-8 w-8 cursor-pointer border border-gray-300 group'>
+                        <svg xmlns="http://www.w3.org/2000/svg" className='fill-gray-600 size-4 group-hover:fill-off-black' viewBox="0 0 448 512"><path d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.2 288 416 288c17.7 0 32-14.3 32-32s-14.3-32-32-32l-306.7 0L214.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z" /></svg>
+                    </div>
+                )}
                 <h1 className="text-lg font-semibold">Email Action</h1>
             </div>
             {/* Email and Code Input */}
@@ -398,7 +416,7 @@ export default function EmailAction() {
                         />
                     </Box>
                 </div>
-                <Button className={"mt-4"} onClick={handleVerifyCode}>Confirm</Button>
+                <Button className={"mt-4"} onClick={() => { handleVerifyCode(); setLoading(true); }}>{loading ? <LoadingSpinner /> : "Confirm"}</Button>
             </div>
         </div>
     );

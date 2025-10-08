@@ -21,6 +21,16 @@ function UploadBatchModal({ handleCloseModal, page, activityId }) {
         documentFor: selectedTemplate
     });
 
+    useEffect(() => {
+        let timer;
+        if (loading) {
+            timer = setTimeout(() => {
+                setLoading(false);
+            }, 5000); // 5 seconds
+        }
+        return () => clearTimeout(timer);
+    }, [loading]);
+
 
     const {
         // uploadAccreditationDocument
@@ -80,7 +90,12 @@ function UploadBatchModal({ handleCloseModal, page, activityId }) {
 
     // Dropzone configuration
     const onDrop = useCallback(acceptedFiles => {
-        setFile(acceptedFiles[0]);
+        const newFiles = acceptedFiles.map(file => ({
+            id: Date.now() + Math.random(), // unique id
+            file,
+        }))
+        setFileList(prevFiles => [...prevFiles, ...newFiles]);
+        setFile(null); // Clear single file state if used elsewhere
     }, []);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -91,6 +106,8 @@ function UploadBatchModal({ handleCloseModal, page, activityId }) {
             'application/pdf': ['.pdf'],
         }
     });
+
+    console.log("dropped down files ", file);
 
     // Handlers
     const handleAddFile = () => {
@@ -150,6 +167,7 @@ function UploadBatchModal({ handleCloseModal, page, activityId }) {
     const handleUploadDocuments = () => {
         console.log("Uploading documents:", fileList);
         if (fileList.length === 0) {
+            setLoading(false);
             setError("Please add files to upload.");
             toast.error("Please add files to upload.");
             return;
@@ -310,36 +328,18 @@ function UploadBatchModal({ handleCloseModal, page, activityId }) {
                                 <input {...getInputProps()} />
                                 {isDragActive ? (
                                     "Drop the files here..."
-                                ) : file ? (
-                                    <div className='p-4 bg-background border border-primary rounded flex items-center justify-between text-primary w-[200px] relative'>
-                                        <h1 className='text-sm font-medium truncate'>{file.name}</h1>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setFile(null);
-                                            }}
-                                            data-tooltip-id="global-tooltip"
-                                            data-tooltip-content="Remove file"
-                                            className='aspect-square flex items-center justify-center cursor-pointer bg-primary rounded-full hover:bg-primary-dark absolute right-2'
-                                        >
-
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                className='size-4 fill-background '
-                                                viewBox="0 0 384 512"
-                                            >
-                                                <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" />
-                                            </svg>
-                                        </button>
-                                    </div>
                                 ) : (
-                                    "Drag 'n' drop or click to select files"
+                                    <div className='text-center'>
+                                        <h1 >Drag 'n' drop or click to select a file</h1>
+                                        <p className='text-sm text-gray-600'>File type supported: .pdf</p>
+                                    </div>
+
                                 )}
                             </div>
 
                             {error && <p className='text-red-500 text-sm'>{error}</p>}
 
-                            <div className='flex justify-end mt-4'>
+                            {/* <div className='flex justify-end mt-4'>
                                 <Button
                                     onClick={handleAddFile}
                                     style="secondary"
@@ -356,7 +356,7 @@ function UploadBatchModal({ handleCloseModal, page, activityId }) {
                                         Add File
                                     </div>
                                 </Button>
-                            </div>
+                            </div> */}
                         </div>
 
                         {/* File List Section */}

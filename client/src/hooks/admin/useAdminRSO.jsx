@@ -93,8 +93,8 @@ const updateRSO = async ({ id, updatedOrg, academicYearId }) => {
         };
 
 
-        console.log("Updating RSO ID:", id, "with data:", updatedOrg, "academicYearId:", academicYearId);
-        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/admin/rso/update-rso/${id}/${academicYearId}`, {
+        console.log("Updating RSO ID:", id, "with data:", updatedOrg);
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/admin/rso/update-rso/${id}`, {
             method: "PATCH",
             headers,
             body: isFileUpload ? formData : JSON.stringify(updatedOrg),

@@ -24,6 +24,22 @@ function DocumentAction() {
   const selectedForm = useSelectedFormStore((state) => state.selectedForm);
   const { createActivity, updateActivity, deleteActivity, error, success } = useRSOActivities();
 
+  useEffect(() => {
+    let timer;
+    if (loading) {
+      timer = setTimeout(() => {
+        setLoading(false);
+      }, 5000); // 5 seconds
+    }
+
+    if (deleting) {
+      timer = setTimeout(() => {
+        setDeleting(false);
+      }, 5000); // 5 seconds
+    }
+    return () => clearTimeout(timer);
+  }, [loading, deleting]);
+
   // hook for creating activity
   const {
     createActivityMutate,
@@ -164,8 +180,14 @@ function DocumentAction() {
   }, [success, navigate]);
 
   const handleSubmit = async (e) => {
+    setLoading(true);
     console.log("Submitting form with activityData:", activityData, "selectedForm:", selectedForm);
-    e.preventDefault();
+
+    // check all fields are filled
+    if (!activityData.Activity_name || !activityData.Activity_description || !activityData.Activity_start_datetime || !activityData.Activity_end_datetime || !activityData.Activity_on_off_campus || !activityData.Activity_place || activityData.Activity_description === '') {
+      toast.error("Please fill in the required fields.");
+      return;
+    }
 
     const changedFields = {};
     // Use originalData to refer if the data has changed
@@ -378,7 +400,6 @@ function DocumentAction() {
   };
 
   const handleDelete = (e) => {
-    e.preventDefault();
     // Show confirmation modal instead of deleting immediately
     setDeleteModalOpen(true);
   };
@@ -521,19 +542,6 @@ function DocumentAction() {
 
               {isEdit ? `Edit` : isCreate ? 'Upload' : 'Upload'}
             </div >
-            <div
-              onClick={() => {
-                setImage(null);
-                setDefaultImage(true);
-                setActivityData(prev => ({
-                  ...prev,
-                  Activity_image: null,
-                  Activity_picturePreview: DefaultPicture,
-                }));
-              }}
-              className='cursor-pointer px-2 py-1 bg-transparent rounded-full aspect-square border border-gray-400 text-sm flex items-center justify-center group hover:text-gray-500'>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" className='fill-off-black size-3 group-hover:fill-gray-500 '><path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" /></svg>
-            </div >
           </div>
 
           {!activityData.Activity_picturePreview && (
@@ -574,7 +582,7 @@ function DocumentAction() {
             <h2 className="text-xl font-semibold text-gray-800">Basic Information</h2>
 
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Activity Name</label>
+              <label className="block text-sm font-medium text-gray-700">Activity Name <span className="text-red-500">*</span></label>
               <TextInput
                 placeholder="Enter activity name"
                 value={activityData.Activity_name}
@@ -583,7 +591,7 @@ function DocumentAction() {
             </div>
 
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Start Date</label>
+              <label className="block text-sm font-medium text-gray-700">Start Date <span className="text-red-500">*</span></label>
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DateTimePicker
                   value={activityData.Activity_start_datetime}
@@ -602,7 +610,7 @@ function DocumentAction() {
             </div>
 
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">End Date</label>
+              <label className="block text-sm font-medium text-gray-700">End Date <span className="text-red-500">*</span></label>
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DateTimePicker
                   value={activityData.Activity_end_datetime}
@@ -621,7 +629,7 @@ function DocumentAction() {
             </div>
 
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Location</label>
+              <label className="block text-sm font-medium text-gray-700">Location <span className="text-red-500">*</span></label>
               <TextInput
                 placeholder="Enter location"
                 value={activityData.Activity_place}
@@ -630,7 +638,7 @@ function DocumentAction() {
             </div>
 
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Description</label>
+              <label className="block text-sm font-medium text-gray-700">Description <span className="text-red-500">*</span></label>
               <textarea
                 rows="4"
                 name="Activity_place"
@@ -647,7 +655,7 @@ function DocumentAction() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">On/Off Campus Activity</label>
+              <label className="block text-sm font-medium text-gray-700">On/Off Campus Activity <span className="text-red-500">*</span></label>
               <ReusableDropdown
                 options={options}
                 value={campusValue}
@@ -656,7 +664,7 @@ function DocumentAction() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Select a Form for the Activity</label>
+              <label className="block text-sm font-medium text-gray-700">Select a Form for the Activity <span className="text-red-500">*</span></label>
               <Button
                 disabled={isCreate ? true : false}
                 onClick={() => navigate("/activities/form-selection", { state: isEdit ? { mode: "edit" } : { mode: "create" } })}

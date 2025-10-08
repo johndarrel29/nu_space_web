@@ -47,8 +47,18 @@ export default function PasswordAction() {
         checkEmailExistsData,
     } = useLogin();
 
+    useEffect(() => {
+        let timer;
+        if (loading) {
+            timer = setTimeout(() => {
+                setLoading(false);
+            }, 10000); // 10 seconds
+        }
+        return () => clearTimeout(timer);
+    }, [loading]);
+
     const handleChangePassword = async () => {
-        const { password, newPassword, confirmPassword, email: formEmail } = formData;
+        const { newPassword, confirmPassword, email: formEmail } = formData;
 
         console.log("fromLogin? ", fromLogin);
         console.log("form email: ", formEmail);
@@ -61,12 +71,11 @@ export default function PasswordAction() {
             }
         } else {
             // Check from a different path
-            if (!password || !newPassword || !confirmPassword || (fromLogin && !formEmail)) {
+            if (!newPassword || !confirmPassword || (fromLogin && !formEmail)) {
                 toast.error("All fields are required.");
                 return;
             }
         }
-
         // Check if new password and confirm password match
         if (newPassword !== confirmPassword) {
             toast.error("Passwords do not match.");
@@ -225,13 +234,7 @@ export default function PasswordAction() {
     return (
         <div className="flex flex-col items-center justify-center gap-4 w-full">
             <div className="w-full justify-start flex items-center justify-start gap-2 mb-4">
-                <div
-                    onClick={() => {
-                        navigate(-1);
-                    }}
-                    className='flex items-center justify-center rounded-full h-8 w-8 cursor-pointer border border-gray-300 group'>
-                    <svg xmlns="http://www.w3.org/2000/svg" className='fill-gray-600 size-4 group-hover:fill-off-black' viewBox="0 0 448 512"><path d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.2 288 416 288c17.7 0 32-14.3 32-32s-14.3-32-32-32l-306.7 0L214.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z" /></svg>
-                </div>
+
                 <h1 className="text-lg font-semibold">Change Password</h1>
             </div>
             {/* Password Input */}
@@ -251,18 +254,6 @@ export default function PasswordAction() {
                 )}
 
                 {/* only show for first login event */}
-                {!fromLogin && (
-                    <div>
-                        <label htmlFor="password" className="text-sm text-gray-600">Current Password</label>
-                        <TextInput
-                            placeholder={"Current Password"}
-                            value={formData.password}
-                            type={"password"}
-                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            id="password"
-                        />
-                    </div>
-                )}
                 <div>
                     <label htmlFor="new-password" className="text-sm text-gray-600">New Password</label>
                     <TextInput

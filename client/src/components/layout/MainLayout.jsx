@@ -32,6 +32,25 @@ function MainLayout({ children }) {
   const [loading, setLoading] = useState(false);
 
 
+  useEffect(() => {
+    let timer;
+    if (loading) {
+      timer = setTimeout(() => {
+        setLoading(false);
+      }, 5000); // 5 seconds
+    }
+
+    if (rejectLoading) {
+      timer = setTimeout(() => {
+        setRejectLoading(false);
+      }, 5000); // 5 seconds
+    }
+
+    return () => clearTimeout(timer);
+  }, [loading, rejectLoading]);
+
+
+
   const {
     // approve activity
     isApprovingActivity,
@@ -443,7 +462,7 @@ function MainLayout({ children }) {
             {/* group notification module and profile picture */}
             <div className="flex items-center gap-4">
 
-              {(isSuperAdmin || isDirector || isAVP) && (
+              {(isDirector || isAVP) && (
                 <div
                   data-tooltip-id="global-tooltip"
                   data-tooltip-content={`${isOnDashboardPage ? "Close Dashboard" : "Dashboard"}`}
@@ -471,24 +490,26 @@ function MainLayout({ children }) {
                 </div>
               )}
 
-              <div
-                data-tooltip-id="global-tooltip"
-                data-tooltip-content={`${isOnNotificationPage ? "Close Notifications" : "Notifications"}`}
-                onClick={() => navigate(isOnNotificationPage ? -1 : "/notifications")}
-                className={`aspect-square border border-mid-gray rounded rounded-full p-3 ${isOnNotificationPage ? "bg-gray-100" : ""}`}
-              >
-                <div className={`flex items-center gap-2 text-sm font-light cursor-pointer`}>
-                  {isOnNotificationPage ? (
-                    <div className="flex items-center gap-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="size-4" fill="currentColor" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="size-4" fill="currentColor" viewBox="0 0 448 512"><path d="M224 0c-17.7 0-32 14.3-32 32l0 19.2C119 66 64 130.6 64 208l0 18.8c0 47-17.3 92.4-48.5 127.6l-7.4 8.3c-8.4 9.4-10.4 22.9-5.3 34.4S19.4 416 32 416l384 0c12.6 0 24-7.4 29.2-18.9s3.1-25-5.3-34.4l-7.4-8.3C401.3 319.2 384 273.9 384 226.8l0-18.8c0-77.4-55-142-128-156.8L256 32c0-17.7-14.3-32-32-32zm45.3 493.3c12-12 18.7-28.3 18.7-45.3l-64 0-64 0c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7z" /></svg>
-                    </div>
-                  )}
+              {!isSuperAdmin && (
+                <div
+                  data-tooltip-id="global-tooltip"
+                  data-tooltip-content={`${isOnNotificationPage ? "Close Notifications" : "Notifications"}`}
+                  onClick={() => navigate(isOnNotificationPage ? -1 : "/notifications")}
+                  className={`aspect-square border border-mid-gray rounded rounded-full p-3 ${isOnNotificationPage ? "bg-gray-100" : ""}`}
+                >
+                  <div className={`flex items-center gap-2 text-sm font-light cursor-pointer`}>
+                    {isOnNotificationPage ? (
+                      <div className="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="size-4" fill="currentColor" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" /></svg>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="size-4" fill="currentColor" viewBox="0 0 448 512"><path d="M224 0c-17.7 0-32 14.3-32 32l0 19.2C119 66 64 130.6 64 208l0 18.8c0 47-17.3 92.4-48.5 127.6l-7.4 8.3c-8.4 9.4-10.4 22.9-5.3 34.4S19.4 416 32 416l384 0c12.6 0 24-7.4 29.2-18.9s3.1-25-5.3-34.4l-7.4-8.3C401.3 319.2 384 273.9 384 226.8l0-18.8c0-77.4-55-142-128-156.8L256 32c0-17.7-14.3-32-32-32zm45.3 493.3c12-12 18.7-28.3 18.7-45.3l-64 0-64 0c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7z" /></svg>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className='flex items-center justify-between text-center pr-6 '>
 

@@ -119,6 +119,17 @@ export default function MainRSO() {
   const [date, setDate] = useState(new Date());
   const [membershipEndDate, setMembershipEndDate] = useState(null);
 
+  useEffect(() => {
+    let timer;
+    if (loading) {
+      timer = setTimeout(() => {
+        setLoading(false);
+      }, 5000); // 5 seconds
+    }
+
+
+  }, [loading]);
+
   // todo: add archive section to show isDeleted = true data
 
   // Process RSO data for table
@@ -263,11 +274,13 @@ export default function MainRSO() {
       if (action?.type === "restore" && user?.RSO_isDeleted === true) {
         restoreRSOMutate({ id: user.id }, {
           onSuccess: (data) => {
+            setLoading(false);
             setActionClick(null);
             console.log("RSO restored successfully:", data);
             toast.success("RSO restored successfully!");
           },
           onError: (error) => {
+            setLoading(false);
             setActionClick(null);
             console.error("Error restoring RSO:", error);
             toast.error("Failed to restore RSO. Please try again.");
@@ -278,11 +291,13 @@ export default function MainRSO() {
       if (actionClick?.user?.RSO_isDeleted === false) {
         softDeleteRSOMutate({ id: actionClick.user.id }, {
           onSuccess: (data) => {
+            setLoading(false);
             setActionClick(null);
             console.log("RSO soft deleted successfully:", data);
             toast.success("RSO soft deleted successfully!. You can restore it from the Deleted RSOs filter.");
           },
           onError: (error) => {
+            setLoading(false);
             setActionClick(null);
             console.error("Error soft deleting RSO:", error);
             toast.error("Failed to soft delete RSO. Please try again.");
@@ -291,11 +306,13 @@ export default function MainRSO() {
       } else if (actionClick?.user?.RSO_isDeleted === true && actionClick?.action?.type !== "restore") {
         hardDeleteRSOMutate({ id: actionClick.user.id }, {
           onSuccess: (data) => {
+            setLoading(false);
             setActionClick(null);
             console.log("RSO hard deleted successfully:", data);
             toast.success("RSO hard deleted successfully!");
           },
           onError: (error) => {
+            setLoading(false);
             setActionClick(null);
             console.error("Error hard deleting RSO:", error);
             toast.error("Failed to hard delete RSO. Please try again.");
@@ -303,9 +320,11 @@ export default function MainRSO() {
         });
       }
     } catch (error) {
+      setLoading(false);
       console.error("Error handling action click:", error);
       toast.error("An unexpected error occurred. Please try again.");
     } finally {
+      setLoading(false);
       setDeleteConfirmation(false);
     }
   };
@@ -570,7 +589,7 @@ export default function MainRSO() {
               <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
                 <div>
                   <h2 className="text-base md:text-lg font-semibold text-gray-900">
-                    {actionClick?.user?.RSO_isDeleted === false ? 'Confirm Soft Deletion' : 'Confirm Hard Deletion'}
+                    {actionClick?.user?.RSO_isDeleted === false ? 'Confirm Deletion' : 'Confirm Permanent Deletion'}
                   </h2>
                 </div>
                 <CloseButton onClick={() => setDeleteConfirmation(false)} />
@@ -578,13 +597,13 @@ export default function MainRSO() {
               <div className="px-6 py-6 flex flex-col gap-4">
                 <p className="text-gray-700 text-sm">
                   {actionClick?.user?.RSO_isDeleted === false
-                    ? 'Are you sure you want to soft delete this RSO?'
-                    : 'Are you sure you want to hard delete this RSO? You cannot recover it after deletion.'}
+                    ? 'Are you sure you want to delete this RSO?'
+                    : 'Are you sure you want to permanently delete this RSO? You cannot recover it after deletion.'}
                 </p>
               </div>
               <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-2 bg-white">
                 <Button style={"secondary"} onClick={() => setDeleteConfirmation(false)}>Cancel</Button>
-                <Button onClick={() => handleActionClick()} className="bg-red-600 hover:bg-red-700 text-white">Delete</Button>
+                <Button disabled={loading} onClick={() => { handleActionClick(); setLoading(true); }} className="bg-red-600 hover:bg-red-700 text-white">{loading ? <LoadingSpinner /> : 'Delete'}</Button>
               </div>
             </motion.div>
           </motion.div>

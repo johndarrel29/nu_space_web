@@ -75,6 +75,28 @@ function RSOAction() {
   const [tagError, setTagError] = useState("");
   // Removed deprecated rsoStatus state (was tied to RSO_status field)
 
+  useEffect(() => {
+    let timer;
+    if (loading) {
+      timer = setTimeout(() => {
+        setLoading(false);
+      }, 5000); // 5 seconds
+    }
+    if (error) {
+      timer = setTimeout(() => {
+        setError("");
+      }, 5000); // 5 seconds
+    }
+
+    if (setDescriptionError) {
+      timer = setTimeout(() => {
+        setDescriptionError("");
+      }, 5000); // 5 seconds
+    }
+
+    return () => clearTimeout(timer);
+  }, [loading, error, descriptionError]);
+
 
   //file manipulaion
   const [image, setImage] = useState(null);
@@ -263,9 +285,6 @@ function RSOAction() {
 
   const handleSubmit = async (e) => {
     try {
-      if (e && typeof e.preventDefault === 'function') {
-        e.preventDefault();
-      }
       const originalUrl = rsoDetailData?.data?.RSOid?.RSO_picture?.signedURL || null;
 
       const pictureUnchanged = (() => {
@@ -600,12 +619,16 @@ function RSOAction() {
                   />
 
                   <div
+                    id="upload-button"
                     onClick={() => fileInputRef.current?.click()}
                     className='px-2 py-1 bg-transparent rounded-xl border border-gray-400 text-sm flex justify-center cursor-pointer'>
 
                     {isEdit ? `Edit` : isCreate ? 'Upload' : 'Upload'}
                   </div >
-                  <div
+                  <label htmlFor="upload-button">
+                    <span className="text-red-500">*</span>
+                  </label>
+                  {/* <div
                     onClick={() => {
                       setImage(null);
                       setFormData(prev => ({
@@ -616,13 +639,13 @@ function RSOAction() {
                     }}
                     className='cursor-pointer px-2 py-1 bg-transparent rounded-full border border-gray-400 text-sm flex items-center justify-center'>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" className='fill-off-black size-3'><path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" /></svg>
-                  </div >
+                  </div > */}
                 </div>
               </div>
 
             </div>
             <div className='w-full'>
-              <label htmlFor="RSO_name" className='text-sm'>RSO Name</label>
+              <label htmlFor="RSO_name" className='text-sm'>RSO Name <span className="text-red-500">*</span></label>
               <TextInput
                 id={'RSO_name'}
                 name={'RSO_name'}
@@ -633,7 +656,7 @@ function RSOAction() {
               ></TextInput>
               <div className='flex flex-col md:flex-row gap-4 mt-2'>
                 <div className='w-full'>
-                  <label htmlFor="RSO_acronym" className='text-sm'>RSO Acronym</label>
+                  <label htmlFor="RSO_acronym" className='text-sm'>RSO Acronym <span className="text-red-500">*</span></label>
                   <TextInput
                     id='RSO_acronym'
                     name='RSO_acronym'
@@ -661,7 +684,7 @@ function RSOAction() {
               </div>
 
               <div className='w-full'>
-                <label htmlFor="RSO_category" className='text-sm'>RSO Category</label>
+                <label htmlFor="RSO_category" className='text-sm'>RSO Category <span className="text-red-500">*</span></label>
                 <ReusableDropdown
                   name="RSO_category"
                   value={formData.RSO_category}
@@ -675,7 +698,7 @@ function RSOAction() {
               </div>
 
               <div className='mt-2'>
-                <label htmlFor="large-input" className='text-sm'>Description</label>
+                <label htmlFor="large-input" className='text-sm'>Description <span className="text-red-500">*</span></label>
                 <textarea
                   rows="4"
                   name="RSO_description"

@@ -326,7 +326,7 @@ export default function ReusableTable({
                                                                                                                 }
                                                                                                             }}
                                                                                                             data-tooltip-id="global-tooltip"
-                                                                                                            data-tooltip-content='Soft Delete'
+                                                                                                            data-tooltip-content='Delete'
                                                                                                             className={`rounded-full w-8 h-8 bg-white flex justify-center items-center cursor-pointer group ${row.isDeleted !== 'undefined' ? '' : 'cursor-not-allowed opacity-50'}`}>
                                                                                                             <svg xmlns="http://www.w3.org/2000/svg" className="fill-gray-600 size-4 group-hover:fill-off-black" viewBox="0 0 640 640"><path d="M183.1 137.4C170.6 124.9 150.3 124.9 137.8 137.4C125.3 149.9 125.3 170.2 137.8 182.7L275.2 320L137.9 457.4C125.4 469.9 125.4 490.2 137.9 502.7C150.4 515.2 170.7 515.2 183.2 502.7L320.5 365.3L457.9 502.6C470.4 515.1 490.7 515.1 503.2 502.6C515.7 490.1 515.7 469.8 503.2 457.3L365.8 320L503.1 182.6C515.6 170.1 515.6 149.8 503.1 137.3C490.6 124.8 470.3 124.8 457.8 137.3L320.5 274.7L183.1 137.4z" /></svg>
                                                                                                         </div>
@@ -355,7 +355,7 @@ export default function ReusableTable({
                                                                                                                 }
                                                                                                             }}
                                                                                                             data-tooltip-id="global-tooltip"
-                                                                                                            data-tooltip-content='Hard Delete'
+                                                                                                            data-tooltip-content='Delete Permanently'
                                                                                                             className={`rounded-full w-8 h-8 bg-white flex justify-center items-center cursor-pointer group ${row.isDeleted !== 'undefined' ? '' : 'cursor-not-allowed opacity-50'}`}>
                                                                                                             <svg xmlns="http://www.w3.org/2000/svg" className="fill-gray-600 size-4 group-hover:fill-off-black" viewBox="0 0 448 512"><path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" /></svg>
                                                                                                         </div>
@@ -413,7 +413,7 @@ export default function ReusableTable({
                                                                                                                 }
                                                                                                             }}
                                                                                                             data-tooltip-id="global-tooltip"
-                                                                                                            data-tooltip-content='Permanent Delete'
+                                                                                                            data-tooltip-content='Delete Permanently'
                                                                                                             className="rounded-full w-8 h-8 bg-white flex justify-center items-center cursor-pointer group">
                                                                                                             <svg xmlns="http://www.w3.org/2000/svg" className="fill-gray-600 size-4 group-hover:fill-off-black" viewBox="0 0 640 640"><path d="M232.7 69.9L224 96L128 96C110.3 96 96 110.3 96 128C96 145.7 110.3 160 128 160L512 160C529.7 160 544 145.7 544 128C544 110.3 529.7 96 512 96L416 96L407.3 69.9C402.9 56.8 390.7 48 376.9 48L263.1 48C249.3 48 237.1 56.8 232.7 69.9zM512 208L128 208L149.1 531.1C150.7 556.4 171.7 576 197 576L443 576C468.3 576 489.3 556.4 490.9 531.1L512 208z" /></svg>
                                                                                                         </div>
@@ -429,7 +429,7 @@ export default function ReusableTable({
                                                                                                                 }
                                                                                                             }}
                                                                                                             data-tooltip-id="global-tooltip"
-                                                                                                            data-tooltip-content='Soft Delete'
+                                                                                                            data-tooltip-content='Delete'
                                                                                                             className="rounded-full w-8 h-8 bg-white flex justify-center items-center cursor-pointer group">
                                                                                                             <svg xmlns="http://www.w3.org/2000/svg" className="fill-gray-600 size-4 group-hover:fill-off-black" viewBox="0 0 640 640"><path d="M183.1 137.4C170.6 124.9 150.3 124.9 137.8 137.4C125.3 149.9 125.3 170.2 137.8 182.7L275.2 320L137.9 457.4C125.4 469.9 125.4 490.2 137.9 502.7C150.4 515.2 170.7 515.2 183.2 502.7L320.5 365.3L457.9 502.6C470.4 515.1 490.7 515.1 503.2 502.6C515.7 490.1 515.7 469.8 503.2 457.3L365.8 320L503.1 182.6C515.6 170.1 515.6 149.8 503.1 137.3C490.6 124.8 470.3 124.8 457.8 137.3L320.5 274.7L183.1 137.4z" /></svg>
                                                                                                         </div></>

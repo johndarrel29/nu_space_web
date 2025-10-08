@@ -45,6 +45,27 @@ export default function MainLogin() {
         loginData,
     } = useLogin();
 
+    useEffect(() => {
+        let timer;
+        if (isLoading) {
+            timer = setTimeout(() => {
+                setIsLoading(false);
+            }, 5000); // 5 seconds
+        }
+        if (forgotPasswordLoading) {
+            timer = setTimeout(() => {
+                setForgotPasswordLoading(false);
+            }, 10000); // 10 seconds
+        }
+        if (error) {
+            timer = setTimeout(() => {
+                setError("");
+            }, 5000); // 5 seconds
+        }
+
+        return () => clearTimeout(timer);
+    }, [isLoading, forgotPasswordLoading, error]);
+
     // Handle login errors and special cases
     useEffect(() => {
         if (!isLoginError) return;
@@ -107,7 +128,6 @@ export default function MainLogin() {
 
     const handleSubmit = async (e) => {
 
-        e?.preventDefault();
         setIsLoading(true);
 
         if (!formData.email || !formData.password) {
@@ -266,9 +286,9 @@ export default function MainLogin() {
                 </div>
 
                 {/* Error Message */}
-                {loginError && (
+                {(loginError || error) && (
                     <p className="mt-2 text-sm text-red-600">
-                        {loginError.message}
+                        {loginError?.message || error}
                     </p>
                 )}
 

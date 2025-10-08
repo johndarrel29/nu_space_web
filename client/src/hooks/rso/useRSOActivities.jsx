@@ -431,6 +431,7 @@ function useRSOActivities({ sorted, search, activityId } = {}) {
     } = useQuery({
         queryKey: ["uploadActivityDocument", { activityId }],
         queryFn: getActivityDocumentsRequest,
+        refetchOnWindowFocus: false,
         enabled: !!activityId,
         onSuccess: (data) => {
             console.log("Upload activity document data fetched:", data);
