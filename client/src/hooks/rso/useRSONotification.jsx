@@ -89,6 +89,36 @@ const getRSOCreatedNotificationsRequest = async ({ queryKey }) => {
     }
 }
 
+const getSDAOAnnouncementRequest = async ({ queryKey }) => {
+    try {
+        const token = useTokenStore.getState().token;
+        const [_, date] = queryKey;
+        const params = new URLSearchParams({ date }).toString();
+
+        console.log("RSO created notifications url called:", `${process.env.REACT_APP_BASE_URL}/api/rsoRep/announcements/getSDAOAnnouncement?${params}`);
+
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/rsoRep/announcements/getSDAOAnnouncement?${params}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: token,
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `Error: ${response.status} - ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error("Error fetching RSO created notifications:", error);
+        throw error;
+    }
+}
+
+
 const updateSentAnnouncementRequest = async ({ announcementId, title, content }) => {
     try {
         const token = useTokenStore.getState().token;
@@ -167,6 +197,18 @@ function useNotification({ userId, filters, date, page = 1 } = {}) {
     });
 
     const {
+        data: sdaoAnnouncementData,
+        isLoading: sdaoAnnouncementLoading,
+        isError: sdaoAnnouncementError,
+        error: sdaoAnnouncementErrorDetails,
+    } = useQuery({
+        queryKey: ['sdaoAnnouncementData', date],
+        queryFn: getSDAOAnnouncementRequest,
+        enabled: isUserRSORepresentative && isAnnouncementsPage, // only fetch if user is an RSO representative and on announcements page
+        refetchOnWindowFocus: false,
+    });
+
+    const {
         mutate: updateSentRSOAnnouncement,
         isLoading: updateSentRSOAnnouncementLoading,
         isError: updateSentRSOAnnouncementError,
@@ -203,6 +245,12 @@ function useNotification({ userId, filters, date, page = 1 } = {}) {
         updateSentRSOAnnouncementLoading,
         updateSentRSOAnnouncementError,
         updateSentRSOAnnouncementErrorDetails,
+
+        // get SDAO announcements (for RSO representatives)
+        sdaoAnnouncementData,
+        sdaoAnnouncementLoading,
+        sdaoAnnouncementError,
+        sdaoAnnouncementErrorDetails,
     }
 }
 

@@ -31,7 +31,7 @@ const fetchDirectorDocuments = async ({ queryKey }) => {
         }
 
         const data = await response.json();
-        return data.documents || [];
+        return data;
     } catch (error) {
         console.error("Error fetching director documents:", error);
         throw error;

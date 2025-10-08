@@ -269,7 +269,8 @@ export default function Activities() {
   const tabs = [
     { label: "Documents" },
     { label: "Forms Used" },
-    { label: "Participants" }
+    { label: "Participants" },
+    { label: "Remarks" },
   ];
 
   // Removed msg timeout effect (msg state removed)
@@ -606,7 +607,7 @@ export default function Activities() {
                             <path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 333.7 393.4 100.3c12.5-12.5 32.8-12.5 45.3 0z" />
                           </svg>
                         </div>
-                        <h3 className="font-semibold text-green-700 text-sm text-center">Document Approved</h3>
+                        <h3 className="font-semibold text-green-700 text-sm text-center">Activity Approved</h3>
                       </div>
                     </div>
                   )
@@ -618,13 +619,12 @@ export default function Activities() {
                               <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" />
                             </svg>
                           </div>
-                          <h3 className="font-semibold text-red-700 text-sm text-center">Document Rejected</h3>
+                          <h3 className="font-semibold text-red-700 text-sm text-center">Activity Rejected</h3>
                         </div>
                       </div>
                     ) : (
                       <div
-                        onClick={handleActivityReview}
-                        className='cursor-pointer bg-yellow-50 p-4 rounded-lg border border-yellow-200 w-full sm:w-[48%] lg:w-[20%] h-24 flex items-center justify-center hover:bg-yellow-100 transition-colors'>
+                        className='bg-yellow-50 p-4 rounded-lg border border-yellow-200 w-full sm:w-[48%] lg:w-[20%] h-24 flex items-center justify-center'>
                         <div className='flex flex-col items-center gap-2'>
                           <div className='bg-yellow-500 p-1 rounded-full'>
                             <svg xmlns="http://www.w3.org/2000/svg" className='size-4 fill-white' viewBox="0 0 512 512">
@@ -793,6 +793,22 @@ export default function Activities() {
                       <span className="text-lg font-medium text-gray-700">No participants to display.</span>
                     </div>
                   )}
+                </div>
+              )}
+
+              {activeTab === 3 && (
+                <div className="bg-white border border-gray-200 rounded-lg p-6 flex items-start gap-3 shadow-sm max-w-xl">
+                  <div className="flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
+                    </svg>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-base font-semibold text-blue-800 mb-1">Remarks</span>
+                    <span className="text-gray-700 text-sm whitespace-pre-line">
+                      {activity?.Activity_remarks ? (activity?.Activity_remarks || 'n/a') : 'No remarks available.'}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>

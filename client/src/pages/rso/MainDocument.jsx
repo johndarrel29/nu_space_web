@@ -37,6 +37,7 @@ function MainDocument() {
     const userID = user?.id || "";
 
     console.log("error query generalDocumentsQueryError", generalDocumentsQueryError);
+    console.log("generalDocsuments", generalDocuments);
 
 
     /**
@@ -66,6 +67,7 @@ function MainDocument() {
                     updatedAt: formatDate(doc.updatedAt) || '',
                     file: doc.file || '',
                     document_status: doc.document_status || '',
+                    academicYear: doc.academicYear || {},
                     title: doc.title || '',
                     url: doc.url || '',
                 };
@@ -172,7 +174,7 @@ function MainDocument() {
                     { name: "Title", key: "title" },
                     { name: "Status", key: "document_status" },
                     { name: "Created At", key: "createdAt" },
-                    { name: "Action", key: "actions" }
+                    { name: "Academic Year", key: "academicYear" }
                 ]}
                 onActionClick={(row) => {
                     setDocumentToDelete(row);

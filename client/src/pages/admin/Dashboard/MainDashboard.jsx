@@ -547,7 +547,7 @@ export default function MainDashboard() {
                         )}
                         {(isUserAdmin || isCoordinator) && (
                             <Button style={"secondary"} onClick={() => navigate('/general-documents/templates')}>
-                                Create Template
+                                Create Document Template
                             </Button>
                         )}
 

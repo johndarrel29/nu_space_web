@@ -72,6 +72,10 @@ function RSOAction() {
   const [originalTagName, setOriginalTagName] = useState("");
   const [error, setError] = useState("");
   const [descriptionError, setDescriptionError] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [acronymError, setAcronymError] = useState("");
+  const [categoryError, setCategoryError] = useState("");
+  const [pictureError, setPictureError] = useState("");
   const [tagError, setTagError] = useState("");
   // Removed deprecated rsoStatus state (was tied to RSO_status field)
 
@@ -88,14 +92,20 @@ function RSOAction() {
       }, 5000); // 5 seconds
     }
 
-    if (setDescriptionError) {
+    if (descriptionError || pictureError || acronymError || nameError || categoryError || tagError) {
       timer = setTimeout(() => {
         setDescriptionError("");
+        setPictureError("");
+        setAcronymError("");
+        setNameError("");
+        setCategoryError("");
+        setTagError("");
       }, 5000); // 5 seconds
     }
 
+
     return () => clearTimeout(timer);
-  }, [loading, error, descriptionError]);
+  }, [loading, error, descriptionError, pictureError, acronymError, categoryError, tagError]);
 
 
   //file manipulaion
@@ -285,6 +295,7 @@ function RSOAction() {
 
   const handleSubmit = async (e) => {
     try {
+      setLoading(true);
       const originalUrl = rsoDetailData?.data?.RSOid?.RSO_picture?.signedURL || null;
 
       const pictureUnchanged = (() => {
@@ -371,34 +382,72 @@ function RSOAction() {
       // Remove display-only fields from payload
       delete payload.RSO_academicYear;
 
-      // Validate form data
+      console.log("Final formData:", formData);
+
+      let hasError = false;
+
+      // Validate image
+      if (!formData.RSO_picture || formData.RSO_picture === null) {
+        setPictureError("RSO picture is required");
+        hasError = true;
+      } else {
+        setPictureError("");
+      }
+
+      // Validate name
+      if (formData.RSO_name === "" || formData.RSO_name === null) {
+        setNameError("RSO name is required");
+        hasError = true;
+      } else {
+        setNameError("");
+      }
+
+      // Validate acronym
+      if (formData.RSO_acronym === "" || formData.RSO_acronym === null) {
+        setAcronymError("RSO acronym is required");
+        hasError = true;
+      } else {
+        setAcronymError("");
+      }
+
+      // Validate category
+      if (formData.RSO_category === "" || formData.RSO_category === null) {
+        setCategoryError("RSO category is required");
+        hasError = true;
+      } else {
+        setCategoryError("");
+      }
+
+      // Validate description
       if (formData.RSO_description === "" || formData.RSO_description === null) {
         setDescriptionError("Description is required");
-        setLoading(false);
-        return;
+        hasError = true;
       } else if (formData.RSO_description.length > 500) {
         setDescriptionError("Description must not exceed 500 characters.");
-        setLoading(false);
-        return;
+        hasError = true;
       } else {
         setDescriptionError("");
       }
 
-      if (selectedTags.length === 0) {
-        setTagError("At least one tag is required");
-        setLoading(false);
-        return;
-      } else if (selectedTags.length < 3) {
+      // Validate tags
+      if (selectedTags.length < 3) {
         setTagError("You must select at least 3 tags");
-        setLoading(false);
-        return;
+        hasError = true;
       } else if (selectedTags.length > 5) {
         setTagError("You can only select up to 5 tags");
-        setLoading(false);
-        return;
+        hasError = true;
       } else {
         setTagError("");
       }
+
+      // If any errors, stop submission
+      if (hasError) {
+        setLoading(false);
+        return;
+      }
+
+
+
       // Don't proceed if there are any errors
       if (error || descriptionError || tagError) {
         setLoading(false);
@@ -628,19 +677,12 @@ function RSOAction() {
                   <label htmlFor="upload-button">
                     <span className="text-red-500">*</span>
                   </label>
-                  {/* <div
-                    onClick={() => {
-                      setImage(null);
-                      setFormData(prev => ({
-                        ...prev,
-                        RSO_picture: null,
-                        RSO_picturePreview: DefaultPicture,
-                      }));
-                    }}
-                    className='cursor-pointer px-2 py-1 bg-transparent rounded-full border border-gray-400 text-sm flex items-center justify-center'>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" className='fill-off-black size-3'><path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z" /></svg>
-                  </div > */}
                 </div>
+                {pictureError && (
+                  <div className="text-red-500 text-sm mt-1">
+                    {pictureError}
+                  </div>
+                )}
               </div>
 
             </div>
@@ -654,6 +696,8 @@ function RSOAction() {
                 value={formData.RSO_name}
                 onChange={handleChange}
               ></TextInput>
+              {nameError && <div className="text-red-500 text-sm mt-1">{nameError}</div>}
+
               <div className='flex flex-col md:flex-row gap-4 mt-2'>
                 <div className='w-full'>
                   <label htmlFor="RSO_acronym" className='text-sm'>RSO Acronym <span className="text-red-500">*</span></label>
@@ -667,6 +711,11 @@ function RSOAction() {
                   >
 
                   </TextInput>
+                  {acronymError && (
+                    <div className="text-red-500 text-sm mt-1">
+                      {acronymError}
+                    </div>
+                  )}
                 </div>
                 <div className='w-full'>
                   <label htmlFor="RSO_college" className='text-sm'>RSO College</label>
@@ -680,6 +729,7 @@ function RSOAction() {
                     }
                     }
                   ></ReusableDropdown>
+
                 </div>
               </div>
 
@@ -695,6 +745,11 @@ function RSOAction() {
                   }
                   }
                 ></ReusableDropdown>
+                {categoryError && (
+                  <div className="text-red-500 text-sm mt-1">
+                    {categoryError}
+                  </div>
+                )}
               </div>
 
               <div className='mt-2'>

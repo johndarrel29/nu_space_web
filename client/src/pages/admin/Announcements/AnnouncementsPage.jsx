@@ -65,7 +65,15 @@ function AnnouncementsPage() {
         updateSentRSOAnnouncementLoading,
         updateSentRSOAnnouncementError,
         updateSentRSOAnnouncementErrorDetails,
+
+        sdaoAnnouncementData,
+        sdaoAnnouncementLoading,
+        sdaoAnnouncementError,
+        sdaoAnnouncementErrorDetails,
     } = useRSONotification({ userId: user?.id, date: filters.date });
+
+    console.log("RSO Created Notifications Data: ", rsoCreatedNotificationsData);
+    console.log("SDAO Announcement Data: ", sdaoAnnouncementData);
 
     useEffect(() => {
         if (filters) {
@@ -152,8 +160,19 @@ function AnnouncementsPage() {
         }))
         : [];
 
+    const tableSDAORSO = Array.isArray(sdaoAnnouncementData?.data)
+        ? sdaoAnnouncementData?.data?.map(n => ({
+            title: n.title,
+            message: n.content?.length > 50 ? n.content.substring(0, 50) + '...' : n.content,
+            createdBy: formatCreatedBy(n.createdBy),
+            createdAt: FormatDate(n.createdAt),
+            notifType: n.data?.type,
+            fullData: n
+        }))
+        : [];
+
     // const rowsToDisplay = activeTab === 0 ? tableRow : isUserRSORepresentative && activeTab === 1 ? tableRowRSO : tableRowSent;
-    const rowsToDisplay = !isUserRSORepresentative ? tableRowSent : tableRowRSO;
+    const rowsToDisplay = !isUserRSORepresentative ? tableRowSent : (activeTab === 0 ? tableRowRSO : tableSDAORSO);
 
     console.log("selectedRSOs:", selectedRSOs);
 
@@ -271,8 +290,11 @@ function AnnouncementsPage() {
         }
     };
 
-    const notificationTab =
-        [
+    const notificationTab = isUserRSORepresentative
+        ? [
+            { label: "Sent" },
+            { label: "Received" }
+        ] : [
             { label: "Sent" }
         ];
 
@@ -456,13 +478,6 @@ function AnnouncementsPage() {
                                     </div>
                                 )}
                                 <Button
-                                    style="secondary"
-                                    onClick={closeModal}
-                                    className="ml-2"
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
                                     disabled={loading || postNotificationLoading || postRSONotificationLoading || postSpecificRSONotificationLoading}
                                     onClick={() => { handleNotification(); setLoading(true); }}
                                 >
@@ -508,13 +523,16 @@ function AnnouncementsPage() {
 
                                 <div>
                                     <h3 className="text-sm font-medium text-gray-500">Title</h3>
-                                    <TextInput value={selectedAnnouncement.title || ""} onChange={(e) => setSelectedAnnouncement({ ...selectedAnnouncement, title: e.target.value })} />
+                                    <TextInput
+                                        disabled={activeTab === 1}
+                                        value={selectedAnnouncement.title || ""} onChange={(e) => setSelectedAnnouncement({ ...selectedAnnouncement, title: e.target.value })} />
                                 </div>
 
                                 <div>
                                     <h3 className="text-sm font-medium text-gray-500">Message / Content</h3>
                                     <textarea
                                         rows="4"
+                                        disabled={activeTab === 1}
                                         name="announcement_description"
                                         className="bg-textfield border border-mid-gray text-gray-900 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                         placeholder="Write your announcement here"
@@ -524,12 +542,6 @@ function AnnouncementsPage() {
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <h3 className="text-sm font-medium text-gray-500">Type</h3>
-                                        <p className="text-sm capitalize">
-                                            {selectedAnnouncement?.data?.type || "—"}
-                                        </p>
-                                    </div>
                                     <div>
                                         <h3 className="text-sm font-medium text-gray-500">Created On</h3>
                                         <p className="text-sm">
@@ -545,18 +557,20 @@ function AnnouncementsPage() {
                                 </div>
                             </div>
 
-                            <div className="flex justify-end mt-6 gap-2">
-                                <Button
-                                    style="primary"
-                                    disabled={updateSentAdminAnnouncementLoading || updateSentRSOAnnouncementLoading || loading}
-                                    onClick={() => { handleUpdateAnnouncement(); setLoading(true); }}
-                                >
-                                    {loading ? <LoadingSpinner /> : 'Edit'}
-                                </Button>
-                                <Button style="secondary" onClick={closeDetailsModal}>
-                                    Close
-                                </Button>
-                            </div>
+                            {activeTab === 0 && (
+                                <div className="flex justify-end mt-6 gap-2">
+                                    <Button
+                                        style="primary"
+                                        disabled={updateSentAdminAnnouncementLoading || updateSentRSOAnnouncementLoading || loading}
+                                        onClick={() => { handleUpdateAnnouncement(); setLoading(true); }}
+                                    >
+                                        {loading ? <LoadingSpinner /> : 'Edit'}
+                                    </Button>
+                                    <Button style="secondary" onClick={closeDetailsModal}>
+                                        Close
+                                    </Button>
+                                </div>
+                            )}
                         </motion.div>
                     </Backdrop>
                 )}

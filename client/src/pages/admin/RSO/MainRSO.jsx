@@ -528,7 +528,7 @@ export default function MainRSO() {
                       <DemoContainer components={['DateTimePicker']}>
                         <DateTimePicker
                           onChange={handleDateTimeChange}
-                          label="Select date and time"
+                          label="Set Deadline Date & Time"
                           value={date ? dayjs(date).tz("Asia/Manila") : null}
                           slotProps={{
                             popper: {

@@ -214,6 +214,56 @@ const fetchSpecificDocument = async ({ queryKey }) => {
     }
 }
 
+const reuploadRejectedActivityDocument = async ({ formData, documentId }) => {
+    try {
+        const token = useTokenStore.getState().getToken();
+
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/rsoRep/documents/activity/${documentId}/re-upload`, {
+            method: "PUT",
+            headers: {
+                Authorization: token
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json(); // try to read the server's message
+            throw new Error(errorData.message || `Error: ${response.status} - ${response.statusText}`);
+        }
+
+        return await response.json();
+
+    } catch (error) {
+        console.error("Error reuploading rejected activity document:", error);
+        throw error;
+    }
+}
+
+const reuploadRejectedAccreditationDocument = async ({ formData, documentId }) => {
+    try {
+        const token = useTokenStore.getState().getToken();
+
+        const response = await fetch(`${process.env.REACT_APP_BASE_URL}/api/rsoRep/documents/accreditation/${documentId}/re-upload`, {
+            method: "PUT",
+            headers: {
+                Authorization: token
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json(); // try to read the server's message
+            throw new Error(errorData.message || `Error: ${response.status} - ${response.statusText}`);
+        }
+
+        return await response.json();
+
+    } catch (error) {
+        console.error("Error reuploading rejected activity document:", error);
+        throw error;
+    }
+}
+
 function useRSODocuments({ documentFor = "", documentId = "", manualEnabled = false } = {}) {
     const queryClient = useQueryClient();
     const { user } = useAuth();
@@ -330,6 +380,32 @@ function useRSODocuments({ documentFor = "", documentId = "", manualEnabled = fa
         enabled: manualEnabled ? manualEnabled : !!documentId && !!isUserRSORepresentative && isDocumentsPage,
     });
 
+    const {
+        mutate: reuploadRejectedActivityDocumentMutate,
+        isLoading: reuploadRejectedActivityDocumentLoading,
+        isSuccess: reuploadRejectedActivityDocumentSuccess,
+        isError: reuploadRejectedActivityDocumentError,
+        error: reuploadRejectedActivityDocumentQueryError,
+    } = useMutation({
+        mutationFn: reuploadRejectedActivityDocument,
+        onSuccess: () => {
+            queryClient.invalidateQueries(["documents"]);
+        },
+    });
+
+    const {
+        mutate: reuploadRejectedAccreditationDocumentMutate,
+        isLoading: reuploadRejectedAccreditationDocumentLoading,
+        isSuccess: reuploadRejectedAccreditationDocumentSuccess,
+        isError: reuploadRejectedAccreditationDocumentError,
+        error: reuploadRejectedAccreditationDocumentQueryError,
+    } = useMutation({
+        mutationFn: reuploadRejectedAccreditationDocument,
+        onSuccess: () => {
+            queryClient.invalidateQueries(["documents"]);
+        },
+    });
+
     return {
         // get document data
         generalDocuments,
@@ -378,6 +454,20 @@ function useRSODocuments({ documentFor = "", documentId = "", manualEnabled = fa
         specificDocumentLoading,
         specificDocumentError,
         specificDocumentQueryError,
+
+        // reuploadRejectedActivityDocument
+        reuploadRejectedActivityDocumentMutate,
+        reuploadRejectedActivityDocumentLoading,
+        reuploadRejectedActivityDocumentSuccess,
+        reuploadRejectedActivityDocumentError,
+        reuploadRejectedActivityDocumentQueryError,
+
+        // reuploadRejectedAccreditationDocument
+        reuploadRejectedAccreditationDocumentMutate,
+        reuploadRejectedAccreditationDocumentLoading,
+        reuploadRejectedAccreditationDocumentSuccess,
+        reuploadRejectedAccreditationDocumentError,
+        reuploadRejectedAccreditationDocumentQueryError,
     }
 }
 

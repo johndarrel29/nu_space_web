@@ -296,6 +296,8 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
         });
     };
 
+    console.log("table data is ", directorDocuments);
+
     const docsToRender = useMemo(() => {
         const pre = activitySelected?.Activity_pre_activity_documents ?? [];
         const post = activitySelected?.Activity_post_activity_documents ?? [];
@@ -376,7 +378,7 @@ export default function BackendTable({ activeTab, rsoId = "" }) {
                             id="status-filter"
                             placeholder={"Select Status"}
                             onChange={(e) => handleSorted(e.target.value)}
-                            options={["All Organizations", "Approved", "Pending", "Rejected"]}
+                            options={["All Status", "Approved", "Pending", "Rejected"]}
                         />
                     </div>
 

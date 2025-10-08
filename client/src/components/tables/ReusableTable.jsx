@@ -19,6 +19,7 @@ const SPECIAL_HEADING_KEYS = [
     "fullName",
     "email",
     "role",
+    "academicYear",
     "assignedRSO",
 ];
 
@@ -300,6 +301,9 @@ export default function ReusableTable({
                                                                                         )}
                                                                                         {heading.key === "createdAt" && (
                                                                                             <span className="text-sm font-light text-gray-600 dark:text-white flex items-center ">{row.createdAt}</span>
+                                                                                        )}
+                                                                                        {heading.key === "academicYear" && (
+                                                                                            <span className="text-sm font-light text-gray-600 dark:text-white flex items-center ">{row?.academicYear?.label || "—"}</span>
                                                                                         )}
                                                                                         {heading.key === "actions" && (
                                                                                             <div className="flex gap-2">
